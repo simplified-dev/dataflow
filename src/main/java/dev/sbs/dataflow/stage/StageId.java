@@ -15,7 +15,7 @@ public enum StageId {
     PARSE_JSON,
 
     /* ---- Filter ---- */
-    FILTER_PREDICATE,
+    FILTER_DOM_TEXT_CONTAINS,
     FILTER_DISTINCT,
 
     /* ---- Transform ---- */
