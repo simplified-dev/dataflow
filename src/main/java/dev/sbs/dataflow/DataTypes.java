@@ -3,6 +3,7 @@ package dev.sbs.dataflow;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.sbs.dataflow.stage.BranchStage;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,7 +67,7 @@ public final class DataTypes {
     /** Gson {@link JsonArray}. */
     public static final @NotNull DataType<JsonArray> JSON_ARRAY = new DataType.Basic<>(JsonArray.class, "JSON_ARRAY");
 
-    /** Output type of {@link dev.sbs.dataflow.stage.BranchStage}, a map of named sub-pipeline results. */
+    /** Output type of {@link BranchStage}, a map of named sub-pipeline results. */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static final @NotNull DataType<Map<String, Object>> BRANCH_OUTPUT =
         new DataType.Basic<>((Class) Map.class, "BRANCH_OUTPUT");

@@ -1,12 +1,13 @@
 package dev.sbs.dataflow;
 
+import dev.sbs.dataflow.stage.PipelineEmbedStage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 /**
- * Bridge that lets {@link dev.sbs.dataflow.stage.PipelineEmbedStage} look up another saved
+ * Bridge that lets {@link PipelineEmbedStage} look up another saved
  * {@link DataPipeline} at execute-time without the {@code dataflow} module knowing about
  * persistence, authorisation, or any specific storage layer.
  * <p>

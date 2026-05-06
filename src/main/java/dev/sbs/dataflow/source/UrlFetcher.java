@@ -1,5 +1,7 @@
 package dev.sbs.dataflow.source;
 
+import dev.sbs.dataflow.stage.Stage;
+import dev.sbs.dataflow.stage.source.UrlSource;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +21,7 @@ import java.time.Duration;
  * Thin {@link HttpClient} wrapper that fetches a URL into a single decoded {@link String}
  * with a configurable size cap and minimal content-type sniffing.
  * <p>
- * Used by {@link dev.sbs.dataflow.stage.source.UrlSource}; not a {@link dev.sbs.dataflow.stage.Stage}
+ * Used by {@link UrlSource}; not a {@link Stage}
  * itself so that other components can reuse the fetcher (e.g. live-preview caching) without
  * re-implementing the size cap.
  */

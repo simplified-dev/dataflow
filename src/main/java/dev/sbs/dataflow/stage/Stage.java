@@ -1,12 +1,13 @@
 package dev.sbs.dataflow.stage;
 
+import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * One step in a {@link dev.sbs.dataflow.DataPipeline}, mapping an input value of type
+ * One step in a {@link DataPipeline}, mapping an input value of type
  * {@code I} to an output value of type {@code O}.
  * <p>
  * Each stage advertises its {@link #inputType()} and {@link #outputType()} as runtime

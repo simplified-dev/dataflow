@@ -1,5 +1,6 @@
 package dev.sbs.dataflow;
 
+import dev.sbs.dataflow.stage.PipelineEmbedStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.ConcurrentSet;
@@ -20,7 +21,7 @@ import java.time.Duration;
  * Discord-agnostic by design: holds an {@link HttpClient}, a {@link Logger}, a
  * {@link DataPipelineResolver}, and an opaque key/value bag that the host application can
  * use to attach whatever extra context it needs without invading the pipeline core. The
- * mutable {@code activeIds} set guards against {@link dev.sbs.dataflow.stage.PipelineEmbedStage}
+ * mutable {@code activeIds} set guards against {@link PipelineEmbedStage}
  * cycles.
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

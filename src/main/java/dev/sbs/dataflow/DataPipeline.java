@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Immutable, validated sequence of {@link Stage} instances that maps a source-produced
@@ -95,7 +96,7 @@ public final class DataPipeline {
      * <p>
      * The cast from the runtime {@link Object} to {@code T} is unchecked - the compiler
      * trusts the inferred type. A mismatch surfaces as a {@link ClassCastException} at
-     * the assignment site, the same way {@link java.util.Map#get(Object)} behaves with a
+     * the assignment site, the same way {@link Map#get(Object)} behaves with a
      * casted return.
      *
      * @param ctx the pipeline context
