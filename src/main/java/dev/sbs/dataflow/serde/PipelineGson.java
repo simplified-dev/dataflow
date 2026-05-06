@@ -30,6 +30,10 @@ import dev.sbs.dataflow.stage.transform.AbsFloatTransform;
 import dev.sbs.dataflow.stage.transform.AbsIntTransform;
 import dev.sbs.dataflow.stage.transform.AbsLongTransform;
 import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.DomChildrenTransform;
+import dev.sbs.dataflow.stage.transform.DomOuterHtmlTransform;
+import dev.sbs.dataflow.stage.transform.DomOwnTextTransform;
+import dev.sbs.dataflow.stage.transform.DomParentTransform;
 import dev.sbs.dataflow.stage.transform.JsonFieldTransform;
 import dev.sbs.dataflow.stage.transform.JsonPathTransform;
 import dev.sbs.dataflow.stage.transform.ListLengthTransform;
@@ -159,7 +163,9 @@ public final class PipelineGson {
                  TRANSFORM_ABS_INT, TRANSFORM_ABS_LONG,
                  TRANSFORM_ABS_FLOAT, TRANSFORM_ABS_DOUBLE,
                  TRANSFORM_NEGATE_INT, TRANSFORM_NEGATE_LONG,
-                 TRANSFORM_NEGATE_FLOAT, TRANSFORM_NEGATE_DOUBLE -> {
+                 TRANSFORM_NEGATE_FLOAT, TRANSFORM_NEGATE_DOUBLE,
+                 TRANSFORM_DOM_CHILDREN, TRANSFORM_DOM_PARENT,
+                 TRANSFORM_DOM_OUTER_HTML, TRANSFORM_DOM_OWN_TEXT -> {
                 /* config-free */
             }
             case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((CssSelectTransform) stage).selector());
@@ -286,6 +292,10 @@ public final class PipelineGson {
             case TRANSFORM_NEGATE_FLOAT -> NegateFloatTransform.create();
             case TRANSFORM_NEGATE_DOUBLE -> NegateDoubleTransform.create();
             case TRANSFORM_TO_STRING -> ToStringTransform.of(requireType(o.get("inputType").getAsString()));
+            case TRANSFORM_DOM_CHILDREN -> DomChildrenTransform.create();
+            case TRANSFORM_DOM_PARENT -> DomParentTransform.create();
+            case TRANSFORM_DOM_OUTER_HTML -> DomOuterHtmlTransform.create();
+            case TRANSFORM_DOM_OWN_TEXT -> DomOwnTextTransform.create();
             case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
             case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
             case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
