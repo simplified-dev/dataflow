@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformRegexExtract implements TransformStage<String, String> {
+public final class RegexExtractTransform implements TransformStage<String, String> {
 
     private final @NotNull String regex;
     private final int group;
@@ -36,8 +36,8 @@ public final class TransformRegexExtract implements TransformStage<String, Strin
      * @param regex the pattern
      * @return the stage
      */
-    public static @NotNull TransformRegexExtract of(@NotNull String regex) {
-        return new TransformRegexExtract(regex, 0);
+    public static @NotNull RegexExtractTransform of(@NotNull String regex) {
+        return new RegexExtractTransform(regex, 0);
     }
 
     /**
@@ -47,8 +47,8 @@ public final class TransformRegexExtract implements TransformStage<String, Strin
      * @param group the 0-based group index
      * @return the stage
      */
-    public static @NotNull TransformRegexExtract of(@NotNull String regex, int group) {
-        return new TransformRegexExtract(regex, group);
+    public static @NotNull RegexExtractTransform of(@NotNull String regex, int group) {
+        return new RegexExtractTransform(regex, group);
     }
 
     /** {@inheritDoc} */

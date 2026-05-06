@@ -9,18 +9,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * {@link TransformStage} that parses a {@link String} into an {@link Integer}, returning
- * {@code null} when the input is unparseable.
+ * {@link TransformStage} that strips leading and trailing whitespace from a {@link String}.
  */
-public final class TransformParseInt implements TransformStage<String, Integer> {
+public final class TrimTransform implements TransformStage<String, String> {
 
     /**
-     * Constructs a parse-int stage.
+     * Constructs a trim stage.
      *
      * @return the stage
      */
-    public static @NotNull TransformParseInt create() {
-        return new TransformParseInt();
+    public static @NotNull TrimTransform create() {
+        return new TrimTransform();
     }
 
     /** {@inheritDoc} */
@@ -31,31 +30,27 @@ public final class TransformParseInt implements TransformStage<String, Integer> 
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<Integer> outputType() {
-        return DataTypes.INT;
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull StageId kind() {
-        return StageId.TRANSFORM_PARSE_INT;
+        return StageId.TRANSFORM_TRIM;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Parse int";
+        return "Trim";
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable Integer execute(@NotNull PipelineContext ctx, @Nullable String input) {
+    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         if (input == null) return null;
-        try {
-            return Integer.valueOf(input.trim());
-        } catch (NumberFormatException ignored) {
-            return null;
-        }
+        return input.trim();
     }
 
 }

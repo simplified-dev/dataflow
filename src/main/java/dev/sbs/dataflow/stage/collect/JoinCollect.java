@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class CollectJoin implements CollectStage<List<String>, String> {
+public final class JoinCollect implements CollectStage<List<String>, String> {
 
     private static final @NotNull DataType<List<String>> INPUT = DataType.list(DataTypes.STRING);
 
@@ -33,8 +33,8 @@ public final class CollectJoin implements CollectStage<List<String>, String> {
      * @param separator the separator inserted between each element
      * @return the stage
      */
-    public static @NotNull CollectJoin of(@NotNull String separator) {
-        return new CollectJoin(separator);
+    public static @NotNull JoinCollect of(@NotNull String separator) {
+        return new JoinCollect(separator);
     }
 
     /** {@inheritDoc} */

@@ -11,31 +11,34 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
- * {@link CollectStage} that returns the first element of the input list, or {@code null}
- * when the list is empty.
+ * {@link CollectStage} that converts a list into a {@code Set} preserving first-occurrence
+ * order, dropping duplicates by {@link Object#equals(Object)}.
  *
  * @param <T> element type
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class CollectFirst<T> implements CollectStage<List<T>, T> {
+public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
 
     private final @NotNull DataType<T> elementType;
     private final @NotNull DataType<List<T>> listType;
+    private final @NotNull DataType<Set<T>> setType;
 
     /**
-     * Constructs a first-element collect stage.
+     * Constructs a collect-to-set stage.
      *
      * @param elementType element type of the list
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull CollectFirst<T> of(@NotNull DataType<T> elementType) {
-        return new CollectFirst<>(elementType, DataType.list(elementType));
+    public static <T> @NotNull SetCollect<T> of(@NotNull DataType<T> elementType) {
+        return new SetCollect<>(elementType, DataType.list(elementType), DataType.set(elementType));
     }
 
     /** {@inheritDoc} */
@@ -46,27 +49,27 @@ public final class CollectFirst<T> implements CollectStage<List<T>, T> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<T> outputType() {
-        return this.elementType;
+    public @NotNull DataType<Set<T>> outputType() {
+        return this.setType;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull StageId kind() {
-        return StageId.COLLECT_FIRST;
+        return StageId.COLLECT_SET;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "First " + this.elementType.label();
+        return "Set " + this.elementType.label();
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable T execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
-        if (input == null || input.isEmpty()) return null;
-        return input.get(0);
+    public @Nullable Set<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+        if (input == null) return null;
+        return Set.copyOf(new LinkedHashSet<>(input));
     }
 
 }

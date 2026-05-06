@@ -22,7 +22,7 @@ import org.jsoup.select.Elements;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformNthChild implements TransformStage<Element, Element> {
+public final class NthChildTransform implements TransformStage<Element, Element> {
 
     private final @NotNull String childSelector;
     private final int index;
@@ -34,8 +34,8 @@ public final class TransformNthChild implements TransformStage<Element, Element>
      * @param index zero-based index into the matches
      * @return the stage
      */
-    public static @NotNull TransformNthChild of(@NotNull String childSelector, int index) {
-        return new TransformNthChild(childSelector, index);
+    public static @NotNull NthChildTransform of(@NotNull String childSelector, int index) {
+        return new NthChildTransform(childSelector, index);
     }
 
     /** {@inheritDoc} */

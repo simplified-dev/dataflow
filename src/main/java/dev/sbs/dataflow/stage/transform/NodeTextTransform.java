@@ -12,15 +12,15 @@ import org.jsoup.nodes.Element;
 /**
  * {@link TransformStage} that returns the visible text content of a jsoup {@link Element}.
  */
-public final class TransformNodeText implements TransformStage<Element, String> {
+public final class NodeTextTransform implements TransformStage<Element, String> {
 
     /**
      * Constructs a node-text stage.
      *
      * @return the stage
      */
-    public static @NotNull TransformNodeText create() {
-        return new TransformNodeText();
+    public static @NotNull NodeTextTransform create() {
+        return new NodeTextTransform();
     }
 
     /** {@inheritDoc} */

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformReplace implements TransformStage<String, String> {
+public final class ReplaceTransform implements TransformStage<String, String> {
 
     private final @NotNull String regex;
     private final @NotNull String replacement;
@@ -31,8 +31,8 @@ public final class TransformReplace implements TransformStage<String, String> {
      * @param replacement the replacement string (regex back-references allowed)
      * @return the stage
      */
-    public static @NotNull TransformReplace of(@NotNull String regex, @NotNull String replacement) {
-        return new TransformReplace(regex, replacement);
+    public static @NotNull ReplaceTransform of(@NotNull String regex, @NotNull String replacement) {
+        return new ReplaceTransform(regex, replacement);
     }
 
     /** {@inheritDoc} */

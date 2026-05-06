@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class FilterDomTextContains implements FilterStage<Element> {
+public final class DomTextContainsFilter implements FilterStage<Element> {
 
     private static final @NotNull DataType<List<Element>> LIST_OF_NODES = DataType.list(DataTypes.DOM_NODE);
 
@@ -35,8 +35,8 @@ public final class FilterDomTextContains implements FilterStage<Element> {
      * @param needle the substring to look for in each node's text
      * @return the stage
      */
-    public static @NotNull FilterDomTextContains of(@NotNull String needle) {
-        return new FilterDomTextContains(needle);
+    public static @NotNull DomTextContainsFilter of(@NotNull String needle) {
+        return new DomTextContainsFilter(needle);
     }
 
     /** {@inheritDoc} */

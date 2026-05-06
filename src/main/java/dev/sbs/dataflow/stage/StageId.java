@@ -10,15 +10,15 @@ public enum StageId {
     /* ---- Source ---- */
     SOURCE_URL,
     SOURCE_PASTE,
-    PARSE_HTML,
-    PARSE_XML,
-    PARSE_JSON,
 
     /* ---- Filter ---- */
     FILTER_DOM_TEXT_CONTAINS,
     FILTER_DISTINCT,
 
     /* ---- Transform ---- */
+    PARSE_HTML,
+    PARSE_XML,
+    PARSE_JSON,
     TRANSFORM_CSS_SELECT,
     TRANSFORM_NODE_TEXT,
     TRANSFORM_NODE_ATTR,

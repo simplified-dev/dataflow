@@ -14,28 +14,28 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * {@link CollectStage} that returns the last element of the input list, or {@code null}
- * when the list is empty.
+ * Identity {@link CollectStage} that returns the input list unchanged. Useful as an
+ * explicit terminal marker in the pipeline UI when you want a {@code List<T>} result.
  *
  * @param <T> element type
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class CollectLast<T> implements CollectStage<List<T>, T> {
+public final class ListCollect<T> implements CollectStage<List<T>, List<T>> {
 
     private final @NotNull DataType<T> elementType;
     private final @NotNull DataType<List<T>> listType;
 
     /**
-     * Constructs a last-element collect stage.
+     * Constructs an identity collect stage.
      *
      * @param elementType element type of the list
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull CollectLast<T> of(@NotNull DataType<T> elementType) {
-        return new CollectLast<>(elementType, DataType.list(elementType));
+    public static <T> @NotNull ListCollect<T> of(@NotNull DataType<T> elementType) {
+        return new ListCollect<>(elementType, DataType.list(elementType));
     }
 
     /** {@inheritDoc} */
@@ -46,27 +46,26 @@ public final class CollectLast<T> implements CollectStage<List<T>, T> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<T> outputType() {
-        return this.elementType;
+    public @NotNull DataType<List<T>> outputType() {
+        return this.listType;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull StageId kind() {
-        return StageId.COLLECT_LAST;
+        return StageId.COLLECT_LIST;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Last " + this.elementType.label();
+        return "List " + this.elementType.label();
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable T execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
-        if (input == null || input.isEmpty()) return null;
-        return input.get(input.size() - 1);
+    public @Nullable List<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+        return input;
     }
 
 }

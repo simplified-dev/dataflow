@@ -1,14 +1,14 @@
 package dev.sbs.dataflow;
 
-import dev.sbs.dataflow.stage.collect.CollectFirst;
-import dev.sbs.dataflow.stage.filter.FilterDomTextContains;
+import dev.sbs.dataflow.stage.collect.FirstCollect;
+import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.TransformCssSelect;
-import dev.sbs.dataflow.stage.transform.TransformNodeText;
-import dev.sbs.dataflow.stage.transform.TransformNthChild;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
-import dev.sbs.dataflow.stage.transform.TransformRegexExtract;
+import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,13 +24,13 @@ class WikiPipelineE2ETest {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("table.infobox tr"))
-            .stage(FilterDomTextContains.of("Dmg"))
-            .stage(CollectFirst.of(DataTypes.DOM_NODE))
-            .stage(TransformNthChild.of("td", 1))
-            .stage(TransformNodeText.create())
-            .stage(TransformRegexExtract.of("\\d+"))
-            .stage(TransformParseInt.create())
+            .stage(CssSelectTransform.of("table.infobox tr"))
+            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(FirstCollect.of(DataTypes.DOM_NODE))
+            .stage(NthChildTransform.of("td", 1))
+            .stage(NodeTextTransform.create())
+            .stage(RegexExtractTransform.of("\\d+"))
+            .stage(ParseIntTransform.create())
             .build();
 
         assertThat(pipeline.validate().isValid(), is(true));

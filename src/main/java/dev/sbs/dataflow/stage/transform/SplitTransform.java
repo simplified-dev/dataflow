@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformSplit implements TransformStage<String, List<String>> {
+public final class SplitTransform implements TransformStage<String, List<String>> {
 
     private static final @NotNull DataType<List<String>> OUTPUT = DataType.list(DataTypes.STRING);
 
@@ -33,8 +33,8 @@ public final class TransformSplit implements TransformStage<String, List<String>
      * @param regex the regex used as a delimiter
      * @return the stage
      */
-    public static @NotNull TransformSplit of(@NotNull String regex) {
-        return new TransformSplit(regex);
+    public static @NotNull SplitTransform of(@NotNull String regex) {
+        return new SplitTransform(regex);
     }
 
     /** {@inheritDoc} */

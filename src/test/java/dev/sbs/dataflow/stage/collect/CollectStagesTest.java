@@ -22,36 +22,36 @@ class CollectStagesTest {
     @Test
     @DisplayName("First returns the first element or null on empty")
     void first() {
-        assertThat(CollectFirst.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b")), is(equalTo("a")));
-        assertThat(CollectFirst.of(DataTypes.STRING).execute(this.ctx, List.of()), is(nullValue()));
-        assertThat(CollectFirst.of(DataTypes.STRING).execute(this.ctx, null), is(nullValue()));
+        assertThat(FirstCollect.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b")), is(equalTo("a")));
+        assertThat(FirstCollect.of(DataTypes.STRING).execute(this.ctx, List.of()), is(nullValue()));
+        assertThat(FirstCollect.of(DataTypes.STRING).execute(this.ctx, null), is(nullValue()));
     }
 
     @Test
     @DisplayName("Last returns the last element or null on empty")
     void last() {
-        assertThat(CollectLast.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b")), is(equalTo("b")));
-        assertThat(CollectLast.of(DataTypes.STRING).execute(this.ctx, List.of()), is(nullValue()));
+        assertThat(LastCollect.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b")), is(equalTo("b")));
+        assertThat(LastCollect.of(DataTypes.STRING).execute(this.ctx, List.of()), is(nullValue()));
     }
 
     @Test
     @DisplayName("List returns the input unchanged")
     void list() {
         List<String> in = List.of("a", "b", "c");
-        assertThat(CollectList.of(DataTypes.STRING).execute(this.ctx, in), contains("a", "b", "c"));
+        assertThat(ListCollect.of(DataTypes.STRING).execute(this.ctx, in), contains("a", "b", "c"));
     }
 
     @Test
     @DisplayName("Set drops duplicates by equals")
     void set() {
-        Set<String> result = CollectSet.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b", "a"));
+        Set<String> result = SetCollect.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b", "a"));
         assertThat(result, containsInAnyOrder("a", "b"));
     }
 
     @Test
     @DisplayName("Join produces a separator-delimited string")
     void join() {
-        assertThat(CollectJoin.of(", ").execute(this.ctx, List.of("a", "b", "c")), is(equalTo("a, b, c")));
+        assertThat(JoinCollect.of(", ").execute(this.ctx, List.of("a", "b", "c")), is(equalTo("a, b, c")));
     }
 
 }

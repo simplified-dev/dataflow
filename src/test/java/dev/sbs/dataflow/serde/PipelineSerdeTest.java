@@ -7,31 +7,31 @@ import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.branch.Branch;
-import dev.sbs.dataflow.stage.collect.CollectFirst;
-import dev.sbs.dataflow.stage.collect.CollectJoin;
-import dev.sbs.dataflow.stage.collect.CollectLast;
-import dev.sbs.dataflow.stage.collect.CollectList;
-import dev.sbs.dataflow.stage.collect.CollectSet;
+import dev.sbs.dataflow.stage.collect.FirstCollect;
+import dev.sbs.dataflow.stage.collect.JoinCollect;
+import dev.sbs.dataflow.stage.collect.LastCollect;
+import dev.sbs.dataflow.stage.collect.ListCollect;
+import dev.sbs.dataflow.stage.collect.SetCollect;
 import dev.sbs.dataflow.stage.embed.PipelineEmbed;
-import dev.sbs.dataflow.stage.filter.FilterDistinct;
-import dev.sbs.dataflow.stage.filter.FilterDomTextContains;
+import dev.sbs.dataflow.stage.filter.DistinctFilter;
+import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.ParseJsonTransform;
 import dev.sbs.dataflow.stage.transform.ParseXmlTransform;
-import dev.sbs.dataflow.stage.transform.TransformCssSelect;
-import dev.sbs.dataflow.stage.transform.TransformJsonField;
-import dev.sbs.dataflow.stage.transform.TransformJsonPath;
-import dev.sbs.dataflow.stage.transform.TransformNodeAttr;
-import dev.sbs.dataflow.stage.transform.TransformNodeText;
-import dev.sbs.dataflow.stage.transform.TransformNthChild;
-import dev.sbs.dataflow.stage.transform.TransformParseDouble;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
-import dev.sbs.dataflow.stage.transform.TransformRegexExtract;
-import dev.sbs.dataflow.stage.transform.TransformReplace;
-import dev.sbs.dataflow.stage.transform.TransformSplit;
-import dev.sbs.dataflow.stage.transform.TransformTrim;
+import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.JsonFieldTransform;
+import dev.sbs.dataflow.stage.transform.JsonPathTransform;
+import dev.sbs.dataflow.stage.transform.NodeAttrTransform;
+import dev.sbs.dataflow.stage.transform.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.ParseDoubleTransform;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
+import dev.sbs.dataflow.stage.transform.ReplaceTransform;
+import dev.sbs.dataflow.stage.transform.SplitTransform;
+import dev.sbs.dataflow.stage.transform.TrimTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -50,13 +50,13 @@ class PipelineSerdeTest {
         DataPipeline original = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("table.infobox tr"))
-            .stage(FilterDomTextContains.of("Dmg"))
-            .stage(CollectFirst.of(DataTypes.DOM_NODE))
-            .stage(TransformNthChild.of("td", 1))
-            .stage(TransformNodeText.create())
-            .stage(TransformRegexExtract.of("\\d+"))
-            .stage(TransformParseInt.create())
+            .stage(CssSelectTransform.of("table.infobox tr"))
+            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(FirstCollect.of(DataTypes.DOM_NODE))
+            .stage(NthChildTransform.of("td", 1))
+            .stage(NodeTextTransform.create())
+            .stage(RegexExtractTransform.of("\\d+"))
+            .stage(ParseIntTransform.create())
             .build();
 
         String json = PipelineGson.toJson(original);
@@ -71,7 +71,7 @@ class PipelineSerdeTest {
     void serdeIsIdempotent() {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.text("hi"))
-            .stage(TransformTrim.create())
+            .stage(TrimTransform.create())
             .build();
         String first = PipelineGson.toJson(pipeline);
         String second = PipelineGson.toJson(PipelineGson.fromJson(first));
@@ -85,14 +85,14 @@ class PipelineSerdeTest {
         DataPipeline jsonPipeline = DataPipeline.builder()
             .source(PasteSource.json(Fixtures.load("sample.json")))
             .stage(ParseJsonTransform.create())
-            .stage(TransformJsonPath.of("stats.dmg"))
+            .stage(JsonPathTransform.of("stats.dmg"))
             .build();
         roundTrip(jsonPipeline);
 
         DataPipeline xmlPipeline = DataPipeline.builder()
             .source(PasteSource.xml(Fixtures.load("sample.xml")))
             .stage(ParseXmlTransform.create())
-            .stage(TransformJsonPath.of("name"))
+            .stage(JsonPathTransform.of("name"))
             .build();
         roundTrip(xmlPipeline);
 
@@ -103,25 +103,25 @@ class PipelineSerdeTest {
 
         DataPipeline allTransforms = DataPipeline.builder()
             .source(PasteSource.text("  hello WORLD  "))
-            .stage(TransformTrim.create())
-            .stage(TransformReplace.of("WORLD", "world"))
-            .stage(TransformRegexExtract.of("\\w+", 0))
-            .stage(TransformSplit.of(""))
+            .stage(TrimTransform.create())
+            .stage(ReplaceTransform.of("WORLD", "world"))
+            .stage(RegexExtractTransform.of("\\w+", 0))
+            .stage(SplitTransform.of(""))
             .build();
         roundTrip(allTransforms);
 
         DataPipeline collectVariants = DataPipeline.builder()
             .source(PasteSource.text("a,b,a,c"))
-            .stage(TransformSplit.of(","))
-            .stage(FilterDistinct.of(DataTypes.STRING))
-            .stage(CollectJoin.of("|"))
+            .stage(SplitTransform.of(","))
+            .stage(DistinctFilter.of(DataTypes.STRING))
+            .stage(JoinCollect.of("|"))
             .build();
         roundTrip(collectVariants);
 
         DataPipeline collectFlavours = DataPipeline.builder()
             .source(PasteSource.text("x"))
-            .stage(TransformSplit.of(""))
-            .stage(CollectLast.of(DataTypes.STRING))
+            .stage(SplitTransform.of(""))
+            .stage(LastCollect.of(DataTypes.STRING))
             .build();
         roundTrip(collectFlavours);
 
@@ -129,43 +129,43 @@ class PipelineSerdeTest {
         DataPipeline misc1 = DataPipeline.builder()
             .source(PasteSource.html("<a href='https://x'>z</a>"))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("a"))
-            .stage(CollectFirst.of(DataTypes.DOM_NODE))
-            .stage(TransformNodeAttr.of("href"))
+            .stage(CssSelectTransform.of("a"))
+            .stage(FirstCollect.of(DataTypes.DOM_NODE))
+            .stage(NodeAttrTransform.of("href"))
             .build();
         roundTrip(misc1);
 
         DataPipeline misc2 = DataPipeline.builder()
             .source(PasteSource.json("{\"x\": 3.14}"))
             .stage(ParseJsonTransform.create())
-            .stage(TransformJsonPath.of("x"))
+            .stage(JsonPathTransform.of("x"))
             .build();
         roundTrip(misc2);
 
         DataPipeline misc3 = DataPipeline.builder()
             .source(PasteSource.text("3.14"))
-            .stage(TransformParseDouble.create())
+            .stage(ParseDoubleTransform.create())
             .build();
         roundTrip(misc3);
 
         DataPipeline setVariant = DataPipeline.builder()
             .source(PasteSource.text("a,b,a,c"))
-            .stage(TransformSplit.of(","))
-            .stage(CollectSet.of(DataTypes.STRING))
+            .stage(SplitTransform.of(","))
+            .stage(SetCollect.of(DataTypes.STRING))
             .build();
         roundTrip(setVariant);
 
         DataPipeline listVariant = DataPipeline.builder()
             .source(PasteSource.text("a,b,c"))
-            .stage(TransformSplit.of(","))
-            .stage(CollectList.of(DataTypes.STRING))
+            .stage(SplitTransform.of(","))
+            .stage(ListCollect.of(DataTypes.STRING))
             .build();
         roundTrip(listVariant);
 
         DataPipeline jsonField = DataPipeline.builder()
             .source(PasteSource.json("{\"x\":\"y\"}"))
             .stage(ParseJsonTransform.create())
-            .stage(TransformJsonField.of("x"))
+            .stage(JsonFieldTransform.of("x"))
             .build();
         // ParseJson outputs JSON_ELEMENT, JsonField expects JSON_OBJECT; serde itself
         // works regardless of validation. Just round-trip the bytes.
@@ -179,25 +179,25 @@ class PipelineSerdeTest {
         DataType<List<org.jsoup.nodes.Element>> input = DataType.list(DataTypes.DOM_NODE);
         Branch<List<org.jsoup.nodes.Element>> branch = Branch.over(input)
             .output("dmg", c -> c
-                .stage(FilterDomTextContains.of("Dmg"))
-                .stage(CollectFirst.of(DataTypes.DOM_NODE))
-                .stage(TransformNthChild.of("td", 1))
-                .stage(TransformNodeText.create())
-                .stage(TransformRegexExtract.of("\\d+"))
-                .stage(TransformParseInt.create()))
+                .stage(DomTextContainsFilter.of("Dmg"))
+                .stage(FirstCollect.of(DataTypes.DOM_NODE))
+                .stage(NthChildTransform.of("td", 1))
+                .stage(NodeTextTransform.create())
+                .stage(RegexExtractTransform.of("\\d+"))
+                .stage(ParseIntTransform.create()))
             .output("strength", c -> c
-                .stage(FilterDomTextContains.of("Strength"))
-                .stage(CollectFirst.of(DataTypes.DOM_NODE))
-                .stage(TransformNthChild.of("td", 1))
-                .stage(TransformNodeText.create())
-                .stage(TransformRegexExtract.of("\\d+"))
-                .stage(TransformParseInt.create()))
+                .stage(DomTextContainsFilter.of("Strength"))
+                .stage(FirstCollect.of(DataTypes.DOM_NODE))
+                .stage(NthChildTransform.of("td", 1))
+                .stage(NodeTextTransform.create())
+                .stage(RegexExtractTransform.of("\\d+"))
+                .stage(ParseIntTransform.create()))
             .build();
 
         DataPipeline original = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("table.infobox tr"))
+            .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(branch)
             .build();
 

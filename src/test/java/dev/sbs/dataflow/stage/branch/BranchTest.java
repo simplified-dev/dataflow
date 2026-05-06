@@ -4,13 +4,13 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.collect.CollectFirst;
-import dev.sbs.dataflow.stage.filter.FilterDomTextContains;
-import dev.sbs.dataflow.stage.transform.TransformCssSelect;
-import dev.sbs.dataflow.stage.transform.TransformNodeText;
-import dev.sbs.dataflow.stage.transform.TransformNthChild;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
-import dev.sbs.dataflow.stage.transform.TransformRegexExtract;
+import dev.sbs.dataflow.stage.collect.FirstCollect;
+import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
@@ -31,35 +31,35 @@ class BranchTest {
     @DisplayName("Branch fans the same row list out to three named integer outputs")
     void branchProducesNamedOutputs() {
         Element root = Jsoup.parse(Fixtures.load("dark_claymore.html"));
-        List<Element> rows = TransformCssSelect.of("table.infobox tr")
+        List<Element> rows = CssSelectTransform.of("table.infobox tr")
             .execute(PipelineContext.empty(), root);
         assertThat(rows, is(notNullValue()));
 
         DataType<List<Element>> input = DataType.list(DataTypes.DOM_NODE);
         Branch<List<Element>> branch = Branch.over(input)
             .output("dmg", chain -> chain
-                .stage(FilterDomTextContains.of("Dmg"))
-                .stage(CollectFirst.of(DataTypes.DOM_NODE))
-                .stage(TransformNthChild.of("td", 1))
-                .stage(TransformNodeText.create())
-                .stage(TransformRegexExtract.of("\\d+"))
-                .stage(TransformParseInt.create())
+                .stage(DomTextContainsFilter.of("Dmg"))
+                .stage(FirstCollect.of(DataTypes.DOM_NODE))
+                .stage(NthChildTransform.of("td", 1))
+                .stage(NodeTextTransform.create())
+                .stage(RegexExtractTransform.of("\\d+"))
+                .stage(ParseIntTransform.create())
             )
             .output("strength", chain -> chain
-                .stage(FilterDomTextContains.of("Strength"))
-                .stage(CollectFirst.of(DataTypes.DOM_NODE))
-                .stage(TransformNthChild.of("td", 1))
-                .stage(TransformNodeText.create())
-                .stage(TransformRegexExtract.of("\\d+"))
-                .stage(TransformParseInt.create())
+                .stage(DomTextContainsFilter.of("Strength"))
+                .stage(FirstCollect.of(DataTypes.DOM_NODE))
+                .stage(NthChildTransform.of("td", 1))
+                .stage(NodeTextTransform.create())
+                .stage(RegexExtractTransform.of("\\d+"))
+                .stage(ParseIntTransform.create())
             )
             .output("crit_damage", chain -> chain
-                .stage(FilterDomTextContains.of("Crit Damage"))
-                .stage(CollectFirst.of(DataTypes.DOM_NODE))
-                .stage(TransformNthChild.of("td", 1))
-                .stage(TransformNodeText.create())
-                .stage(TransformRegexExtract.of("\\d+"))
-                .stage(TransformParseInt.create())
+                .stage(DomTextContainsFilter.of("Crit Damage"))
+                .stage(FirstCollect.of(DataTypes.DOM_NODE))
+                .stage(NthChildTransform.of("td", 1))
+                .stage(NodeTextTransform.create())
+                .stage(RegexExtractTransform.of("\\d+"))
+                .stage(ParseIntTransform.create())
             )
             .build();
 

@@ -1,8 +1,8 @@
-package dev.sbs.dataflow.stage.filter;
+package dev.sbs.dataflow.stage.collect;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.FilterStage;
+import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.StageId;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,32 +11,31 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * {@link FilterStage} that returns the input list with duplicate elements removed,
- * preserving first-occurrence order. Equality is by {@link Object#equals(Object)}.
+ * {@link CollectStage} that returns the last element of the input list, or {@code null}
+ * when the list is empty.
  *
  * @param <T> element type
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class FilterDistinct<T> implements FilterStage<T> {
+public final class LastCollect<T> implements CollectStage<List<T>, T> {
 
     private final @NotNull DataType<T> elementType;
     private final @NotNull DataType<List<T>> listType;
 
     /**
-     * Constructs a distinct filter for the given element type.
+     * Constructs a last-element collect stage.
      *
      * @param elementType element type of the list
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull FilterDistinct<T> of(@NotNull DataType<T> elementType) {
-        return new FilterDistinct<>(elementType, DataType.list(elementType));
+    public static <T> @NotNull LastCollect<T> of(@NotNull DataType<T> elementType) {
+        return new LastCollect<>(elementType, DataType.list(elementType));
     }
 
     /** {@inheritDoc} */
@@ -47,27 +46,27 @@ public final class FilterDistinct<T> implements FilterStage<T> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<List<T>> outputType() {
-        return this.listType;
+    public @NotNull DataType<T> outputType() {
+        return this.elementType;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull StageId kind() {
-        return StageId.FILTER_DISTINCT;
+        return StageId.COLLECT_LAST;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Distinct " + this.elementType.label();
+        return "Last " + this.elementType.label();
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
-        if (input == null) return null;
-        return List.copyOf(new LinkedHashSet<>(input));
+    public @Nullable T execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+        if (input == null || input.isEmpty()) return null;
+        return input.get(input.size() - 1);
     }
 
 }

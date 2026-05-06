@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformJsonField implements TransformStage<JsonObject, JsonElement> {
+public final class JsonFieldTransform implements TransformStage<JsonObject, JsonElement> {
 
     private final @NotNull String fieldName;
 
@@ -31,8 +31,8 @@ public final class TransformJsonField implements TransformStage<JsonObject, Json
      * @param fieldName the field to extract
      * @return the stage
      */
-    public static @NotNull TransformJsonField of(@NotNull String fieldName) {
-        return new TransformJsonField(fieldName);
+    public static @NotNull JsonFieldTransform of(@NotNull String fieldName) {
+        return new JsonFieldTransform(fieldName);
     }
 
     /** {@inheritDoc} */

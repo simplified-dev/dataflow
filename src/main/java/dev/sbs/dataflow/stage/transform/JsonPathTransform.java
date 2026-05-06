@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformJsonPath implements TransformStage<JsonElement, JsonElement> {
+public final class JsonPathTransform implements TransformStage<JsonElement, JsonElement> {
 
     private final @NotNull String path;
 
@@ -34,8 +34,8 @@ public final class TransformJsonPath implements TransformStage<JsonElement, Json
      * @param path dot-separated key path (e.g. {@code "stats.combat.dmg"})
      * @return the stage
      */
-    public static @NotNull TransformJsonPath of(@NotNull String path) {
-        return new TransformJsonPath(path);
+    public static @NotNull JsonPathTransform of(@NotNull String path) {
+        return new JsonPathTransform(path);
     }
 
     /** {@inheritDoc} */

@@ -1,10 +1,10 @@
 package dev.sbs.dataflow;
 
-import dev.sbs.dataflow.stage.collect.CollectFirst;
+import dev.sbs.dataflow.stage.collect.FirstCollect;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.TransformCssSelect;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
+import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +40,8 @@ class DataTypeChainTest {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html("<html><body>x</body></html>"))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("body"))
-            .stage(TransformParseInt.create())
+            .stage(CssSelectTransform.of("body"))
+            .stage(ParseIntTransform.create())
             .build();
 
         ValidationReport report = pipeline.validate();
@@ -58,8 +58,8 @@ class DataTypeChainTest {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
             .stage(ParseHtmlTransform.create())
-            .stage(TransformCssSelect.of("table.infobox tr"))
-            .stage(CollectFirst.of(DataTypes.DOM_NODE))
+            .stage(CssSelectTransform.of("table.infobox tr"))
+            .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .build();
         assertThat(pipeline.validate().isValid(), is(true));
     }

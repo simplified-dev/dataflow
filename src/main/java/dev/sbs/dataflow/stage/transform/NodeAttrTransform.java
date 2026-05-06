@@ -13,29 +13,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
-import java.util.List;
-
 /**
- * {@link TransformStage} that runs a jsoup CSS selector against a {@link Element} and returns
- * every matching element as a {@code List<Element>}.
+ * {@link TransformStage} that returns a named attribute value of a jsoup {@link Element}.
+ * Returns the empty string when the attribute is absent, matching jsoup's convention.
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
-public final class TransformCssSelect implements TransformStage<Element, List<Element>> {
+public final class NodeAttrTransform implements TransformStage<Element, String> {
 
-    private static final @NotNull DataType<List<Element>> OUTPUT = DataType.list(DataTypes.DOM_NODE);
-
-    private final @NotNull String selector;
+    private final @NotNull String attributeName;
 
     /**
-     * Constructs a CSS-select stage.
+     * Constructs a node-attribute stage.
      *
-     * @param selector the jsoup-flavoured CSS selector
+     * @param attributeName the attribute to extract
      * @return the stage
      */
-    public static @NotNull TransformCssSelect of(@NotNull String selector) {
-        return new TransformCssSelect(selector);
+    public static @NotNull NodeAttrTransform of(@NotNull String attributeName) {
+        return new NodeAttrTransform(attributeName);
     }
 
     /** {@inheritDoc} */
@@ -46,27 +42,27 @@ public final class TransformCssSelect implements TransformStage<Element, List<El
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<List<Element>> outputType() {
-        return OUTPUT;
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull StageId kind() {
-        return StageId.TRANSFORM_CSS_SELECT;
+        return StageId.TRANSFORM_NODE_ATTR;
     }
 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "CSS select '" + this.selector + "'";
+        return "Attr '" + this.attributeName + "'";
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<Element> execute(@NotNull PipelineContext ctx, @Nullable Element input) {
+    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Element input) {
         if (input == null) return null;
-        return List.copyOf(input.select(this.selector));
+        return input.attr(this.attributeName);
     }
 
 }

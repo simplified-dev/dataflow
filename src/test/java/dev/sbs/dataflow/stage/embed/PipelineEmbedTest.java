@@ -5,7 +5,7 @@ import dev.sbs.dataflow.DataPipelineResolver;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.source.PasteSource;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +47,7 @@ class PipelineEmbedTest {
         // B: produces integer 42
         DataPipeline b = DataPipeline.builder()
             .source(PasteSource.text("42"))
-            // PasteSource.text emits RAW_TEXT, but TransformParseInt expects STRING.
+            // PasteSource.text emits RAW_TEXT, but ParseIntTransform expects STRING.
             // For now the embed test focuses on the embed mechanics, so we use a
             // simple chain: paste TEXT then we accept it as-is via a no-op chain.
             .build();

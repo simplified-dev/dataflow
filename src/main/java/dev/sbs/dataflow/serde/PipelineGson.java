@@ -12,31 +12,31 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageId;
 import dev.sbs.dataflow.stage.branch.Branch;
-import dev.sbs.dataflow.stage.collect.CollectFirst;
-import dev.sbs.dataflow.stage.collect.CollectJoin;
-import dev.sbs.dataflow.stage.collect.CollectLast;
-import dev.sbs.dataflow.stage.collect.CollectList;
-import dev.sbs.dataflow.stage.collect.CollectSet;
+import dev.sbs.dataflow.stage.collect.FirstCollect;
+import dev.sbs.dataflow.stage.collect.JoinCollect;
+import dev.sbs.dataflow.stage.collect.LastCollect;
+import dev.sbs.dataflow.stage.collect.ListCollect;
+import dev.sbs.dataflow.stage.collect.SetCollect;
 import dev.sbs.dataflow.stage.embed.PipelineEmbed;
-import dev.sbs.dataflow.stage.filter.FilterDistinct;
-import dev.sbs.dataflow.stage.filter.FilterDomTextContains;
+import dev.sbs.dataflow.stage.filter.DistinctFilter;
+import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.ParseJsonTransform;
 import dev.sbs.dataflow.stage.transform.ParseXmlTransform;
-import dev.sbs.dataflow.stage.transform.TransformCssSelect;
-import dev.sbs.dataflow.stage.transform.TransformJsonField;
-import dev.sbs.dataflow.stage.transform.TransformJsonPath;
-import dev.sbs.dataflow.stage.transform.TransformNodeAttr;
-import dev.sbs.dataflow.stage.transform.TransformNodeText;
-import dev.sbs.dataflow.stage.transform.TransformNthChild;
-import dev.sbs.dataflow.stage.transform.TransformParseDouble;
-import dev.sbs.dataflow.stage.transform.TransformParseInt;
-import dev.sbs.dataflow.stage.transform.TransformRegexExtract;
-import dev.sbs.dataflow.stage.transform.TransformReplace;
-import dev.sbs.dataflow.stage.transform.TransformSplit;
-import dev.sbs.dataflow.stage.transform.TransformTrim;
+import dev.sbs.dataflow.stage.transform.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.JsonFieldTransform;
+import dev.sbs.dataflow.stage.transform.JsonPathTransform;
+import dev.sbs.dataflow.stage.transform.NodeAttrTransform;
+import dev.sbs.dataflow.stage.transform.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.ParseDoubleTransform;
+import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
+import dev.sbs.dataflow.stage.transform.ReplaceTransform;
+import dev.sbs.dataflow.stage.transform.SplitTransform;
+import dev.sbs.dataflow.stage.transform.TrimTransform;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
@@ -135,34 +135,34 @@ public final class PipelineGson {
                  TRANSFORM_TRIM -> {
                 /* config-free */
             }
-            case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((TransformCssSelect) stage).selector());
-            case TRANSFORM_NODE_ATTR -> o.addProperty("attributeName", ((TransformNodeAttr) stage).attributeName());
+            case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((CssSelectTransform) stage).selector());
+            case TRANSFORM_NODE_ATTR -> o.addProperty("attributeName", ((NodeAttrTransform) stage).attributeName());
             case TRANSFORM_NTH_CHILD -> {
-                TransformNthChild s = (TransformNthChild) stage;
+                NthChildTransform s = (NthChildTransform) stage;
                 o.addProperty("childSelector", s.childSelector());
                 o.addProperty("index", s.index());
             }
-            case TRANSFORM_JSON_PATH -> o.addProperty("path", ((TransformJsonPath) stage).path());
-            case TRANSFORM_JSON_FIELD -> o.addProperty("fieldName", ((TransformJsonField) stage).fieldName());
+            case TRANSFORM_JSON_PATH -> o.addProperty("path", ((JsonPathTransform) stage).path());
+            case TRANSFORM_JSON_FIELD -> o.addProperty("fieldName", ((JsonFieldTransform) stage).fieldName());
             case TRANSFORM_REGEX_EXTRACT -> {
-                TransformRegexExtract s = (TransformRegexExtract) stage;
+                RegexExtractTransform s = (RegexExtractTransform) stage;
                 o.addProperty("regex", s.regex());
                 o.addProperty("group", s.group());
             }
             case TRANSFORM_REPLACE -> {
-                TransformReplace s = (TransformReplace) stage;
+                ReplaceTransform s = (ReplaceTransform) stage;
                 o.addProperty("regex", s.regex());
                 o.addProperty("replacement", s.replacement());
             }
-            case TRANSFORM_SPLIT -> o.addProperty("regex", ((TransformSplit) stage).regex());
+            case TRANSFORM_SPLIT -> o.addProperty("regex", ((SplitTransform) stage).regex());
             case TRANSFORM_MAP -> throw new UnsupportedOperationException("TRANSFORM_MAP serde lands in v2");
-            case FILTER_DOM_TEXT_CONTAINS -> o.addProperty("needle", ((FilterDomTextContains) stage).needle());
-            case FILTER_DISTINCT -> o.addProperty("elementType", ((FilterDistinct<?>) stage).elementType().label());
-            case COLLECT_FIRST -> o.addProperty("elementType", ((CollectFirst<?>) stage).elementType().label());
-            case COLLECT_LAST -> o.addProperty("elementType", ((CollectLast<?>) stage).elementType().label());
-            case COLLECT_LIST -> o.addProperty("elementType", ((CollectList<?>) stage).elementType().label());
-            case COLLECT_SET -> o.addProperty("elementType", ((CollectSet<?>) stage).elementType().label());
-            case COLLECT_JOIN -> o.addProperty("separator", ((CollectJoin) stage).separator());
+            case FILTER_DOM_TEXT_CONTAINS -> o.addProperty("needle", ((DomTextContainsFilter) stage).needle());
+            case FILTER_DISTINCT -> o.addProperty("elementType", ((DistinctFilter<?>) stage).elementType().label());
+            case COLLECT_FIRST -> o.addProperty("elementType", ((FirstCollect<?>) stage).elementType().label());
+            case COLLECT_LAST -> o.addProperty("elementType", ((LastCollect<?>) stage).elementType().label());
+            case COLLECT_LIST -> o.addProperty("elementType", ((ListCollect<?>) stage).elementType().label());
+            case COLLECT_SET -> o.addProperty("elementType", ((SetCollect<?>) stage).elementType().label());
+            case COLLECT_JOIN -> o.addProperty("separator", ((JoinCollect) stage).separator());
             case BRANCH -> {
                 Branch<?> b = (Branch<?>) stage;
                 o.addProperty("inputType", b.inputType().label());
@@ -213,35 +213,35 @@ public final class PipelineGson {
             case PARSE_HTML -> ParseHtmlTransform.create();
             case PARSE_XML -> ParseXmlTransform.create();
             case PARSE_JSON -> ParseJsonTransform.create();
-            case TRANSFORM_CSS_SELECT -> TransformCssSelect.of(o.get("selector").getAsString());
-            case TRANSFORM_NODE_TEXT -> TransformNodeText.create();
-            case TRANSFORM_NODE_ATTR -> TransformNodeAttr.of(o.get("attributeName").getAsString());
-            case TRANSFORM_NTH_CHILD -> TransformNthChild.of(
+            case TRANSFORM_CSS_SELECT -> CssSelectTransform.of(o.get("selector").getAsString());
+            case TRANSFORM_NODE_TEXT -> NodeTextTransform.create();
+            case TRANSFORM_NODE_ATTR -> NodeAttrTransform.of(o.get("attributeName").getAsString());
+            case TRANSFORM_NTH_CHILD -> NthChildTransform.of(
                 o.get("childSelector").getAsString(),
                 o.get("index").getAsInt()
             );
-            case TRANSFORM_JSON_PATH -> TransformJsonPath.of(o.get("path").getAsString());
-            case TRANSFORM_JSON_FIELD -> TransformJsonField.of(o.get("fieldName").getAsString());
-            case TRANSFORM_REGEX_EXTRACT -> TransformRegexExtract.of(
+            case TRANSFORM_JSON_PATH -> JsonPathTransform.of(o.get("path").getAsString());
+            case TRANSFORM_JSON_FIELD -> JsonFieldTransform.of(o.get("fieldName").getAsString());
+            case TRANSFORM_REGEX_EXTRACT -> RegexExtractTransform.of(
                 o.get("regex").getAsString(),
                 o.has("group") ? o.get("group").getAsInt() : 0
             );
-            case TRANSFORM_PARSE_INT -> TransformParseInt.create();
-            case TRANSFORM_PARSE_DOUBLE -> TransformParseDouble.create();
-            case TRANSFORM_TRIM -> TransformTrim.create();
-            case TRANSFORM_REPLACE -> TransformReplace.of(
+            case TRANSFORM_PARSE_INT -> ParseIntTransform.create();
+            case TRANSFORM_PARSE_DOUBLE -> ParseDoubleTransform.create();
+            case TRANSFORM_TRIM -> TrimTransform.create();
+            case TRANSFORM_REPLACE -> ReplaceTransform.of(
                 o.get("regex").getAsString(),
                 o.get("replacement").getAsString()
             );
-            case TRANSFORM_SPLIT -> TransformSplit.of(o.get("regex").getAsString());
+            case TRANSFORM_SPLIT -> SplitTransform.of(o.get("regex").getAsString());
             case TRANSFORM_MAP -> throw new UnsupportedOperationException("TRANSFORM_MAP serde lands in v2");
-            case FILTER_DOM_TEXT_CONTAINS -> FilterDomTextContains.of(o.get("needle").getAsString());
-            case FILTER_DISTINCT -> FilterDistinct.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_FIRST -> CollectFirst.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_LAST -> CollectLast.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_LIST -> CollectList.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_SET -> CollectSet.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_JOIN -> CollectJoin.of(o.get("separator").getAsString());
+            case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
+            case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
+            case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
+            case COLLECT_LAST -> LastCollect.of(requireType(o.get("elementType").getAsString()));
+            case COLLECT_LIST -> ListCollect.of(requireType(o.get("elementType").getAsString()));
+            case COLLECT_SET -> SetCollect.of(requireType(o.get("elementType").getAsString()));
+            case COLLECT_JOIN -> JoinCollect.of(o.get("separator").getAsString());
             case BRANCH -> {
                 DataType<?> input = requireType(o.get("inputType").getAsString());
                 Branch.Builder<?> bb = Branch.over((DataType) input);

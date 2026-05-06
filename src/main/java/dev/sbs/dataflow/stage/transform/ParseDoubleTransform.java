@@ -12,15 +12,15 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that parses a {@link String} into a {@link Double}, returning
  * {@code null} when the input is unparseable.
  */
-public final class TransformParseDouble implements TransformStage<String, Double> {
+public final class ParseDoubleTransform implements TransformStage<String, Double> {
 
     /**
      * Constructs a parse-double stage.
      *
      * @return the stage
      */
-    public static @NotNull TransformParseDouble create() {
-        return new TransformParseDouble();
+    public static @NotNull ParseDoubleTransform create() {
+        return new ParseDoubleTransform();
     }
 
     /** {@inheritDoc} */
