@@ -30,6 +30,9 @@ import dev.sbs.dataflow.stage.filter.IndexInRangeFilter;
 import dev.sbs.dataflow.stage.filter.IntGreaterThanFilter;
 import dev.sbs.dataflow.stage.filter.IntInRangeFilter;
 import dev.sbs.dataflow.stage.filter.IntLessThanFilter;
+import dev.sbs.dataflow.stage.filter.LongGreaterThanFilter;
+import dev.sbs.dataflow.stage.filter.LongInRangeFilter;
+import dev.sbs.dataflow.stage.filter.LongLessThanFilter;
 import dev.sbs.dataflow.stage.filter.JsonFieldEqualsFilter;
 import dev.sbs.dataflow.stage.filter.JsonHasFieldFilter;
 import dev.sbs.dataflow.stage.filter.NotNullFilter;
@@ -257,6 +260,13 @@ public final class PipelineGson {
                 o.addProperty("min", f.min());
                 o.addProperty("max", f.max());
             }
+            case FILTER_LONG_GREATER_THAN -> o.addProperty("threshold", ((LongGreaterThanFilter) stage).threshold());
+            case FILTER_LONG_LESS_THAN -> o.addProperty("threshold", ((LongLessThanFilter) stage).threshold());
+            case FILTER_LONG_IN_RANGE -> {
+                LongInRangeFilter f = (LongInRangeFilter) stage;
+                o.addProperty("min", f.min());
+                o.addProperty("max", f.max());
+            }
             case FILTER_DOUBLE_GREATER_THAN -> o.addProperty("threshold", ((DoubleGreaterThanFilter) stage).threshold());
             case FILTER_DOUBLE_LESS_THAN -> o.addProperty("threshold", ((DoubleLessThanFilter) stage).threshold());
             case FILTER_DOUBLE_IN_RANGE -> {
@@ -412,6 +422,9 @@ public final class PipelineGson {
             case FILTER_INT_GREATER_THAN -> IntGreaterThanFilter.of(o.get("threshold").getAsInt());
             case FILTER_INT_LESS_THAN -> IntLessThanFilter.of(o.get("threshold").getAsInt());
             case FILTER_INT_IN_RANGE -> IntInRangeFilter.of(o.get("min").getAsInt(), o.get("max").getAsInt());
+            case FILTER_LONG_GREATER_THAN -> LongGreaterThanFilter.of(o.get("threshold").getAsLong());
+            case FILTER_LONG_LESS_THAN -> LongLessThanFilter.of(o.get("threshold").getAsLong());
+            case FILTER_LONG_IN_RANGE -> LongInRangeFilter.of(o.get("min").getAsLong(), o.get("max").getAsLong());
             case FILTER_DOUBLE_GREATER_THAN -> DoubleGreaterThanFilter.of(o.get("threshold").getAsDouble());
             case FILTER_DOUBLE_LESS_THAN -> DoubleLessThanFilter.of(o.get("threshold").getAsDouble());
             case FILTER_DOUBLE_IN_RANGE -> DoubleInRangeFilter.of(o.get("min").getAsDouble(), o.get("max").getAsDouble());

@@ -66,12 +66,17 @@ class FilterExpansionTest {
     }
 
     @Test
-    @DisplayName("Numeric filters cover Int and Double greaterThan/lessThan/inRange")
+    @DisplayName("Numeric filters cover Int / Long / Double greaterThan / lessThan / inRange")
     void numericFilters() {
         List<Integer> ints = Arrays.asList(1, 5, 10, 15, 20);
         assertThat(IntGreaterThanFilter.of(10).execute(this.ctx, ints), contains(15, 20));
         assertThat(IntLessThanFilter.of(10).execute(this.ctx, ints), contains(1, 5));
         assertThat(IntInRangeFilter.of(5, 15).execute(this.ctx, ints), contains(5, 10, 15));
+
+        List<Long> longs = Arrays.asList(1L, 5_000_000_000L, 10_000_000_000L, 20_000_000_000L);
+        assertThat(LongGreaterThanFilter.of(7_000_000_000L).execute(this.ctx, longs), contains(10_000_000_000L, 20_000_000_000L));
+        assertThat(LongLessThanFilter.of(7_000_000_000L).execute(this.ctx, longs), contains(1L, 5_000_000_000L));
+        assertThat(LongInRangeFilter.of(5_000_000_000L, 10_000_000_000L).execute(this.ctx, longs), contains(5_000_000_000L, 10_000_000_000L));
 
         List<Double> doubles = Arrays.asList(1.0, 2.5, 5.0, 7.5);
         assertThat(DoubleGreaterThanFilter.of(2.5).execute(this.ctx, doubles), contains(5.0, 7.5));
