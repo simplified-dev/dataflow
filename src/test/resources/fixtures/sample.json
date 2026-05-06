@@ -1,0 +1,9 @@
+{
+  "name": "Dark Claymore",
+  "rarity": "Mythic",
+  "stats": {
+    "dmg": 500,
+    "strength": 220,
+    "crit_damage": 175
+  }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<item>
+  <name>Dark Claymore</name>
+  <rarity>Mythic</rarity>
+  <stats>
+    <dmg>500</dmg>
+    <strength>220</strength>
+  </stats>
+</item>
