@@ -27,6 +27,8 @@ import dev.sbs.dataflow.stage.transform.ParseJsonTransform;
 import dev.sbs.dataflow.stage.transform.ParseXmlTransform;
 import dev.sbs.dataflow.stage.transform.AbsDoubleTransform;
 import dev.sbs.dataflow.stage.transform.AbsFloatTransform;
+import dev.sbs.dataflow.stage.transform.Base64DecodeTransform;
+import dev.sbs.dataflow.stage.transform.Base64EncodeTransform;
 import dev.sbs.dataflow.stage.transform.AbsIntTransform;
 import dev.sbs.dataflow.stage.transform.AbsLongTransform;
 import dev.sbs.dataflow.stage.transform.CssSelectTransform;
@@ -66,6 +68,8 @@ import dev.sbs.dataflow.stage.transform.SuffixTransform;
 import dev.sbs.dataflow.stage.transform.ToStringTransform;
 import dev.sbs.dataflow.stage.transform.TrimTransform;
 import dev.sbs.dataflow.stage.transform.UpperCaseTransform;
+import dev.sbs.dataflow.stage.transform.UrlDecodeTransform;
+import dev.sbs.dataflow.stage.transform.UrlEncodeTransform;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
@@ -174,7 +178,9 @@ public final class PipelineGson {
                  TRANSFORM_DOM_OUTER_HTML, TRANSFORM_DOM_OWN_TEXT,
                  TRANSFORM_JSON_AS_STRING, TRANSFORM_JSON_AS_INT,
                  TRANSFORM_JSON_AS_LONG, TRANSFORM_JSON_AS_DOUBLE,
-                 TRANSFORM_JSON_AS_BOOLEAN, TRANSFORM_JSON_STRINGIFY -> {
+                 TRANSFORM_JSON_AS_BOOLEAN, TRANSFORM_JSON_STRINGIFY,
+                 TRANSFORM_BASE64_ENCODE, TRANSFORM_BASE64_DECODE,
+                 TRANSFORM_URL_ENCODE, TRANSFORM_URL_DECODE -> {
                 /* config-free */
             }
             case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((CssSelectTransform) stage).selector());
@@ -311,6 +317,10 @@ public final class PipelineGson {
             case TRANSFORM_JSON_AS_DOUBLE -> JsonAsDoubleTransform.create();
             case TRANSFORM_JSON_AS_BOOLEAN -> JsonAsBooleanTransform.create();
             case TRANSFORM_JSON_STRINGIFY -> JsonStringifyTransform.create();
+            case TRANSFORM_BASE64_ENCODE -> Base64EncodeTransform.create();
+            case TRANSFORM_BASE64_DECODE -> Base64DecodeTransform.create();
+            case TRANSFORM_URL_ENCODE -> UrlEncodeTransform.create();
+            case TRANSFORM_URL_DECODE -> UrlDecodeTransform.create();
             case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
             case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
             case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
