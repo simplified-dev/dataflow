@@ -31,8 +31,11 @@ import dev.sbs.dataflow.stage.transform.JsonPathTransform;
 import dev.sbs.dataflow.stage.transform.NodeAttrTransform;
 import dev.sbs.dataflow.stage.transform.NodeTextTransform;
 import dev.sbs.dataflow.stage.transform.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.ParseBooleanTransform;
 import dev.sbs.dataflow.stage.transform.ParseDoubleTransform;
+import dev.sbs.dataflow.stage.transform.ParseFloatTransform;
 import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.ParseLongTransform;
 import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
 import dev.sbs.dataflow.stage.transform.ReplaceTransform;
 import dev.sbs.dataflow.stage.transform.SplitTransform;
@@ -131,7 +134,9 @@ public final class PipelineGson {
             }
             case PARSE_HTML, PARSE_XML, PARSE_JSON,
                  TRANSFORM_NODE_TEXT,
-                 TRANSFORM_PARSE_INT, TRANSFORM_PARSE_DOUBLE,
+                 TRANSFORM_PARSE_INT, TRANSFORM_PARSE_LONG,
+                 TRANSFORM_PARSE_FLOAT, TRANSFORM_PARSE_DOUBLE,
+                 TRANSFORM_PARSE_BOOLEAN,
                  TRANSFORM_TRIM -> {
                 /* config-free */
             }
@@ -227,7 +232,10 @@ public final class PipelineGson {
                 o.has("group") ? o.get("group").getAsInt() : 0
             );
             case TRANSFORM_PARSE_INT -> ParseIntTransform.create();
+            case TRANSFORM_PARSE_LONG -> ParseLongTransform.create();
+            case TRANSFORM_PARSE_FLOAT -> ParseFloatTransform.create();
             case TRANSFORM_PARSE_DOUBLE -> ParseDoubleTransform.create();
+            case TRANSFORM_PARSE_BOOLEAN -> ParseBooleanTransform.create();
             case TRANSFORM_TRIM -> TrimTransform.create();
             case TRANSFORM_REPLACE -> ReplaceTransform.of(
                 o.get("regex").getAsString(),

@@ -45,6 +45,9 @@ public final class DataTypes {
     /** 64-bit signed integer value. */
     public static final @NotNull DataType<Long> LONG = new DataType.Basic<>(Long.class, "LONG");
 
+    /** 32-bit IEEE-754 floating-point value. */
+    public static final @NotNull DataType<Float> FLOAT = new DataType.Basic<>(Float.class, "FLOAT");
+
     /** 64-bit IEEE-754 floating-point value. */
     public static final @NotNull DataType<Double> DOUBLE = new DataType.Basic<>(Double.class, "DOUBLE");
 
