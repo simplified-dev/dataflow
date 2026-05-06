@@ -35,6 +35,7 @@ public enum StageId {
 
     /* ---- Collect ---- */
     COLLECT_FIRST,
+    COLLECT_LAST,
     COLLECT_LIST,
     COLLECT_SET,
     COLLECT_JOIN,
