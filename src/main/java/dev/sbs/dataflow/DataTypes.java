@@ -5,8 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -63,5 +67,41 @@ public final class DataTypes {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static final @NotNull DataType<Map<String, Object>> BRANCH_OUTPUT =
         new DataType.Basic<>((Class) Map.class, "BRANCH_OUTPUT");
+
+    private static final @NotNull Map<String, DataType<?>> BASICS = collectBasics();
+
+    private static @NotNull Map<String, DataType<?>> collectBasics() {
+        Map<String, DataType<?>> map = new HashMap<>();
+        for (Field f : DataTypes.class.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) continue;
+            if (!DataType.class.isAssignableFrom(f.getType())) continue;
+            try {
+                DataType<?> t = (DataType<?>) f.get(null);
+                if (t != null) map.put(t.label(), t);
+            } catch (IllegalAccessException ignored) {
+                // skip non-accessible
+            }
+        }
+        return Map.copyOf(map);
+    }
+
+    /**
+     * Looks up a {@link DataType} by its label. Recognises every {@code public static final}
+     * field declared in this class plus the {@code List<...>} and {@code Set<...>} forms.
+     *
+     * @param label the label to look up
+     * @return the matching {@link DataType}, or {@code null} when unknown
+     */
+    public static @Nullable DataType<?> byLabel(@NotNull String label) {
+        if (label.startsWith("List<") && label.endsWith(">")) {
+            DataType<?> inner = byLabel(label.substring(5, label.length() - 1));
+            return inner == null ? null : DataType.list(inner);
+        }
+        if (label.startsWith("Set<") && label.endsWith(">")) {
+            DataType<?> inner = byLabel(label.substring(4, label.length() - 1));
+            return inner == null ? null : DataType.set(inner);
+        }
+        return BASICS.get(label);
+    }
 
 }
