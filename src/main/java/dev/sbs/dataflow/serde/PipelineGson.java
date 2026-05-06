@@ -19,7 +19,28 @@ import dev.sbs.dataflow.stage.collect.ListCollect;
 import dev.sbs.dataflow.stage.collect.SetCollect;
 import dev.sbs.dataflow.stage.embed.PipelineEmbed;
 import dev.sbs.dataflow.stage.filter.DistinctFilter;
+import dev.sbs.dataflow.stage.filter.DomHasAttrFilter;
+import dev.sbs.dataflow.stage.filter.DomTagEqualsFilter;
 import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.filter.DomTextMatchesFilter;
+import dev.sbs.dataflow.stage.filter.DoubleGreaterThanFilter;
+import dev.sbs.dataflow.stage.filter.DoubleInRangeFilter;
+import dev.sbs.dataflow.stage.filter.DoubleLessThanFilter;
+import dev.sbs.dataflow.stage.filter.IndexInRangeFilter;
+import dev.sbs.dataflow.stage.filter.IntGreaterThanFilter;
+import dev.sbs.dataflow.stage.filter.IntInRangeFilter;
+import dev.sbs.dataflow.stage.filter.IntLessThanFilter;
+import dev.sbs.dataflow.stage.filter.JsonFieldEqualsFilter;
+import dev.sbs.dataflow.stage.filter.JsonHasFieldFilter;
+import dev.sbs.dataflow.stage.filter.NotNullFilter;
+import dev.sbs.dataflow.stage.filter.SkipFilter;
+import dev.sbs.dataflow.stage.filter.StringContainsFilter;
+import dev.sbs.dataflow.stage.filter.StringEndsWithFilter;
+import dev.sbs.dataflow.stage.filter.StringEqualsFilter;
+import dev.sbs.dataflow.stage.filter.StringMatchesFilter;
+import dev.sbs.dataflow.stage.filter.StringNonEmptyFilter;
+import dev.sbs.dataflow.stage.filter.StringStartsWithFilter;
+import dev.sbs.dataflow.stage.filter.TakeFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
@@ -210,6 +231,56 @@ public final class PipelineGson {
             case TRANSFORM_REVERSE -> o.addProperty("elementType", ((ReverseTransform<?>) stage).elementType().label());
             case TRANSFORM_TO_STRING -> o.addProperty("inputType", ((ToStringTransform<?>) stage).inputType().label());
             case FILTER_DOM_TEXT_CONTAINS -> o.addProperty("needle", ((DomTextContainsFilter) stage).needle());
+            case FILTER_DOM_TEXT_MATCHES -> o.addProperty("regex", ((DomTextMatchesFilter) stage).regex());
+            case FILTER_DOM_HAS_ATTR -> {
+                DomHasAttrFilter f = (DomHasAttrFilter) stage;
+                o.addProperty("attributeName", f.attributeName());
+                if (f.expectedValue() != null) o.addProperty("expectedValue", f.expectedValue());
+            }
+            case FILTER_DOM_TAG_EQUALS -> o.addProperty("tagName", ((DomTagEqualsFilter) stage).tagName());
+            case FILTER_STRING_CONTAINS -> o.addProperty("needle", ((StringContainsFilter) stage).needle());
+            case FILTER_STRING_MATCHES -> o.addProperty("regex", ((StringMatchesFilter) stage).regex());
+            case FILTER_STRING_STARTS_WITH -> o.addProperty("prefix", ((StringStartsWithFilter) stage).prefix());
+            case FILTER_STRING_ENDS_WITH -> o.addProperty("suffix", ((StringEndsWithFilter) stage).suffix());
+            case FILTER_STRING_EQUALS -> o.addProperty("target", ((StringEqualsFilter) stage).target());
+            case FILTER_STRING_NON_EMPTY -> { /* config-free */ }
+            case FILTER_JSON_HAS_FIELD -> o.addProperty("fieldName", ((JsonHasFieldFilter) stage).fieldName());
+            case FILTER_JSON_FIELD_EQUALS -> {
+                JsonFieldEqualsFilter f = (JsonFieldEqualsFilter) stage;
+                o.addProperty("fieldName", f.fieldName());
+                o.addProperty("expectedValue", f.expectedValue());
+            }
+            case FILTER_INT_GREATER_THAN -> o.addProperty("threshold", ((IntGreaterThanFilter) stage).threshold());
+            case FILTER_INT_LESS_THAN -> o.addProperty("threshold", ((IntLessThanFilter) stage).threshold());
+            case FILTER_INT_IN_RANGE -> {
+                IntInRangeFilter f = (IntInRangeFilter) stage;
+                o.addProperty("min", f.min());
+                o.addProperty("max", f.max());
+            }
+            case FILTER_DOUBLE_GREATER_THAN -> o.addProperty("threshold", ((DoubleGreaterThanFilter) stage).threshold());
+            case FILTER_DOUBLE_LESS_THAN -> o.addProperty("threshold", ((DoubleLessThanFilter) stage).threshold());
+            case FILTER_DOUBLE_IN_RANGE -> {
+                DoubleInRangeFilter f = (DoubleInRangeFilter) stage;
+                o.addProperty("min", f.min());
+                o.addProperty("max", f.max());
+            }
+            case FILTER_NOT_NULL -> o.addProperty("elementType", ((NotNullFilter<?>) stage).elementType().label());
+            case FILTER_TAKE -> {
+                TakeFilter<?> f = (TakeFilter<?>) stage;
+                o.addProperty("elementType", f.elementType().label());
+                o.addProperty("count", f.count());
+            }
+            case FILTER_SKIP -> {
+                SkipFilter<?> f = (SkipFilter<?>) stage;
+                o.addProperty("elementType", f.elementType().label());
+                o.addProperty("count", f.count());
+            }
+            case FILTER_INDEX_IN_RANGE -> {
+                IndexInRangeFilter<?> f = (IndexInRangeFilter<?>) stage;
+                o.addProperty("elementType", f.elementType().label());
+                o.addProperty("fromInclusive", f.fromInclusive());
+                o.addProperty("toExclusive", f.toExclusive());
+            }
             case FILTER_DISTINCT -> o.addProperty("elementType", ((DistinctFilter<?>) stage).elementType().label());
             case COLLECT_FIRST -> o.addProperty("elementType", ((FirstCollect<?>) stage).elementType().label());
             case COLLECT_LAST -> o.addProperty("elementType", ((LastCollect<?>) stage).elementType().label());
@@ -322,6 +393,42 @@ public final class PipelineGson {
             case TRANSFORM_URL_ENCODE -> UrlEncodeTransform.create();
             case TRANSFORM_URL_DECODE -> UrlDecodeTransform.create();
             case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
+            case FILTER_DOM_TEXT_MATCHES -> DomTextMatchesFilter.of(o.get("regex").getAsString());
+            case FILTER_DOM_HAS_ATTR -> o.has("expectedValue")
+                ? DomHasAttrFilter.of(o.get("attributeName").getAsString(), o.get("expectedValue").getAsString())
+                : DomHasAttrFilter.of(o.get("attributeName").getAsString());
+            case FILTER_DOM_TAG_EQUALS -> DomTagEqualsFilter.of(o.get("tagName").getAsString());
+            case FILTER_STRING_CONTAINS -> StringContainsFilter.of(o.get("needle").getAsString());
+            case FILTER_STRING_MATCHES -> StringMatchesFilter.of(o.get("regex").getAsString());
+            case FILTER_STRING_STARTS_WITH -> StringStartsWithFilter.of(o.get("prefix").getAsString());
+            case FILTER_STRING_ENDS_WITH -> StringEndsWithFilter.of(o.get("suffix").getAsString());
+            case FILTER_STRING_EQUALS -> StringEqualsFilter.of(o.get("target").getAsString());
+            case FILTER_STRING_NON_EMPTY -> StringNonEmptyFilter.create();
+            case FILTER_JSON_HAS_FIELD -> JsonHasFieldFilter.of(o.get("fieldName").getAsString());
+            case FILTER_JSON_FIELD_EQUALS -> JsonFieldEqualsFilter.of(
+                o.get("fieldName").getAsString(),
+                o.get("expectedValue").getAsString()
+            );
+            case FILTER_INT_GREATER_THAN -> IntGreaterThanFilter.of(o.get("threshold").getAsInt());
+            case FILTER_INT_LESS_THAN -> IntLessThanFilter.of(o.get("threshold").getAsInt());
+            case FILTER_INT_IN_RANGE -> IntInRangeFilter.of(o.get("min").getAsInt(), o.get("max").getAsInt());
+            case FILTER_DOUBLE_GREATER_THAN -> DoubleGreaterThanFilter.of(o.get("threshold").getAsDouble());
+            case FILTER_DOUBLE_LESS_THAN -> DoubleLessThanFilter.of(o.get("threshold").getAsDouble());
+            case FILTER_DOUBLE_IN_RANGE -> DoubleInRangeFilter.of(o.get("min").getAsDouble(), o.get("max").getAsDouble());
+            case FILTER_NOT_NULL -> NotNullFilter.of(requireType(o.get("elementType").getAsString()));
+            case FILTER_TAKE -> TakeFilter.of(
+                requireType(o.get("elementType").getAsString()),
+                o.get("count").getAsInt()
+            );
+            case FILTER_SKIP -> SkipFilter.of(
+                requireType(o.get("elementType").getAsString()),
+                o.get("count").getAsInt()
+            );
+            case FILTER_INDEX_IN_RANGE -> IndexInRangeFilter.of(
+                requireType(o.get("elementType").getAsString()),
+                o.get("fromInclusive").getAsInt(),
+                o.get("toExclusive").getAsInt()
+            );
             case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
             case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
             case COLLECT_LAST -> LastCollect.of(requireType(o.get("elementType").getAsString()));
