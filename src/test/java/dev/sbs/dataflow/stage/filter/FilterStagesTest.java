@@ -1,5 +1,11 @@
 package dev.sbs.dataflow.stage.filter;
 
+import dev.sbs.dataflow.stage.filter.dom.*;
+import dev.sbs.dataflow.stage.filter.json.*;
+import dev.sbs.dataflow.stage.filter.list.*;
+import dev.sbs.dataflow.stage.filter.numeric.*;
+import dev.sbs.dataflow.stage.filter.string.*;
+
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import org.jsoup.Jsoup;

@@ -2,9 +2,9 @@ package dev.sbs.dataflow;
 
 import dev.sbs.dataflow.stage.collect.FirstCollect;
 import dev.sbs.dataflow.stage.source.PasteSource;
-import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
+import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

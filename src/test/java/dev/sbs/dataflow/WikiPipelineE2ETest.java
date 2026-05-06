@@ -1,14 +1,14 @@
 package dev.sbs.dataflow;
 
 import dev.sbs.dataflow.stage.collect.FirstCollect;
-import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
-import dev.sbs.dataflow.stage.transform.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.NthChildTransform;
-import dev.sbs.dataflow.stage.transform.ParseIntTransform;
-import dev.sbs.dataflow.stage.transform.RegexExtractTransform;
+import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
+import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
+import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

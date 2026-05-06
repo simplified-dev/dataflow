@@ -1,5 +1,11 @@
 package dev.sbs.dataflow.stage.filter;
 
+import dev.sbs.dataflow.stage.filter.dom.*;
+import dev.sbs.dataflow.stage.filter.json.*;
+import dev.sbs.dataflow.stage.filter.list.*;
+import dev.sbs.dataflow.stage.filter.numeric.*;
+import dev.sbs.dataflow.stage.filter.string.*;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataTypes;

@@ -1,5 +1,12 @@
 package dev.sbs.dataflow.stage.transform;
 
+import dev.sbs.dataflow.stage.transform.dom.*;
+import dev.sbs.dataflow.stage.transform.encoding.*;
+import dev.sbs.dataflow.stage.transform.json.*;
+import dev.sbs.dataflow.stage.transform.list.*;
+import dev.sbs.dataflow.stage.transform.primitive.*;
+import dev.sbs.dataflow.stage.transform.string.*;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import dev.sbs.dataflow.PipelineContext;
@@ -151,7 +158,7 @@ class TransformStagesTest {
         // Run the actual stages to exercise the chain
         List<Element> all = CssSelectTransform.of("table.infobox tr").execute(this.ctx, root);
         assertThat(all, is(notNullValue()));
-        List<Element> filtered = dev.sbs.dataflow.stage.filter.DomTextContainsFilter.of("Dmg")
+        List<Element> filtered = dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter.of("Dmg")
             .execute(this.ctx, all);
         assertThat(filtered, is(notNullValue()));
         assertThat(filtered.size(), is(equalTo(1)));

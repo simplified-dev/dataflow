@@ -23,9 +23,11 @@ Requires Java 21.
 ```java
 import dev.sbs.dataflow.*;
 import dev.sbs.dataflow.stage.collect.FirstCollect;
-import dev.sbs.dataflow.stage.filter.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.UrlSource;
-import dev.sbs.dataflow.stage.transform.*;
+import dev.sbs.dataflow.stage.transform.dom.*;       // ParseHtml, CssSelect, NodeText, NthChild
+import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
 
 DataPipeline pipeline = DataPipeline.builder()
     .source(UrlSource.html("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))
@@ -40,6 +42,30 @@ DataPipeline pipeline = DataPipeline.builder()
     .build();
 
 Integer dmg = pipeline.execute(PipelineContext.empty()); // 500 — generic <T> infers Integer
+```
+
+### Package layout
+
+```
+dev.sbs.dataflow.stage
+  .source                 UrlSource, PasteSource
+  .embed                  PipelineEmbed
+  .branch                 Branch
+  .collect                FirstCollect, LastCollect, ListCollect, SetCollect, JoinCollect
+  .transform.string       LowerCase, UpperCase, StringLength, Prefix, Suffix,
+                          Trim, Replace, Split, RegexExtract
+  .transform.primitive    ParseInt/Long/Float/Double/Boolean, Abs*, Negate*, ToString
+  .transform.list         ListLength, Reverse
+  .transform.dom          ParseHtml, CssSelect, NodeText, NodeAttr, NthChild,
+                          DomChildren, DomParent, DomOuterHtml, DomOwnText
+  .transform.json         ParseXml, ParseJson, JsonPath, JsonField,
+                          JsonAsString/Int/Long/Double/Boolean, JsonStringify
+  .transform.encoding     Base64Encode/Decode, UrlEncode/Decode
+  .filter.string          Contains, Matches, StartsWith, EndsWith, Equals, NonEmpty
+  .filter.list            Distinct, NotNull, Take, Skip, IndexInRange
+  .filter.numeric         Int/Long/Double × {GreaterThan, LessThan, InRange}
+  .filter.dom             DomTextContains, DomTextMatches, DomHasAttr, DomTagEquals
+  .filter.json            JsonHasField, JsonFieldEquals
 ```
 
 ## Stage catalog

@@ -5,7 +5,7 @@ import dev.sbs.dataflow.DataPipelineResolver;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.source.PasteSource;
-import dev.sbs.dataflow.stage.transform.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;

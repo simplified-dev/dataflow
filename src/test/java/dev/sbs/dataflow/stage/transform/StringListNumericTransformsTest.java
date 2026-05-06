@@ -1,5 +1,12 @@
 package dev.sbs.dataflow.stage.transform;
 
+import dev.sbs.dataflow.stage.transform.dom.*;
+import dev.sbs.dataflow.stage.transform.encoding.*;
+import dev.sbs.dataflow.stage.transform.json.*;
+import dev.sbs.dataflow.stage.transform.list.*;
+import dev.sbs.dataflow.stage.transform.primitive.*;
+import dev.sbs.dataflow.stage.transform.string.*;
+
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import org.junit.jupiter.api.DisplayName;
