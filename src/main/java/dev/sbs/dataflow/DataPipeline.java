@@ -1,5 +1,6 @@
 package dev.sbs.dataflow;
 
+import dev.sbs.dataflow.stage.PipelineEmbedStage;
 import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.simplified.collection.Concurrent;
@@ -54,7 +55,7 @@ public final class DataPipeline {
      * Walks the stage chain and reports every type-chain mismatch and structural issue.
      * <p>
      * Pipelines with zero stages report a single pipeline-level "missing source" issue.
-     * Pipelines whose first stage is not a {@link SourceStage} report a structural issue.
+     * Pipelines whose first stage expects an upstream input report a structural issue.
      *
      * @return the validation report
      */
@@ -67,9 +68,10 @@ public final class DataPipeline {
         List<ValidationReport.Issue> issues = new ArrayList<>();
         Stage<?, ?> first = this.stages.getFirst();
 
-        if (!(first instanceof SourceStage<?>))
+        boolean isSourceLike = first instanceof SourceStage<?> || first instanceof PipelineEmbedStage<?>;
+        if (!isSourceLike)
             issues.add(new ValidationReport.Issue(0,
-                "First stage must be a SourceStage but was " + first.getClass().getSimpleName()
+                "First stage must be a SourceStage or PipelineEmbedStage but was " + first.getClass().getSimpleName()
             ));
 
         DataType<?> previousOutput = first.outputType();
@@ -121,13 +123,20 @@ public final class DataPipeline {
 
         /**
          * Sets the source stage. Must be called exactly once before {@link #build()}.
+         * Accepts any stage whose input type is {@code Void} - either a {@link SourceStage}
+         * or a {@link PipelineEmbedStage}.
          *
-         * @param source the source stage
+         * @param source the source-like first stage
          * @return this builder
          */
-        public @NotNull Builder source(@NotNull SourceStage<?> source) {
+        public @NotNull Builder source(@NotNull Stage<Void, ?> source) {
             if (!this.stages.isEmpty())
                 throw new IllegalStateException("Source already set");
+            if (!(source instanceof SourceStage<?>) && !(source instanceof PipelineEmbedStage<?>))
+                throw new IllegalArgumentException(
+                    "First stage must be a SourceStage or PipelineEmbedStage but was "
+                        + source.getClass().getSimpleName()
+                );
             this.stages.add(source);
             return this;
         }
