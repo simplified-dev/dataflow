@@ -34,8 +34,14 @@ import dev.sbs.dataflow.stage.transform.DomChildrenTransform;
 import dev.sbs.dataflow.stage.transform.DomOuterHtmlTransform;
 import dev.sbs.dataflow.stage.transform.DomOwnTextTransform;
 import dev.sbs.dataflow.stage.transform.DomParentTransform;
+import dev.sbs.dataflow.stage.transform.JsonAsBooleanTransform;
+import dev.sbs.dataflow.stage.transform.JsonAsDoubleTransform;
+import dev.sbs.dataflow.stage.transform.JsonAsIntTransform;
+import dev.sbs.dataflow.stage.transform.JsonAsLongTransform;
+import dev.sbs.dataflow.stage.transform.JsonAsStringTransform;
 import dev.sbs.dataflow.stage.transform.JsonFieldTransform;
 import dev.sbs.dataflow.stage.transform.JsonPathTransform;
+import dev.sbs.dataflow.stage.transform.JsonStringifyTransform;
 import dev.sbs.dataflow.stage.transform.ListLengthTransform;
 import dev.sbs.dataflow.stage.transform.LowerCaseTransform;
 import dev.sbs.dataflow.stage.transform.NegateDoubleTransform;
@@ -165,7 +171,10 @@ public final class PipelineGson {
                  TRANSFORM_NEGATE_INT, TRANSFORM_NEGATE_LONG,
                  TRANSFORM_NEGATE_FLOAT, TRANSFORM_NEGATE_DOUBLE,
                  TRANSFORM_DOM_CHILDREN, TRANSFORM_DOM_PARENT,
-                 TRANSFORM_DOM_OUTER_HTML, TRANSFORM_DOM_OWN_TEXT -> {
+                 TRANSFORM_DOM_OUTER_HTML, TRANSFORM_DOM_OWN_TEXT,
+                 TRANSFORM_JSON_AS_STRING, TRANSFORM_JSON_AS_INT,
+                 TRANSFORM_JSON_AS_LONG, TRANSFORM_JSON_AS_DOUBLE,
+                 TRANSFORM_JSON_AS_BOOLEAN, TRANSFORM_JSON_STRINGIFY -> {
                 /* config-free */
             }
             case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((CssSelectTransform) stage).selector());
@@ -296,6 +305,12 @@ public final class PipelineGson {
             case TRANSFORM_DOM_PARENT -> DomParentTransform.create();
             case TRANSFORM_DOM_OUTER_HTML -> DomOuterHtmlTransform.create();
             case TRANSFORM_DOM_OWN_TEXT -> DomOwnTextTransform.create();
+            case TRANSFORM_JSON_AS_STRING -> JsonAsStringTransform.create();
+            case TRANSFORM_JSON_AS_INT -> JsonAsIntTransform.create();
+            case TRANSFORM_JSON_AS_LONG -> JsonAsLongTransform.create();
+            case TRANSFORM_JSON_AS_DOUBLE -> JsonAsDoubleTransform.create();
+            case TRANSFORM_JSON_AS_BOOLEAN -> JsonAsBooleanTransform.create();
+            case TRANSFORM_JSON_STRINGIFY -> JsonStringifyTransform.create();
             case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
             case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
             case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
