@@ -38,4 +38,24 @@ class WikiPipelineE2ETest {
         assertThat(result, is(equalTo(500)));
     }
 
+    @Test
+    @DisplayName("Generic execute<T> infers the result type at the call site")
+    void executeInfersResultType() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
+            .stage(ParseHtmlTransform.create())
+            .stage(CssSelectTransform.of("table.infobox tr"))
+            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(FirstCollect.of(DataTypes.DOM_NODE))
+            .stage(NthChildTransform.of("td", 1))
+            .stage(NodeTextTransform.create())
+            .stage(RegexExtractTransform.of("\\d+"))
+            .stage(ParseIntTransform.create())
+            .build();
+
+        // T is inferred from the assignment - no explicit cast needed.
+        Integer dmg = pipeline.execute(PipelineContext.empty());
+        assertThat(dmg, is(equalTo(500)));
+    }
+
 }

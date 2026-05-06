@@ -90,14 +90,21 @@ public final class DataPipeline {
     }
 
     /**
-     * Executes the pipeline against {@code ctx}.
+     * Executes the pipeline against {@code ctx}, returning the final value with the type
+     * inferred at the call site.
+     * <p>
+     * The cast from the runtime {@link Object} to {@code T} is unchecked - the compiler
+     * trusts the inferred type. A mismatch surfaces as a {@link ClassCastException} at
+     * the assignment site, the same way {@link java.util.Map#get(Object)} behaves with a
+     * casted return.
      *
      * @param ctx the pipeline context
      * @return the final value, possibly {@code null} when a stage rejects its input
      * @throws IllegalStateException if {@link #validate()} reports any issues
+     * @param <T> inferred result type
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public @Nullable Object execute(@NotNull PipelineContext ctx) {
+    public <T> @Nullable T execute(@NotNull PipelineContext ctx) {
         ValidationReport report = this.validate();
         if (!report.isValid())
             throw new IllegalStateException(
@@ -109,7 +116,7 @@ public final class DataPipeline {
             current = stage.execute(ctx, current);
             if (current == null) break;
         }
-        return current;
+        return (T) current;
     }
 
     /**
