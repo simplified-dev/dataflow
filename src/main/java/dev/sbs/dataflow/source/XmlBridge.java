@@ -5,7 +5,9 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -21,6 +23,8 @@ import java.io.IOException;
  * {@code dev.simplified.client.codec.XmlDecoder} but reimplemented here so {@code dataflow}
  * does not depend on the {@code client} module.
  */
+@Getter
+@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class XmlBridge {
 

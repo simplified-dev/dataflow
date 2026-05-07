@@ -24,9 +24,9 @@ import java.time.Duration;
  * mutable {@code activeIds} set guards against {@link PipelineEmbedStage}
  * cycles.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PipelineContext {
 
     private static final @NotNull Logger DEFAULT_LOG = LoggerFactory.getLogger(PipelineContext.class);

@@ -25,9 +25,9 @@ import java.util.Map;
  * {@link Stage#outputType() output type}; this is enforced by {@link #validate()} and
  * re-checked at runtime by {@link #execute(PipelineContext)}.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DataPipeline {
 
     private static final @NotNull DataPipeline EMPTY = new DataPipeline(Concurrent.newUnmodifiableList());
