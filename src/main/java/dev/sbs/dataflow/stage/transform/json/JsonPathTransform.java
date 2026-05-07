@@ -4,7 +4,8 @@ import com.google.gson.JsonElement;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -21,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
  * Path syntax mirrors the {@code @SerializedPath} annotation used in {@code gson-extras}:
  * dot-separated keys, no array indexing.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JsonPathTransform implements TransformStage<JsonElement, JsonElement> {
 
     private final @NotNull String path;
@@ -40,26 +41,8 @@ public final class JsonPathTransform implements TransformStage<JsonElement, Json
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<JsonElement> inputType() {
-        return DataTypes.JSON_ELEMENT;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull DataType<JsonElement> outputType() {
-        return DataTypes.JSON_ELEMENT;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_JSON_PATH;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull String summary() {
-        return "JSON path '" + this.path + "'";
+    public @NotNull StageConfig config() {
+        return StageConfig.builder().string("path", this.path).build();
     }
 
     /** {@inheritDoc} */
@@ -74,6 +57,30 @@ public final class JsonPathTransform implements TransformStage<JsonElement, Json
             if (current == null) return null;
         }
         return current;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<JsonElement> inputType() {
+        return DataTypes.JSON_ELEMENT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_JSON_PATH;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<JsonElement> outputType() {
+        return DataTypes.JSON_ELEMENT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "JSON path '" + this.path + "'";
     }
 
 }

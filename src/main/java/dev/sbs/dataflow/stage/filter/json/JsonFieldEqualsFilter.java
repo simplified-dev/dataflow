@@ -6,7 +6,10 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,20 +18,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * {@link FilterStage} keeping only {@link JsonObject}s whose named field is a primitive
  * equal to the configured string value.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JsonFieldEqualsFilter implements FilterStage<JsonObject> {
 
     private static final @NotNull DataType<List<JsonObject>> LIST_OBJ = DataType.list(DataTypes.JSON_OBJECT);
 
     private final @NotNull String fieldName;
+
     private final @NotNull String expectedValue;
 
     /**
@@ -43,22 +46,52 @@ public final class JsonFieldEqualsFilter implements FilterStage<JsonObject> {
         return new JsonFieldEqualsFilter(fieldName, expectedValue);
     }
 
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<JsonObject>> inputType()  { return LIST_OBJ; }
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<JsonObject>> outputType() { return LIST_OBJ; }
-    /** {@inheritDoc} */ @Override public @NotNull StageId kind()                          { return StageId.FILTER_JSON_FIELD_EQUALS; }
-    /** {@inheritDoc} */ @Override public @NotNull String summary()                        { return "Field " + this.fieldName + "='" + this.expectedValue + "'"; }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("fieldName", this.fieldName)
+            .string("expectedValue", this.expectedValue)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<JsonObject> execute(@NotNull PipelineContext ctx, @Nullable List<JsonObject> input) {
+    public @Nullable ConcurrentList<JsonObject> execute(@NotNull PipelineContext ctx, @Nullable List<JsonObject> input) {
         if (input == null) return null;
-        return input.stream().filter(this::matches).collect(Collectors.toUnmodifiableList());
+        return input.stream()
+            .filter(this::matches)
+            .collect(Concurrent.toUnmodifiableList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<JsonObject>> inputType() {
+        return LIST_OBJ;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_JSON_FIELD_EQUALS;
     }
 
     private boolean matches(@NotNull JsonObject o) {
         if (!o.has(this.fieldName)) return false;
         JsonElement v = o.get(this.fieldName);
         return v.isJsonPrimitive() && this.expectedValue.equals(v.getAsString());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<JsonObject>> outputType() {
+        return LIST_OBJ;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Field " + this.fieldName + "='" + this.expectedValue + "'";
     }
 
 }

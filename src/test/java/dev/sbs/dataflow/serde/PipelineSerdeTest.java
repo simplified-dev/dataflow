@@ -49,14 +49,14 @@ class PipelineSerdeTest {
     void roundTripWikiPipeline() {
         DataPipeline original = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.create())
+            .stage(NodeTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
-            .stage(ParseIntTransform.create())
+            .stage(ParseIntTransform.of())
             .build();
 
         String json = PipelineGson.toJson(original);
@@ -71,7 +71,7 @@ class PipelineSerdeTest {
     void serdeIsIdempotent() {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.text("hi"))
-            .stage(TrimTransform.create())
+            .stage(TrimTransform.of())
             .build();
         String first = PipelineGson.toJson(pipeline);
         String second = PipelineGson.toJson(PipelineGson.fromJson(first));
@@ -84,14 +84,14 @@ class PipelineSerdeTest {
         // Build a synthetic JSON fixture pipeline that exercises Json* stages.
         DataPipeline jsonPipeline = DataPipeline.builder()
             .source(PasteSource.json(Fixtures.load("sample.json")))
-            .stage(ParseJsonTransform.create())
+            .stage(ParseJsonTransform.of())
             .stage(JsonPathTransform.of("stats.dmg"))
             .build();
         roundTrip(jsonPipeline);
 
         DataPipeline xmlPipeline = DataPipeline.builder()
             .source(PasteSource.xml(Fixtures.load("sample.xml")))
-            .stage(ParseXmlTransform.create())
+            .stage(ParseXmlTransform.of())
             .stage(JsonPathTransform.of("name"))
             .build();
         roundTrip(xmlPipeline);
@@ -103,7 +103,7 @@ class PipelineSerdeTest {
 
         DataPipeline allTransforms = DataPipeline.builder()
             .source(PasteSource.text("  hello WORLD  "))
-            .stage(TrimTransform.create())
+            .stage(TrimTransform.of())
             .stage(ReplaceTransform.of("WORLD", "world"))
             .stage(RegexExtractTransform.of("\\w+", 0))
             .stage(SplitTransform.of(""))
@@ -128,7 +128,7 @@ class PipelineSerdeTest {
         // attribute, json field, parseDouble, set
         DataPipeline misc1 = DataPipeline.builder()
             .source(PasteSource.html("<a href='https://x'>z</a>"))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("a"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(NodeAttrTransform.of("href"))
@@ -137,14 +137,14 @@ class PipelineSerdeTest {
 
         DataPipeline misc2 = DataPipeline.builder()
             .source(PasteSource.json("{\"x\": 3.14}"))
-            .stage(ParseJsonTransform.create())
+            .stage(ParseJsonTransform.of())
             .stage(JsonPathTransform.of("x"))
             .build();
         roundTrip(misc2);
 
         DataPipeline misc3 = DataPipeline.builder()
             .source(PasteSource.text("3.14"))
-            .stage(ParseDoubleTransform.create())
+            .stage(ParseDoubleTransform.of())
             .build();
         roundTrip(misc3);
 
@@ -164,7 +164,7 @@ class PipelineSerdeTest {
 
         DataPipeline jsonField = DataPipeline.builder()
             .source(PasteSource.json("{\"x\":\"y\"}"))
-            .stage(ParseJsonTransform.create())
+            .stage(ParseJsonTransform.of())
             .stage(JsonFieldTransform.of("x"))
             .build();
         // ParseJson outputs JSON_ELEMENT, JsonField expects JSON_OBJECT; serde itself
@@ -182,21 +182,21 @@ class PipelineSerdeTest {
                 .stage(DomTextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
                 .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.create())
+                .stage(NodeTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
-                .stage(ParseIntTransform.create()))
+                .stage(ParseIntTransform.of()))
             .output("strength", c -> c
                 .stage(DomTextContainsFilter.of("Strength"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
                 .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.create())
+                .stage(NodeTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
-                .stage(ParseIntTransform.create()))
+                .stage(ParseIntTransform.of()))
             .build();
 
         DataPipeline original = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(branch)
             .build();
@@ -232,7 +232,7 @@ class PipelineSerdeTest {
     }
 
     @Test
-    @DisplayName("Unknown StageId is rejected with a clear error")
+    @DisplayName("Unknown StageKind is rejected with a clear error")
     void unknownKindRejected() {
         try {
             PipelineGson.fromJson("[{\"kind\":\"NOT_A_REAL_KIND\"}]");

@@ -3,7 +3,8 @@ package dev.sbs.dataflow.stage.collect;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +22,15 @@ import java.util.Set;
  *
  * @param <T> element type
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
 
     private final @NotNull DataType<T> elementType;
+
     private final @NotNull DataType<List<T>> listType;
+
     private final @NotNull DataType<Set<T>> setType;
 
     /**
@@ -43,8 +46,29 @@ public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .dataType("elementType", this.elementType)
+            .build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable Set<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+        if (input == null) return null;
+        return Set.copyOf(new LinkedHashSet<>(input));
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.COLLECT_SET;
     }
 
     /** {@inheritDoc} */
@@ -55,21 +79,8 @@ public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.COLLECT_SET;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Set " + this.elementType.label();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable Set<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
-        if (input == null) return null;
-        return Set.copyOf(new LinkedHashSet<>(input));
     }
 
 }

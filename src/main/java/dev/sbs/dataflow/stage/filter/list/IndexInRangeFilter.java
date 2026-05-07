@@ -3,7 +3,10 @@ package dev.sbs.dataflow.stage.filter.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +22,17 @@ import java.util.List;
  *
  * @param <T> element type
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class IndexInRangeFilter<T> implements FilterStage<T> {
 
     private final @NotNull DataType<T> elementType;
+
     private final @NotNull DataType<List<T>> listType;
+
     private final int fromInclusive;
+
     private final int toExclusive;
 
     /**
@@ -42,18 +48,47 @@ public final class IndexInRangeFilter<T> implements FilterStage<T> {
         return new IndexInRangeFilter<>(elementType, DataType.list(elementType), fromInclusive, toExclusive);
     }
 
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<T>> inputType()  { return this.listType; }
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<T>> outputType() { return this.listType; }
-    /** {@inheritDoc} */ @Override public @NotNull StageId kind()                 { return StageId.FILTER_INDEX_IN_RANGE; }
-    /** {@inheritDoc} */ @Override public @NotNull String summary()               { return "Index in [" + this.fromInclusive + ", " + this.toExclusive + ")"; }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .dataType("elementType", this.elementType)
+            .integer("fromInclusive", this.fromInclusive)
+            .integer("toExclusive", this.toExclusive)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+    public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
         int from = Math.max(0, Math.min(this.fromInclusive, input.size()));
         int to = Math.max(from, Math.min(this.toExclusive, input.size()));
-        return List.copyOf(input.subList(from, to));
+        return Concurrent.newUnmodifiableList(input.subList(from, to));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> inputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_INDEX_IN_RANGE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> outputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Index in [" + this.fromInclusive + ", " + this.toExclusive + ")";
     }
 
 }

@@ -9,103 +9,29 @@ import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
+import dev.sbs.dataflow.stage.FieldSpec;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageId;
-import dev.sbs.dataflow.stage.branch.Branch;
-import dev.sbs.dataflow.stage.collect.FirstCollect;
-import dev.sbs.dataflow.stage.collect.JoinCollect;
-import dev.sbs.dataflow.stage.collect.LastCollect;
-import dev.sbs.dataflow.stage.collect.ListCollect;
-import dev.sbs.dataflow.stage.collect.SetCollect;
-import dev.sbs.dataflow.stage.embed.PipelineEmbed;
-import dev.sbs.dataflow.stage.filter.list.DistinctFilter;
-import dev.sbs.dataflow.stage.filter.dom.DomHasAttrFilter;
-import dev.sbs.dataflow.stage.filter.dom.DomTagEqualsFilter;
-import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
-import dev.sbs.dataflow.stage.filter.dom.DomTextMatchesFilter;
-import dev.sbs.dataflow.stage.filter.numeric.DoubleGreaterThanFilter;
-import dev.sbs.dataflow.stage.filter.numeric.DoubleInRangeFilter;
-import dev.sbs.dataflow.stage.filter.numeric.DoubleLessThanFilter;
-import dev.sbs.dataflow.stage.filter.list.IndexInRangeFilter;
-import dev.sbs.dataflow.stage.filter.numeric.IntGreaterThanFilter;
-import dev.sbs.dataflow.stage.filter.numeric.IntInRangeFilter;
-import dev.sbs.dataflow.stage.filter.numeric.IntLessThanFilter;
-import dev.sbs.dataflow.stage.filter.numeric.LongGreaterThanFilter;
-import dev.sbs.dataflow.stage.filter.numeric.LongInRangeFilter;
-import dev.sbs.dataflow.stage.filter.numeric.LongLessThanFilter;
-import dev.sbs.dataflow.stage.filter.json.JsonFieldEqualsFilter;
-import dev.sbs.dataflow.stage.filter.json.JsonHasFieldFilter;
-import dev.sbs.dataflow.stage.filter.list.NotNullFilter;
-import dev.sbs.dataflow.stage.filter.list.SkipFilter;
-import dev.sbs.dataflow.stage.filter.string.StringContainsFilter;
-import dev.sbs.dataflow.stage.filter.string.StringEndsWithFilter;
-import dev.sbs.dataflow.stage.filter.string.StringEqualsFilter;
-import dev.sbs.dataflow.stage.filter.string.StringMatchesFilter;
-import dev.sbs.dataflow.stage.filter.string.StringNonEmptyFilter;
-import dev.sbs.dataflow.stage.filter.string.StringStartsWithFilter;
-import dev.sbs.dataflow.stage.filter.list.TakeFilter;
-import dev.sbs.dataflow.stage.source.PasteSource;
-import dev.sbs.dataflow.stage.source.UrlSource;
-import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.json.ParseJsonTransform;
-import dev.sbs.dataflow.stage.transform.json.ParseXmlTransform;
-import dev.sbs.dataflow.stage.transform.primitive.AbsDoubleTransform;
-import dev.sbs.dataflow.stage.transform.primitive.AbsFloatTransform;
-import dev.sbs.dataflow.stage.transform.encoding.Base64DecodeTransform;
-import dev.sbs.dataflow.stage.transform.encoding.Base64EncodeTransform;
-import dev.sbs.dataflow.stage.transform.primitive.AbsIntTransform;
-import dev.sbs.dataflow.stage.transform.primitive.AbsLongTransform;
-import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.dom.DomChildrenTransform;
-import dev.sbs.dataflow.stage.transform.dom.DomOuterHtmlTransform;
-import dev.sbs.dataflow.stage.transform.dom.DomOwnTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.DomParentTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonAsBooleanTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonAsDoubleTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonAsIntTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonAsLongTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonAsStringTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonFieldTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonPathTransform;
-import dev.sbs.dataflow.stage.transform.json.JsonStringifyTransform;
-import dev.sbs.dataflow.stage.transform.list.ListLengthTransform;
-import dev.sbs.dataflow.stage.transform.string.LowerCaseTransform;
-import dev.sbs.dataflow.stage.transform.primitive.NegateDoubleTransform;
-import dev.sbs.dataflow.stage.transform.primitive.NegateFloatTransform;
-import dev.sbs.dataflow.stage.transform.primitive.NegateIntTransform;
-import dev.sbs.dataflow.stage.transform.primitive.NegateLongTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeAttrTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ParseBooleanTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ParseDoubleTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ParseFloatTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ParseLongTransform;
-import dev.sbs.dataflow.stage.transform.string.PrefixTransform;
-import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
-import dev.sbs.dataflow.stage.transform.string.ReplaceTransform;
-import dev.sbs.dataflow.stage.transform.list.ReverseTransform;
-import dev.sbs.dataflow.stage.transform.string.SplitTransform;
-import dev.sbs.dataflow.stage.transform.string.StringLengthTransform;
-import dev.sbs.dataflow.stage.transform.string.SuffixTransform;
-import dev.sbs.dataflow.stage.transform.primitive.ToStringTransform;
-import dev.sbs.dataflow.stage.transform.string.TrimTransform;
-import dev.sbs.dataflow.stage.transform.string.UpperCaseTransform;
-import dev.sbs.dataflow.stage.transform.encoding.UrlDecodeTransform;
-import dev.sbs.dataflow.stage.transform.encoding.UrlEncodeTransform;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Gson-based serialiser for {@link DataPipeline} definitions.
  * <p>
  * Wire format is a JSON array of stage descriptors. Each descriptor carries a {@code "kind"}
- * field whose value is the {@link StageId} name; the remaining fields are the stage's
+ * field whose value is the {@link StageKind} name; the remaining fields are the stage's
  * configuration. {@link DataType} references serialise as their {@link DataType#label()},
  * round-tripped through {@link DataTypes#byLabel(String)}.
+ * <p>
+ * The schema and factory used by serde live directly on each {@link StageKind} constant.
  * <p>
  * The internal {@link Gson} instance is configured with the {@code gson-extras}
  * {@link CaseInsensitiveEnumTypeAdapterFactory} and {@link PostInitTypeAdapterFactory} so
@@ -135,344 +61,126 @@ public final class PipelineGson {
      *
      * @param json the JSON definition
      * @return the rebuilt pipeline
-     * @throws IllegalArgumentException if the JSON references an unknown {@link StageId} or
+     * @throws IllegalArgumentException if the JSON references an unknown {@link StageKind} or
      *         a {@link DataType} label that this build does not recognise
      */
     public static @NotNull DataPipeline fromJson(@NotNull String json) {
         JsonElement el = JsonParser.parseString(json);
+
         if (!el.isJsonArray())
             throw new IllegalArgumentException("Pipeline JSON must be a top-level array");
+
         return fromJsonArray(el.getAsJsonArray());
     }
 
     /* ====================  internals  ==================== */
 
-    @SuppressWarnings("unchecked")
     private static @NotNull JsonArray toJsonArray(@NotNull DataPipeline pipeline) {
         JsonArray arr = new JsonArray();
+
         for (Stage<?, ?> stage : pipeline.stages())
             arr.add(stageToJson(stage));
+
         return arr;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     private static @NotNull DataPipeline fromJsonArray(@NotNull JsonArray arr) {
         if (arr.isEmpty()) return DataPipeline.empty();
         DataPipeline.Builder b = DataPipeline.builder();
         boolean first = true;
+
         for (JsonElement el : arr) {
             Stage<?, ?> stage = stageFromJson(el.getAsJsonObject());
             if (first) {
                 b.source((Stage<Void, ?>) stage);
                 first = false;
-            } else {
+            } else
                 b.stage(stage);
-            }
         }
+
         return b.build();
     }
 
+    @SuppressWarnings("unchecked")
     private static @NotNull JsonObject stageToJson(@NotNull Stage<?, ?> stage) {
         JsonObject o = new JsonObject();
-        o.addProperty("kind", stage.kind().name());
-        switch (stage.kind()) {
-            case SOURCE_URL -> {
-                UrlSource s = (UrlSource) stage;
-                o.addProperty("url", s.url());
-                o.addProperty("outputType", s.outputType().label());
-            }
-            case SOURCE_PASTE -> {
-                PasteSource s = (PasteSource) stage;
-                o.addProperty("body", s.body());
-                o.addProperty("outputType", s.outputType().label());
-            }
-            case PARSE_HTML, PARSE_XML, PARSE_JSON,
-                 TRANSFORM_NODE_TEXT,
-                 TRANSFORM_PARSE_INT, TRANSFORM_PARSE_LONG,
-                 TRANSFORM_PARSE_FLOAT, TRANSFORM_PARSE_DOUBLE,
-                 TRANSFORM_PARSE_BOOLEAN,
-                 TRANSFORM_TRIM,
-                 TRANSFORM_LOWERCASE, TRANSFORM_UPPERCASE,
-                 TRANSFORM_STRING_LENGTH,
-                 TRANSFORM_ABS_INT, TRANSFORM_ABS_LONG,
-                 TRANSFORM_ABS_FLOAT, TRANSFORM_ABS_DOUBLE,
-                 TRANSFORM_NEGATE_INT, TRANSFORM_NEGATE_LONG,
-                 TRANSFORM_NEGATE_FLOAT, TRANSFORM_NEGATE_DOUBLE,
-                 TRANSFORM_DOM_CHILDREN, TRANSFORM_DOM_PARENT,
-                 TRANSFORM_DOM_OUTER_HTML, TRANSFORM_DOM_OWN_TEXT,
-                 TRANSFORM_JSON_AS_STRING, TRANSFORM_JSON_AS_INT,
-                 TRANSFORM_JSON_AS_LONG, TRANSFORM_JSON_AS_DOUBLE,
-                 TRANSFORM_JSON_AS_BOOLEAN, TRANSFORM_JSON_STRINGIFY,
-                 TRANSFORM_BASE64_ENCODE, TRANSFORM_BASE64_DECODE,
-                 TRANSFORM_URL_ENCODE, TRANSFORM_URL_DECODE -> {
-                /* config-free */
-            }
-            case TRANSFORM_CSS_SELECT -> o.addProperty("selector", ((CssSelectTransform) stage).selector());
-            case TRANSFORM_NODE_ATTR -> o.addProperty("attributeName", ((NodeAttrTransform) stage).attributeName());
-            case TRANSFORM_NTH_CHILD -> {
-                NthChildTransform s = (NthChildTransform) stage;
-                o.addProperty("childSelector", s.childSelector());
-                o.addProperty("index", s.index());
-            }
-            case TRANSFORM_JSON_PATH -> o.addProperty("path", ((JsonPathTransform) stage).path());
-            case TRANSFORM_JSON_FIELD -> o.addProperty("fieldName", ((JsonFieldTransform) stage).fieldName());
-            case TRANSFORM_REGEX_EXTRACT -> {
-                RegexExtractTransform s = (RegexExtractTransform) stage;
-                o.addProperty("regex", s.regex());
-                o.addProperty("group", s.group());
-            }
-            case TRANSFORM_REPLACE -> {
-                ReplaceTransform s = (ReplaceTransform) stage;
-                o.addProperty("regex", s.regex());
-                o.addProperty("replacement", s.replacement());
-            }
-            case TRANSFORM_SPLIT -> o.addProperty("regex", ((SplitTransform) stage).regex());
-            case TRANSFORM_MAP -> throw new UnsupportedOperationException("TRANSFORM_MAP serde lands in v2");
-            case TRANSFORM_PREFIX -> o.addProperty("prefix", ((PrefixTransform) stage).prefix());
-            case TRANSFORM_SUFFIX -> o.addProperty("suffix", ((SuffixTransform) stage).suffix());
-            case TRANSFORM_LIST_LENGTH -> o.addProperty("elementType", ((ListLengthTransform<?>) stage).elementType().label());
-            case TRANSFORM_REVERSE -> o.addProperty("elementType", ((ReverseTransform<?>) stage).elementType().label());
-            case TRANSFORM_TO_STRING -> o.addProperty("inputType", ((ToStringTransform<?>) stage).inputType().label());
-            case FILTER_DOM_TEXT_CONTAINS -> o.addProperty("needle", ((DomTextContainsFilter) stage).needle());
-            case FILTER_DOM_TEXT_MATCHES -> o.addProperty("regex", ((DomTextMatchesFilter) stage).regex());
-            case FILTER_DOM_HAS_ATTR -> {
-                DomHasAttrFilter f = (DomHasAttrFilter) stage;
-                o.addProperty("attributeName", f.attributeName());
-                if (f.expectedValue() != null) o.addProperty("expectedValue", f.expectedValue());
-            }
-            case FILTER_DOM_TAG_EQUALS -> o.addProperty("tagName", ((DomTagEqualsFilter) stage).tagName());
-            case FILTER_STRING_CONTAINS -> o.addProperty("needle", ((StringContainsFilter) stage).needle());
-            case FILTER_STRING_MATCHES -> o.addProperty("regex", ((StringMatchesFilter) stage).regex());
-            case FILTER_STRING_STARTS_WITH -> o.addProperty("prefix", ((StringStartsWithFilter) stage).prefix());
-            case FILTER_STRING_ENDS_WITH -> o.addProperty("suffix", ((StringEndsWithFilter) stage).suffix());
-            case FILTER_STRING_EQUALS -> o.addProperty("target", ((StringEqualsFilter) stage).target());
-            case FILTER_STRING_NON_EMPTY -> { /* config-free */ }
-            case FILTER_JSON_HAS_FIELD -> o.addProperty("fieldName", ((JsonHasFieldFilter) stage).fieldName());
-            case FILTER_JSON_FIELD_EQUALS -> {
-                JsonFieldEqualsFilter f = (JsonFieldEqualsFilter) stage;
-                o.addProperty("fieldName", f.fieldName());
-                o.addProperty("expectedValue", f.expectedValue());
-            }
-            case FILTER_INT_GREATER_THAN -> o.addProperty("threshold", ((IntGreaterThanFilter) stage).threshold());
-            case FILTER_INT_LESS_THAN -> o.addProperty("threshold", ((IntLessThanFilter) stage).threshold());
-            case FILTER_INT_IN_RANGE -> {
-                IntInRangeFilter f = (IntInRangeFilter) stage;
-                o.addProperty("min", f.min());
-                o.addProperty("max", f.max());
-            }
-            case FILTER_LONG_GREATER_THAN -> o.addProperty("threshold", ((LongGreaterThanFilter) stage).threshold());
-            case FILTER_LONG_LESS_THAN -> o.addProperty("threshold", ((LongLessThanFilter) stage).threshold());
-            case FILTER_LONG_IN_RANGE -> {
-                LongInRangeFilter f = (LongInRangeFilter) stage;
-                o.addProperty("min", f.min());
-                o.addProperty("max", f.max());
-            }
-            case FILTER_DOUBLE_GREATER_THAN -> o.addProperty("threshold", ((DoubleGreaterThanFilter) stage).threshold());
-            case FILTER_DOUBLE_LESS_THAN -> o.addProperty("threshold", ((DoubleLessThanFilter) stage).threshold());
-            case FILTER_DOUBLE_IN_RANGE -> {
-                DoubleInRangeFilter f = (DoubleInRangeFilter) stage;
-                o.addProperty("min", f.min());
-                o.addProperty("max", f.max());
-            }
-            case FILTER_NOT_NULL -> o.addProperty("elementType", ((NotNullFilter<?>) stage).elementType().label());
-            case FILTER_TAKE -> {
-                TakeFilter<?> f = (TakeFilter<?>) stage;
-                o.addProperty("elementType", f.elementType().label());
-                o.addProperty("count", f.count());
-            }
-            case FILTER_SKIP -> {
-                SkipFilter<?> f = (SkipFilter<?>) stage;
-                o.addProperty("elementType", f.elementType().label());
-                o.addProperty("count", f.count());
-            }
-            case FILTER_INDEX_IN_RANGE -> {
-                IndexInRangeFilter<?> f = (IndexInRangeFilter<?>) stage;
-                o.addProperty("elementType", f.elementType().label());
-                o.addProperty("fromInclusive", f.fromInclusive());
-                o.addProperty("toExclusive", f.toExclusive());
-            }
-            case FILTER_DISTINCT -> o.addProperty("elementType", ((DistinctFilter<?>) stage).elementType().label());
-            case COLLECT_FIRST -> o.addProperty("elementType", ((FirstCollect<?>) stage).elementType().label());
-            case COLLECT_LAST -> o.addProperty("elementType", ((LastCollect<?>) stage).elementType().label());
-            case COLLECT_LIST -> o.addProperty("elementType", ((ListCollect<?>) stage).elementType().label());
-            case COLLECT_SET -> o.addProperty("elementType", ((SetCollect<?>) stage).elementType().label());
-            case COLLECT_JOIN -> o.addProperty("separator", ((JoinCollect) stage).separator());
-            case BRANCH -> {
-                Branch<?> b = (Branch<?>) stage;
-                o.addProperty("inputType", b.inputType().label());
-                JsonObject outputs = new JsonObject();
-                for (var entry : b.outputs().entrySet()) {
-                    JsonArray sub = new JsonArray();
-                    for (Stage<?, ?> child : entry.getValue())
-                        sub.add(stageToJson(child));
-                    outputs.add(entry.getKey(), sub);
+        StageKind kind = stage.kind();
+        o.addProperty("kind", kind.name());
+        StageConfig cfg = stage.config();
+
+        for (FieldSpec spec : kind.schema()) {
+            Object v = cfg.raw(spec.name());
+            switch (spec.type()) {
+                case STRING    -> o.addProperty(spec.name(), (String) v);
+                case INT       -> o.addProperty(spec.name(), (Integer) v);
+                case LONG      -> o.addProperty(spec.name(), (Long) v);
+                case DOUBLE    -> o.addProperty(spec.name(), (Double) v);
+                case BOOLEAN   -> o.addProperty(spec.name(), (Boolean) v);
+                case DATA_TYPE -> o.addProperty(spec.name(), ((DataType<?>) v).label());
+                case SUB_PIPELINES_MAP -> {
+                    JsonObject outputs = new JsonObject();
+
+                    for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : ((Map<String, ? extends List<? extends Stage<?, ?>>>) v).entrySet()) {
+                        JsonArray sub = new JsonArray();
+
+                        for (Stage<?, ?> child : entry.getValue())
+                            sub.add(stageToJson(child));
+
+                        outputs.add(entry.getKey(), sub);
+                    }
+
+                    o.add(spec.name(), outputs);
                 }
-                o.add("outputs", outputs);
-            }
-            case PIPELINE_EMBED -> {
-                PipelineEmbed<?> e = (PipelineEmbed<?>) stage;
-                o.addProperty("embeddedPipelineId", e.embeddedPipelineId());
-                o.addProperty("outputType", e.outputType().label());
             }
         }
         return o;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private static @NotNull Stage<?, ?> stageFromJson(@NotNull JsonObject o) {
-        StageId kind = StageId.valueOf(o.get("kind").getAsString());
-        return switch (kind) {
-            case SOURCE_URL -> {
-                String url = o.get("url").getAsString();
-                String label = o.get("outputType").getAsString();
-                yield switch (label) {
-                    case "RAW_HTML" -> UrlSource.html(url);
-                    case "RAW_XML" -> UrlSource.xml(url);
-                    case "RAW_JSON" -> UrlSource.json(url);
-                    case "RAW_TEXT" -> UrlSource.text(url);
-                    default -> throw new IllegalArgumentException("Unknown UrlSource outputType: " + label);
-                };
-            }
-            case SOURCE_PASTE -> {
-                String body = o.get("body").getAsString();
-                String label = o.get("outputType").getAsString();
-                yield switch (label) {
-                    case "RAW_HTML" -> PasteSource.html(body);
-                    case "RAW_XML" -> PasteSource.xml(body);
-                    case "RAW_JSON" -> PasteSource.json(body);
-                    case "RAW_TEXT" -> PasteSource.text(body);
-                    default -> throw new IllegalArgumentException("Unknown PasteSource outputType: " + label);
-                };
-            }
-            case PARSE_HTML -> ParseHtmlTransform.create();
-            case PARSE_XML -> ParseXmlTransform.create();
-            case PARSE_JSON -> ParseJsonTransform.create();
-            case TRANSFORM_CSS_SELECT -> CssSelectTransform.of(o.get("selector").getAsString());
-            case TRANSFORM_NODE_TEXT -> NodeTextTransform.create();
-            case TRANSFORM_NODE_ATTR -> NodeAttrTransform.of(o.get("attributeName").getAsString());
-            case TRANSFORM_NTH_CHILD -> NthChildTransform.of(
-                o.get("childSelector").getAsString(),
-                o.get("index").getAsInt()
-            );
-            case TRANSFORM_JSON_PATH -> JsonPathTransform.of(o.get("path").getAsString());
-            case TRANSFORM_JSON_FIELD -> JsonFieldTransform.of(o.get("fieldName").getAsString());
-            case TRANSFORM_REGEX_EXTRACT -> RegexExtractTransform.of(
-                o.get("regex").getAsString(),
-                o.has("group") ? o.get("group").getAsInt() : 0
-            );
-            case TRANSFORM_PARSE_INT -> ParseIntTransform.create();
-            case TRANSFORM_PARSE_LONG -> ParseLongTransform.create();
-            case TRANSFORM_PARSE_FLOAT -> ParseFloatTransform.create();
-            case TRANSFORM_PARSE_DOUBLE -> ParseDoubleTransform.create();
-            case TRANSFORM_PARSE_BOOLEAN -> ParseBooleanTransform.create();
-            case TRANSFORM_TRIM -> TrimTransform.create();
-            case TRANSFORM_REPLACE -> ReplaceTransform.of(
-                o.get("regex").getAsString(),
-                o.get("replacement").getAsString()
-            );
-            case TRANSFORM_SPLIT -> SplitTransform.of(o.get("regex").getAsString());
-            case TRANSFORM_MAP -> throw new UnsupportedOperationException("TRANSFORM_MAP serde lands in v2");
-            case TRANSFORM_LOWERCASE -> LowerCaseTransform.create();
-            case TRANSFORM_UPPERCASE -> UpperCaseTransform.create();
-            case TRANSFORM_STRING_LENGTH -> StringLengthTransform.create();
-            case TRANSFORM_PREFIX -> PrefixTransform.of(o.get("prefix").getAsString());
-            case TRANSFORM_SUFFIX -> SuffixTransform.of(o.get("suffix").getAsString());
-            case TRANSFORM_LIST_LENGTH -> ListLengthTransform.of(requireType(o.get("elementType").getAsString()));
-            case TRANSFORM_REVERSE -> ReverseTransform.of(requireType(o.get("elementType").getAsString()));
-            case TRANSFORM_ABS_INT -> AbsIntTransform.create();
-            case TRANSFORM_ABS_LONG -> AbsLongTransform.create();
-            case TRANSFORM_ABS_FLOAT -> AbsFloatTransform.create();
-            case TRANSFORM_ABS_DOUBLE -> AbsDoubleTransform.create();
-            case TRANSFORM_NEGATE_INT -> NegateIntTransform.create();
-            case TRANSFORM_NEGATE_LONG -> NegateLongTransform.create();
-            case TRANSFORM_NEGATE_FLOAT -> NegateFloatTransform.create();
-            case TRANSFORM_NEGATE_DOUBLE -> NegateDoubleTransform.create();
-            case TRANSFORM_TO_STRING -> ToStringTransform.of(requireType(o.get("inputType").getAsString()));
-            case TRANSFORM_DOM_CHILDREN -> DomChildrenTransform.create();
-            case TRANSFORM_DOM_PARENT -> DomParentTransform.create();
-            case TRANSFORM_DOM_OUTER_HTML -> DomOuterHtmlTransform.create();
-            case TRANSFORM_DOM_OWN_TEXT -> DomOwnTextTransform.create();
-            case TRANSFORM_JSON_AS_STRING -> JsonAsStringTransform.create();
-            case TRANSFORM_JSON_AS_INT -> JsonAsIntTransform.create();
-            case TRANSFORM_JSON_AS_LONG -> JsonAsLongTransform.create();
-            case TRANSFORM_JSON_AS_DOUBLE -> JsonAsDoubleTransform.create();
-            case TRANSFORM_JSON_AS_BOOLEAN -> JsonAsBooleanTransform.create();
-            case TRANSFORM_JSON_STRINGIFY -> JsonStringifyTransform.create();
-            case TRANSFORM_BASE64_ENCODE -> Base64EncodeTransform.create();
-            case TRANSFORM_BASE64_DECODE -> Base64DecodeTransform.create();
-            case TRANSFORM_URL_ENCODE -> UrlEncodeTransform.create();
-            case TRANSFORM_URL_DECODE -> UrlDecodeTransform.create();
-            case FILTER_DOM_TEXT_CONTAINS -> DomTextContainsFilter.of(o.get("needle").getAsString());
-            case FILTER_DOM_TEXT_MATCHES -> DomTextMatchesFilter.of(o.get("regex").getAsString());
-            case FILTER_DOM_HAS_ATTR -> o.has("expectedValue")
-                ? DomHasAttrFilter.of(o.get("attributeName").getAsString(), o.get("expectedValue").getAsString())
-                : DomHasAttrFilter.of(o.get("attributeName").getAsString());
-            case FILTER_DOM_TAG_EQUALS -> DomTagEqualsFilter.of(o.get("tagName").getAsString());
-            case FILTER_STRING_CONTAINS -> StringContainsFilter.of(o.get("needle").getAsString());
-            case FILTER_STRING_MATCHES -> StringMatchesFilter.of(o.get("regex").getAsString());
-            case FILTER_STRING_STARTS_WITH -> StringStartsWithFilter.of(o.get("prefix").getAsString());
-            case FILTER_STRING_ENDS_WITH -> StringEndsWithFilter.of(o.get("suffix").getAsString());
-            case FILTER_STRING_EQUALS -> StringEqualsFilter.of(o.get("target").getAsString());
-            case FILTER_STRING_NON_EMPTY -> StringNonEmptyFilter.create();
-            case FILTER_JSON_HAS_FIELD -> JsonHasFieldFilter.of(o.get("fieldName").getAsString());
-            case FILTER_JSON_FIELD_EQUALS -> JsonFieldEqualsFilter.of(
-                o.get("fieldName").getAsString(),
-                o.get("expectedValue").getAsString()
-            );
-            case FILTER_INT_GREATER_THAN -> IntGreaterThanFilter.of(o.get("threshold").getAsInt());
-            case FILTER_INT_LESS_THAN -> IntLessThanFilter.of(o.get("threshold").getAsInt());
-            case FILTER_INT_IN_RANGE -> IntInRangeFilter.of(o.get("min").getAsInt(), o.get("max").getAsInt());
-            case FILTER_LONG_GREATER_THAN -> LongGreaterThanFilter.of(o.get("threshold").getAsLong());
-            case FILTER_LONG_LESS_THAN -> LongLessThanFilter.of(o.get("threshold").getAsLong());
-            case FILTER_LONG_IN_RANGE -> LongInRangeFilter.of(o.get("min").getAsLong(), o.get("max").getAsLong());
-            case FILTER_DOUBLE_GREATER_THAN -> DoubleGreaterThanFilter.of(o.get("threshold").getAsDouble());
-            case FILTER_DOUBLE_LESS_THAN -> DoubleLessThanFilter.of(o.get("threshold").getAsDouble());
-            case FILTER_DOUBLE_IN_RANGE -> DoubleInRangeFilter.of(o.get("min").getAsDouble(), o.get("max").getAsDouble());
-            case FILTER_NOT_NULL -> NotNullFilter.of(requireType(o.get("elementType").getAsString()));
-            case FILTER_TAKE -> TakeFilter.of(
-                requireType(o.get("elementType").getAsString()),
-                o.get("count").getAsInt()
-            );
-            case FILTER_SKIP -> SkipFilter.of(
-                requireType(o.get("elementType").getAsString()),
-                o.get("count").getAsInt()
-            );
-            case FILTER_INDEX_IN_RANGE -> IndexInRangeFilter.of(
-                requireType(o.get("elementType").getAsString()),
-                o.get("fromInclusive").getAsInt(),
-                o.get("toExclusive").getAsInt()
-            );
-            case FILTER_DISTINCT -> DistinctFilter.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_FIRST -> FirstCollect.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_LAST -> LastCollect.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_LIST -> ListCollect.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_SET -> SetCollect.of(requireType(o.get("elementType").getAsString()));
-            case COLLECT_JOIN -> JoinCollect.of(o.get("separator").getAsString());
-            case BRANCH -> {
-                DataType<?> input = requireType(o.get("inputType").getAsString());
-                Branch.Builder<?> bb = Branch.over((DataType) input);
-                JsonObject outputs = o.getAsJsonObject("outputs");
-                for (var entry : outputs.entrySet()) {
-                    String name = entry.getKey();
-                    JsonArray sub = entry.getValue().getAsJsonArray();
-                    bb.output(name, chain -> {
-                        for (JsonElement child : sub)
-                            chain.stage(stageFromJson(child.getAsJsonObject()));
-                    });
+        StageKind kind = StageKind.valueOf(o.get("kind").getAsString());
+        if (kind.factory() == null)
+            throw new IllegalArgumentException("No factory registered for kind: " + kind);
+        StageConfig.Builder b = StageConfig.builder();
+
+        for (FieldSpec spec : kind.schema()) {
+            JsonElement raw = o.get(spec.name());
+            if (raw == null) continue;
+
+            switch (spec.type()) {
+                case STRING    -> b.string(spec.name(), raw.getAsString());
+                case INT       -> b.integer(spec.name(), raw.getAsInt());
+                case LONG      -> b.longVal(spec.name(), raw.getAsLong());
+                case DOUBLE    -> b.doubleVal(spec.name(), raw.getAsDouble());
+                case BOOLEAN   -> b.bool(spec.name(), raw.getAsBoolean());
+                case DATA_TYPE -> b.dataType(spec.name(), requireType(raw.getAsString()));
+                case SUB_PIPELINES_MAP -> {
+                    JsonObject outputs = raw.getAsJsonObject();
+                    LinkedHashMap<String, List<Stage<?, ?>>> map = new LinkedHashMap<>();
+
+                    for (Map.Entry<String, JsonElement> entry : outputs.entrySet()) {
+                        JsonArray sub = entry.getValue().getAsJsonArray();
+                        List<Stage<?, ?>> stages = new ArrayList<>();
+
+                        for (JsonElement el : sub)
+                            stages.add(stageFromJson(el.getAsJsonObject()));
+
+                        map.put(entry.getKey(), stages);
+                    }
+
+                    b.subPipelines(spec.name(), map);
                 }
-                yield bb.build();
             }
-            case PIPELINE_EMBED -> PipelineEmbed.of(
-                o.get("embeddedPipelineId").getAsString(),
-                requireType(o.get("outputType").getAsString())
-            );
-        };
+        }
+        return kind.factory().apply(b.build());
     }
 
     private static @NotNull DataType<?> requireType(@NotNull String label) {
         DataType<?> t = DataTypes.byLabel(label);
+
         if (t == null)
             throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
+
         return t;
     }
 

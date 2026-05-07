@@ -3,8 +3,11 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +22,9 @@ import java.util.List;
  * {@link TransformStage} that runs a jsoup CSS selector against a {@link Element} and returns
  * every matching element as a {@code List<Element>}.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CssSelectTransform implements TransformStage<Element, List<Element>> {
 
     private static final @NotNull DataType<List<Element>> OUTPUT = DataType.list(DataTypes.DOM_NODE);
@@ -40,8 +43,27 @@ public final class CssSelectTransform implements TransformStage<Element, List<El
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder().string("selector", this.selector).build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable ConcurrentList<Element> execute(@NotNull PipelineContext ctx, @Nullable Element input) {
+        if (input == null) return null;
+        return Concurrent.newUnmodifiableList(input.select(this.selector));
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_CSS_SELECT;
     }
 
     /** {@inheritDoc} */
@@ -52,21 +74,8 @@ public final class CssSelectTransform implements TransformStage<Element, List<El
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_CSS_SELECT;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "CSS select '" + this.selector + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable List<Element> execute(@NotNull PipelineContext ctx, @Nullable Element input) {
-        if (input == null) return null;
-        return List.copyOf(input.select(this.selector));
     }
 
 }

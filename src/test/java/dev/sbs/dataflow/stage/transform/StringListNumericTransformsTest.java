@@ -26,9 +26,9 @@ class StringListNumericTransformsTest {
     @Test
     @DisplayName("Lowercase / Uppercase / StringLength / Prefix / Suffix")
     void stringShape() {
-        assertThat(LowerCaseTransform.create().execute(this.ctx, "AbC"), is(equalTo("abc")));
-        assertThat(UpperCaseTransform.create().execute(this.ctx, "AbC"), is(equalTo("ABC")));
-        assertThat(StringLengthTransform.create().execute(this.ctx, "hello"), is(equalTo(5)));
+        assertThat(LowerCaseTransform.of().execute(this.ctx, "AbC"), is(equalTo("abc")));
+        assertThat(UpperCaseTransform.of().execute(this.ctx, "AbC"), is(equalTo("ABC")));
+        assertThat(StringLengthTransform.of().execute(this.ctx, "hello"), is(equalTo(5)));
         assertThat(PrefixTransform.of(">>>").execute(this.ctx, "x"), is(equalTo(">>>x")));
         assertThat(SuffixTransform.of("<<<").execute(this.ctx, "x"), is(equalTo("x<<<")));
     }
@@ -50,19 +50,19 @@ class StringListNumericTransformsTest {
     @Test
     @DisplayName("Abs(int/long/float/double) returns the magnitude")
     void abs() {
-        assertThat(AbsIntTransform.create().execute(this.ctx, -5), is(equalTo(5)));
-        assertThat(AbsLongTransform.create().execute(this.ctx, -5L), is(equalTo(5L)));
-        assertThat(AbsFloatTransform.create().execute(this.ctx, -5.5f), is(equalTo(5.5f)));
-        assertThat(AbsDoubleTransform.create().execute(this.ctx, -5.5), is(equalTo(5.5)));
+        assertThat(AbsIntTransform.of().execute(this.ctx, -5), is(equalTo(5)));
+        assertThat(AbsLongTransform.of().execute(this.ctx, -5L), is(equalTo(5L)));
+        assertThat(AbsFloatTransform.of().execute(this.ctx, -5.5f), is(equalTo(5.5f)));
+        assertThat(AbsDoubleTransform.of().execute(this.ctx, -5.5), is(equalTo(5.5)));
     }
 
     @Test
     @DisplayName("Negate(int/long/float/double) flips the sign")
     void negate() {
-        assertThat(NegateIntTransform.create().execute(this.ctx, 5), is(equalTo(-5)));
-        assertThat(NegateLongTransform.create().execute(this.ctx, 5L), is(equalTo(-5L)));
-        assertThat(NegateFloatTransform.create().execute(this.ctx, 5.5f), is(equalTo(-5.5f)));
-        assertThat(NegateDoubleTransform.create().execute(this.ctx, 5.5), is(equalTo(-5.5)));
+        assertThat(NegateIntTransform.of().execute(this.ctx, 5), is(equalTo(-5)));
+        assertThat(NegateLongTransform.of().execute(this.ctx, 5L), is(equalTo(-5L)));
+        assertThat(NegateFloatTransform.of().execute(this.ctx, 5.5f), is(equalTo(-5.5f)));
+        assertThat(NegateDoubleTransform.of().execute(this.ctx, 5.5), is(equalTo(-5.5)));
     }
 
     @Test

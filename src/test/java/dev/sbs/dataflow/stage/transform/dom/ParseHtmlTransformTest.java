@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class ParseHtmlTransformTest {
 
-    private final ParseHtmlTransform stage = ParseHtmlTransform.create();
+    private final ParseHtmlTransform stage = ParseHtmlTransform.of();
 
     @Test
     @DisplayName("Dark Claymore fixture parses into a queryable jsoup document")

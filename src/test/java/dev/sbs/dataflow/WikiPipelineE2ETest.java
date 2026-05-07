@@ -23,14 +23,14 @@ class WikiPipelineE2ETest {
     void darkClaymoreDmgIsFiveHundred() {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.create())
+            .stage(NodeTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
-            .stage(ParseIntTransform.create())
+            .stage(ParseIntTransform.of())
             .build();
 
         assertThat(pipeline.validate().isValid(), is(true));
@@ -43,14 +43,14 @@ class WikiPipelineE2ETest {
     void executeInfersResultType() {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html(Fixtures.load("dark_claymore.html")))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.create())
+            .stage(NodeTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
-            .stage(ParseIntTransform.create())
+            .stage(ParseIntTransform.of())
             .build();
 
         // T is inferred from the assignment - no explicit cast needed.

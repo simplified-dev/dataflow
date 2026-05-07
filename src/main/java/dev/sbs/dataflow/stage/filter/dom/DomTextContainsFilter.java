@@ -4,7 +4,10 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,15 +17,14 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * {@link FilterStage} over {@code List<Element>} that keeps every element whose
  * {@link Element#text()} contains the configured needle (case-sensitive).
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DomTextContainsFilter implements FilterStage<Element> {
 
     private static final @NotNull DataType<List<Element>> LIST_OF_NODES = DataType.list(DataTypes.DOM_NODE);
@@ -41,8 +43,29 @@ public final class DomTextContainsFilter implements FilterStage<Element> {
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder().string("needle", this.needle).build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable ConcurrentList<Element> execute(@NotNull PipelineContext ctx, @Nullable List<Element> input) {
+        if (input == null) return null;
+        return input.stream()
+            .filter(el -> el.text().contains(this.needle))
+            .collect(Concurrent.toUnmodifiableList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<List<Element>> inputType() {
         return LIST_OF_NODES;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_DOM_TEXT_CONTAINS;
     }
 
     /** {@inheritDoc} */
@@ -53,23 +76,8 @@ public final class DomTextContainsFilter implements FilterStage<Element> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.FILTER_DOM_TEXT_CONTAINS;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Text contains '" + this.needle + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable List<Element> execute(@NotNull PipelineContext ctx, @Nullable List<Element> input) {
-        if (input == null) return null;
-        return input.stream()
-            .filter(el -> el.text().contains(this.needle))
-            .collect(Collectors.toUnmodifiableList());
     }
 
 }

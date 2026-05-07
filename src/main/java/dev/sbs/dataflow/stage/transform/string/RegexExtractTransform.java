@@ -3,7 +3,8 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,12 +23,13 @@ import java.util.regex.Pattern;
  * Group {@code 0} (the entire match) is the default; positive group indexes refer to
  * parenthesised capture groups.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RegexExtractTransform implements TransformStage<String, String> {
 
     private final @NotNull String regex;
+
     private final int group;
 
     /**
@@ -53,26 +55,11 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<String> inputType() {
-        return DataTypes.STRING;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull DataType<String> outputType() {
-        return DataTypes.STRING;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_REGEX_EXTRACT;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull String summary() {
-        return "Regex '" + this.regex + "'" + (this.group == 0 ? "" : " group " + this.group);
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("regex", this.regex)
+            .integer("group", this.group)
+            .build();
     }
 
     /** {@inheritDoc} */
@@ -83,6 +70,30 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
         if (!m.find()) return null;
         if (this.group < 0 || this.group > m.groupCount()) return null;
         return m.group(this.group);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> inputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_REGEX_EXTRACT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Regex '" + this.regex + "'" + (this.group == 0 ? "" : " group " + this.group);
     }
 
 }

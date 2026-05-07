@@ -16,14 +16,14 @@ public non-sealed interface BranchStage<I> extends Stage<I, Map<String, Object>>
 
     /** {@inheritDoc} */
     @Override
-    default @NotNull DataType<Map<String, Object>> outputType() {
-        return DataTypes.BRANCH_OUTPUT;
+    default @NotNull StageKind kind() {
+        return StageKind.BRANCH;
     }
 
     /** {@inheritDoc} */
     @Override
-    default @NotNull StageId kind() {
-        return StageId.BRANCH;
+    default @NotNull DataType<Map<String, Object>> outputType() {
+        return DataTypes.BRANCH_OUTPUT;
     }
 
 }

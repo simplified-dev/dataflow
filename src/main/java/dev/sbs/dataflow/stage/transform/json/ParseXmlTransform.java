@@ -5,8 +5,13 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.source.XmlBridge;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that parses a {@link DataTypes#RAW_XML} body into a Gson
  * {@link JsonElement} via {@link XmlBridge}.
  */
+@Getter
+@Accessors(fluent = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParseXmlTransform implements TransformStage<String, JsonElement> {
 
     /**
@@ -21,8 +29,21 @@ public final class ParseXmlTransform implements TransformStage<String, JsonEleme
      *
      * @return the stage
      */
-    public static @NotNull ParseXmlTransform create() {
+    public static @NotNull ParseXmlTransform of() {
         return new ParseXmlTransform();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.empty();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable JsonElement execute(@NotNull PipelineContext ctx, @Nullable String input) {
+        if (input == null) return null;
+        return XmlBridge.parse(input);
     }
 
     /** {@inheritDoc} */
@@ -33,27 +54,20 @@ public final class ParseXmlTransform implements TransformStage<String, JsonEleme
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageKind kind() {
+        return StageKind.PARSE_XML;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<JsonElement> outputType() {
         return DataTypes.JSON_ELEMENT;
     }
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.PARSE_XML;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Parse as XML";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable JsonElement execute(@NotNull PipelineContext ctx, @Nullable String input) {
-        if (input == null) return null;
-        return XmlBridge.parse(input);
     }
 
 }

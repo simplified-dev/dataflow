@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.is;
 
 class ParseJsonTransformTest {
 
-    private final ParseJsonTransform stage = ParseJsonTransform.create();
+    private final ParseJsonTransform stage = ParseJsonTransform.of();
 
     @Test
     @DisplayName("Sample JSON fixture parses and exposes nested fields")

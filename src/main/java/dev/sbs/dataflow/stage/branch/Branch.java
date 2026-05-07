@@ -4,6 +4,7 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.BranchStage;
 import dev.sbs.dataflow.stage.Stage;
+import dev.sbs.dataflow.stage.StageConfig;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -27,46 +28,14 @@ import java.util.function.Consumer;
  *
  * @param <I> input type, shared by every sub-chain
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Branch<I> implements BranchStage<I> {
 
     private final @NotNull DataType<I> inputType;
+
     private final @NotNull Map<String, ConcurrentList<Stage<?, ?>>> outputs;
-
-    /**
-     * Creates a fresh {@link Builder} for a branch keyed on the given input type.
-     *
-     * @param inputType the shared input type
-     * @return a new builder
-     * @param <I> input type
-     */
-    public static <I> @NotNull Builder<I> over(@NotNull DataType<I> inputType) {
-        return new Builder<>(inputType);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull String summary() {
-        return "Branch (" + this.outputs.size() + " outputs)";
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    @Override
-    public @NotNull Map<String, Object> execute(@NotNull PipelineContext ctx, @Nullable I input) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<String, ConcurrentList<Stage<?, ?>>> entry : this.outputs.entrySet()) {
-            Object current = input;
-            for (Stage stage : entry.getValue()) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            result.put(entry.getKey(), current);
-        }
-        return Map.copyOf(result);
-    }
 
     /**
      * Mutable builder for {@link Branch}.
@@ -74,7 +43,6 @@ public final class Branch<I> implements BranchStage<I> {
      * @param <I> input type, shared by every output's sub-chain
      */
     public static final class Builder<I> {
-
         private final @NotNull DataType<I> inputType;
         private final @NotNull Map<String, ConcurrentList<Stage<?, ?>>> outputs = new LinkedHashMap<>();
 
@@ -104,14 +72,12 @@ public final class Branch<I> implements BranchStage<I> {
         public @NotNull Branch<I> build() {
             return new Branch<>(this.inputType, Map.copyOf(this.outputs));
         }
-
     }
 
     /**
      * Mutable builder for one named sub-chain inside a {@link Branch}.
      */
     public static final class ChainBuilder {
-
         private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
 
         private ChainBuilder() {}
@@ -126,7 +92,61 @@ public final class Branch<I> implements BranchStage<I> {
             this.stages.add(stage);
             return this;
         }
+    }
 
+    /**
+     * Reconstructs a {@link Branch} from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt branch
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static @NotNull Branch<?> fromConfig(@NotNull StageConfig cfg) {
+        DataType<?> inputType = cfg.getDataType("inputType");
+        Map<String, ConcurrentList<Stage<?, ?>>> outputs = cfg.getSubPipelines("outputs");
+        return new Branch(inputType, outputs);
+    }
+
+    /**
+     * Creates a fresh {@link Builder} for a branch keyed on the given input type.
+     *
+     * @param inputType the shared input type
+     * @return a new builder
+     * @param <I> input type
+     */
+    public static <I> @NotNull Builder<I> over(@NotNull DataType<I> inputType) {
+        return new Builder<>(inputType);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .dataType("inputType", this.inputType)
+            .subPipelines("outputs", this.outputs)
+            .build();
+    }
+
+    /** {@inheritDoc} */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    public @NotNull Map<String, Object> execute(@NotNull PipelineContext ctx, @Nullable I input) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (Map.Entry<String, ConcurrentList<Stage<?, ?>>> entry : this.outputs.entrySet()) {
+            Object current = input;
+            for (Stage stage : entry.getValue()) {
+                if (current == null) break;
+                current = stage.execute(ctx, current);
+            }
+            result.put(entry.getKey(), current);
+        }
+        return Map.copyOf(result);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Branch (" + this.outputs.size() + " outputs)";
     }
 
 }

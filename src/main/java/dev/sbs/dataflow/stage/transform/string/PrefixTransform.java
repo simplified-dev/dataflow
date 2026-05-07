@@ -3,7 +3,8 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,9 +16,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that prepends a configured string in front of the input.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PrefixTransform implements TransformStage<String, String> {
 
     private final @NotNull String prefix;
@@ -33,18 +34,41 @@ public final class PrefixTransform implements TransformStage<String, String> {
     }
 
     /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> inputType()  { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> outputType() { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull StageId kind()                { return StageId.TRANSFORM_PREFIX; }
-    /** {@inheritDoc} */
-    @Override public @NotNull String summary()              { return "Prefix '" + this.prefix + "'"; }
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("prefix", this.prefix)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         return input == null ? null : this.prefix + input;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> inputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_PREFIX;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Prefix '" + this.prefix + "'";
     }
 
 }

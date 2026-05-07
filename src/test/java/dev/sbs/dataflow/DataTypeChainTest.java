@@ -20,7 +20,7 @@ class DataTypeChainTest {
         // PasteSource.text emits RAW_TEXT; ParseHtmlTransform expects RAW_HTML.
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.text("hi"))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .build();
 
         ValidationReport report = pipeline.validate();
@@ -39,9 +39,9 @@ class DataTypeChainTest {
         // Source -> ParseHtml -> CssSelect (DOM_NODE -> List<DOM_NODE>) -> ParseInt (expects STRING) - mismatch at index 3
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html("<html><body>x</body></html>"))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("body"))
-            .stage(ParseIntTransform.create())
+            .stage(ParseIntTransform.of())
             .build();
 
         ValidationReport report = pipeline.validate();
@@ -57,7 +57,7 @@ class DataTypeChainTest {
     void validChainReportsNoIssues() {
         DataPipeline pipeline = DataPipeline.builder()
             .source(PasteSource.html("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
-            .stage(ParseHtmlTransform.create())
+            .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .build();

@@ -2,7 +2,7 @@ package dev.sbs.dataflow.stage.source;
 
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageKind;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,9 +31,9 @@ class PasteSourceTest {
     }
 
     @Test
-    @DisplayName("Paste source advertises StageId.SOURCE_PASTE")
+    @DisplayName("Paste source advertises StageKind.SOURCE_PASTE")
     void kindIsSourcePaste() {
-        assertThat(PasteSource.text("x").kind(), is(equalTo(StageId.SOURCE_PASTE)));
+        assertThat(PasteSource.text("x").kind(), is(equalTo(StageKind.SOURCE_PASTE)));
     }
 
 }

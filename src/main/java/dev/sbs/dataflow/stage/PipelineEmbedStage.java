@@ -19,17 +19,17 @@ import org.jetbrains.annotations.NotNull;
  */
 public non-sealed interface PipelineEmbedStage<O> extends Stage<Void, O> {
 
-    /** {@inheritDoc} */
-    @Override
-    default @NotNull DataType<Void> inputType() {
-        return DataTypes.NONE;
-    }
-
     /**
      * Stable id of the embedded pipeline, used both for resolution and cycle detection.
      *
      * @return the embedded pipeline id
      */
     @NotNull String embeddedPipelineId();
+
+    /** {@inheritDoc} */
+    @Override
+    default @NotNull DataType<Void> inputType() {
+        return DataTypes.NONE;
+    }
 
 }

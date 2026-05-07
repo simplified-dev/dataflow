@@ -3,7 +3,8 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,12 +20,13 @@ import org.jsoup.select.Elements;
  * returns the {@code n}-th match, where {@code n} is 0-based. Returns {@code null} if the
  * index is out of range.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NthChildTransform implements TransformStage<Element, Element> {
 
     private final @NotNull String childSelector;
+
     private final int index;
 
     /**
@@ -40,8 +42,32 @@ public final class NthChildTransform implements TransformStage<Element, Element>
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("childSelector", this.childSelector)
+            .integer("index", this.index)
+            .build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable Element execute(@NotNull PipelineContext ctx, @Nullable Element input) {
+        if (input == null) return null;
+        Elements matches = input.select(this.childSelector);
+        if (this.index < 0 || this.index >= matches.size()) return null;
+        return matches.get(this.index);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_NTH_CHILD;
     }
 
     /** {@inheritDoc} */
@@ -52,23 +78,8 @@ public final class NthChildTransform implements TransformStage<Element, Element>
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_NTH_CHILD;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Child #" + this.index + " '" + this.childSelector + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable Element execute(@NotNull PipelineContext ctx, @Nullable Element input) {
-        if (input == null) return null;
-        Elements matches = input.select(this.childSelector);
-        if (this.index < 0 || this.index >= matches.size()) return null;
-        return matches.get(this.index);
     }
 
 }

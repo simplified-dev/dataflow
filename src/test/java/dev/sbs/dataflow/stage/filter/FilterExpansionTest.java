@@ -38,7 +38,7 @@ class FilterExpansionTest {
         assertThat(StringStartsWithFilter.of("ap").execute(this.ctx, all), contains("apple", "apricot", "applepie"));
         assertThat(StringEndsWithFilter.of("ie").execute(this.ctx, all), contains("applepie"));
         assertThat(StringEqualsFilter.of("apple").execute(this.ctx, all), contains("apple"));
-        assertThat(StringNonEmptyFilter.create().execute(this.ctx, all), contains("apple", "banana", "apricot", "applepie"));
+        assertThat(StringNonEmptyFilter.of().execute(this.ctx, all), contains("apple", "banana", "apricot", "applepie"));
     }
 
     @Test

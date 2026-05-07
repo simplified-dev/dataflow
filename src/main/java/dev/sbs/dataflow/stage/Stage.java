@@ -40,7 +40,22 @@ public sealed interface Stage<I, O> permits
      *
      * @return the kind
      */
-    @NotNull StageId kind();
+    @NotNull StageKind kind();
+
+    /**
+     * Configuration of this stage exposed as a typed name-to-value map. Mirrors the schema
+     * declared on {@link #kind()}.
+     * <p>
+     * Both serde (writes) and the UI builder (reads for pre-fill, writes when constructing
+     * a replacement via {@link StageKind#factory()}) iterate this single source of truth,
+     * eliminating per-kind switches. Default returns {@link StageConfig#empty()} for
+     * config-free stages.
+     *
+     * @return the configuration
+     */
+    default @NotNull StageConfig config() {
+        return StageConfig.empty();
+    }
 
     /**
      * One-line label used by the UI to describe this stage's configuration. Keep it short

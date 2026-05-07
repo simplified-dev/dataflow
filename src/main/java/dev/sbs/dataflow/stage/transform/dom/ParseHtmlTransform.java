@@ -3,8 +3,13 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
@@ -14,6 +19,9 @@ import org.jsoup.nodes.Element;
  * {@link TransformStage} that parses a {@link DataTypes#RAW_HTML} body into a jsoup
  * {@link Element} suitable for CSS-selector traversal.
  */
+@Getter
+@Accessors(fluent = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParseHtmlTransform implements TransformStage<String, Element> {
 
     /**
@@ -21,8 +29,21 @@ public final class ParseHtmlTransform implements TransformStage<String, Element>
      *
      * @return the stage
      */
-    public static @NotNull ParseHtmlTransform create() {
+    public static @NotNull ParseHtmlTransform of() {
         return new ParseHtmlTransform();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.empty();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable Element execute(@NotNull PipelineContext ctx, @Nullable String input) {
+        if (input == null) return null;
+        return Jsoup.parse(input);
     }
 
     /** {@inheritDoc} */
@@ -33,27 +54,20 @@ public final class ParseHtmlTransform implements TransformStage<String, Element>
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageKind kind() {
+        return StageKind.PARSE_HTML;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<Element> outputType() {
         return DataTypes.DOM_NODE;
     }
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.PARSE_HTML;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Parse as HTML";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable Element execute(@NotNull PipelineContext ctx, @Nullable String input) {
-        if (input == null) return null;
-        return Jsoup.parse(input);
     }
 
 }

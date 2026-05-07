@@ -2,8 +2,11 @@ package dev.sbs.dataflow.stage.transform.list;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +24,13 @@ import java.util.List;
  *
  * @param <T> element type
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ReverseTransform<T> implements TransformStage<List<T>, List<T>> {
 
     private final @NotNull DataType<T> elementType;
+
     private final @NotNull DataType<List<T>> listType;
 
     /**
@@ -41,21 +45,44 @@ public final class ReverseTransform<T> implements TransformStage<List<T>, List<T
     }
 
     /** {@inheritDoc} */
-    @Override public @NotNull DataType<List<T>> inputType()  { return this.listType; }
-    /** {@inheritDoc} */
-    @Override public @NotNull DataType<List<T>> outputType() { return this.listType; }
-    /** {@inheritDoc} */
-    @Override public @NotNull StageId kind()                 { return StageId.TRANSFORM_REVERSE; }
-    /** {@inheritDoc} */
-    @Override public @NotNull String summary()               { return "Reverse " + this.elementType.label(); }
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .dataType("elementType", this.elementType)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+    public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
         List<T> copy = new ArrayList<>(input);
         Collections.reverse(copy);
-        return List.copyOf(copy);
+        return Concurrent.newUnmodifiableList(copy);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> inputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_REVERSE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> outputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Reverse " + this.elementType.label();
     }
 
 }

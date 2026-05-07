@@ -4,7 +4,10 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -13,15 +16,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /** {@link FilterStage} keeping ints strictly greater than the configured threshold. */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class IntGreaterThanFilter implements FilterStage<Integer> {
 
     private static final @NotNull DataType<List<Integer>> LIST_INT = DataType.list(DataTypes.INT);
+
     private final int threshold;
 
     /**
@@ -34,15 +37,44 @@ public final class IntGreaterThanFilter implements FilterStage<Integer> {
         return new IntGreaterThanFilter(threshold);
     }
 
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<Integer>> inputType()  { return LIST_INT; }
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<Integer>> outputType() { return LIST_INT; }
-    /** {@inheritDoc} */ @Override public @NotNull StageId kind()                       { return StageId.FILTER_INT_GREATER_THAN; }
-    /** {@inheritDoc} */ @Override public @NotNull String summary()                     { return "Int > " + this.threshold; }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .integer("threshold", this.threshold)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<Integer> execute(@NotNull PipelineContext ctx, @Nullable List<Integer> input) {
-        return input == null ? null : input.stream().filter(i -> i != null && i > this.threshold).collect(Collectors.toUnmodifiableList());
+    public @Nullable ConcurrentList<Integer> execute(@NotNull PipelineContext ctx, @Nullable List<Integer> input) {
+        return input == null ? null : input.stream()
+            .filter(i -> i != null && i > this.threshold)
+            .collect(Concurrent.toUnmodifiableList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Integer>> inputType() {
+        return LIST_INT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_INT_GREATER_THAN;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Integer>> outputType() {
+        return LIST_INT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Int > " + this.threshold;
     }
 
 }

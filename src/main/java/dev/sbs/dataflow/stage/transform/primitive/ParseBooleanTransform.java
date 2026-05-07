@@ -3,8 +3,13 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +19,9 @@ import org.jetbrains.annotations.Nullable;
  * Recognises {@code "true"}/{@code "false"} (case-insensitive) plus {@code "1"} / {@code "0"}
  * and {@code "yes"} / {@code "no"}. Anything else returns {@code null}.
  */
+@Getter
+@Accessors(fluent = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParseBooleanTransform implements TransformStage<String, Boolean> {
 
     /**
@@ -21,32 +29,14 @@ public final class ParseBooleanTransform implements TransformStage<String, Boole
      *
      * @return the stage
      */
-    public static @NotNull ParseBooleanTransform create() {
+    public static @NotNull ParseBooleanTransform of() {
         return new ParseBooleanTransform();
     }
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull DataType<String> inputType() {
-        return DataTypes.STRING;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull DataType<Boolean> outputType() {
-        return DataTypes.BOOLEAN;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_PARSE_BOOLEAN;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull String summary() {
-        return "Parse boolean";
+    public @NotNull StageConfig config() {
+        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */
@@ -58,6 +48,30 @@ public final class ParseBooleanTransform implements TransformStage<String, Boole
             case "false", "0", "no" -> Boolean.FALSE;
             default -> null;
         };
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> inputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_PARSE_BOOLEAN;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<Boolean> outputType() {
+        return DataTypes.BOOLEAN;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Parse boolean";
     }
 
 }

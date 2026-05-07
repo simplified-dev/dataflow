@@ -5,7 +5,8 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.source.UrlFetcher;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,13 @@ import java.net.URI;
  * {@link SourceStage} that fetches a URL via {@link UrlFetcher} and emits the response body
  * tagged as one of the {@code RAW_*} types.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UrlSource implements SourceStage<String> {
 
     private final @NotNull String url;
+
     private final @NotNull DataType<String> outputType;
 
     /**
@@ -36,16 +38,6 @@ public final class UrlSource implements SourceStage<String> {
      */
     public static @NotNull UrlSource html(@NotNull String url) {
         return new UrlSource(url, DataTypes.RAW_HTML);
-    }
-
-    /**
-     * Constructs a URL source whose body is treated as XML.
-     *
-     * @param url the URL to fetch
-     * @return a new source
-     */
-    public static @NotNull UrlSource xml(@NotNull String url) {
-        return new UrlSource(url, DataTypes.RAW_XML);
     }
 
     /**
@@ -68,16 +60,28 @@ public final class UrlSource implements SourceStage<String> {
         return new UrlSource(url, DataTypes.RAW_TEXT);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageId kind() {
-        return StageId.SOURCE_URL;
+    /**
+     * Constructs a URL source whose body is treated as XML.
+     *
+     * @param url the URL to fetch
+     * @return a new source
+     */
+    public static @NotNull UrlSource xml(@NotNull String url) {
+        return new UrlSource(url, DataTypes.RAW_XML);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static @NotNull UrlSource fromConfig(@NotNull StageConfig cfg) {
+        return new UrlSource(cfg.getString("url"), (DataType<String>) cfg.getDataType("outputType"));
     }
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull String summary() {
-        return "URL " + this.outputType.label() + " " + this.url;
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("url", this.url)
+            .dataType("outputType", this.outputType)
+            .build();
     }
 
     /** {@inheritDoc} */
@@ -91,6 +95,18 @@ public final class UrlSource implements SourceStage<String> {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Fetch interrupted", e);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.SOURCE_URL;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "URL " + this.outputType.label() + " " + this.url;
     }
 
 }

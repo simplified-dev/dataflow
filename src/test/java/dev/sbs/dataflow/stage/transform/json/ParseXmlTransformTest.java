@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.is;
 
 class ParseXmlTransformTest {
 
-    private final ParseXmlTransform stage = ParseXmlTransform.create();
+    private final ParseXmlTransform stage = ParseXmlTransform.of();
 
     @Test
     @DisplayName("Sample XML fixture parses into a JsonElement preserving nested fields")

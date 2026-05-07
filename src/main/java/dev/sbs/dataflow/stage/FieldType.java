@@ -1,0 +1,35 @@
+package dev.sbs.dataflow.stage;
+
+import dev.sbs.dataflow.DataType;
+
+/**
+ * Discriminator for one configuration slot in a {@link FieldSpec}. Used by serde and UI
+ * code to handle each slot uniformly without switching on {@link StageKind}.
+ */
+public enum FieldType {
+
+    /** UTF-8 string. */
+    STRING,
+
+    /** 32-bit signed integer. */
+    INT,
+
+    /** 64-bit signed integer. */
+    LONG,
+
+    /** 64-bit IEEE-754 floating point. */
+    DOUBLE,
+
+    /** Boolean value. */
+    BOOLEAN,
+
+    /** {@link DataType} reference, serialised as its label. */
+    DATA_TYPE,
+
+    /**
+     * Map of named sub-pipelines, keyed by output name. Each value is an ordered list of
+     * {@link Stage} instances forming the named output's sub-chain.
+     */
+    SUB_PIPELINES_MAP,
+
+}

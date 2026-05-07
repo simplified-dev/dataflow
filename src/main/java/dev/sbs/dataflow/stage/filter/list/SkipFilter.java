@@ -3,7 +3,10 @@ package dev.sbs.dataflow.stage.filter.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +21,15 @@ import java.util.List;
  *
  * @param <T> element type
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SkipFilter<T> implements FilterStage<T> {
 
     private final @NotNull DataType<T> elementType;
+
     private final @NotNull DataType<List<T>> listType;
+
     private final int count;
 
     /**
@@ -39,17 +44,45 @@ public final class SkipFilter<T> implements FilterStage<T> {
         return new SkipFilter<>(elementType, DataType.list(elementType), Math.max(0, count));
     }
 
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<T>> inputType()  { return this.listType; }
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<T>> outputType() { return this.listType; }
-    /** {@inheritDoc} */ @Override public @NotNull StageId kind()                 { return StageId.FILTER_SKIP; }
-    /** {@inheritDoc} */ @Override public @NotNull String summary()               { return "Skip " + this.count; }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .dataType("elementType", this.elementType)
+            .integer("count", this.count)
+            .build();
+    }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
+    public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
-        if (this.count >= input.size()) return List.of();
-        return List.copyOf(input.subList(this.count, input.size()));
+        if (this.count >= input.size()) return Concurrent.newUnmodifiableList();
+        return Concurrent.newUnmodifiableList(input.subList(this.count, input.size()));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> inputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_SKIP;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<T>> outputType() {
+        return this.listType;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Skip " + this.count;
     }
 
 }

@@ -4,7 +4,8 @@ import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.PipelineEmbedStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +24,13 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <O> output type of the inner pipeline
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PipelineEmbed<O> implements PipelineEmbedStage<O> {
 
     private final @NotNull String embeddedPipelineId;
+
     private final @NotNull DataType<O> outputType;
 
     /**
@@ -49,14 +51,11 @@ public final class PipelineEmbed<O> implements PipelineEmbedStage<O> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.PIPELINE_EMBED;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull String summary() {
-        return "Embed '" + this.embeddedPipelineId + "' (" + this.outputType.label() + ")";
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("embeddedPipelineId", this.embeddedPipelineId)
+            .dataType("outputType", this.outputType)
+            .build();
     }
 
     /** {@inheritDoc} */
@@ -72,6 +71,18 @@ public final class PipelineEmbed<O> implements PipelineEmbedStage<O> {
         } finally {
             ctx.exitPipeline(this.embeddedPipelineId);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.PIPELINE_EMBED;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Embed '" + this.embeddedPipelineId + "' (" + this.outputType.label() + ")";
     }
 
 }

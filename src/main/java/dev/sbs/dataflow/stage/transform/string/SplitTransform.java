@@ -3,8 +3,11 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +21,9 @@ import java.util.List;
  * {@link TransformStage} that splits a {@link String} on a regex into a list of substrings,
  * equivalent to {@link String#split(String)}.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SplitTransform implements TransformStage<String, List<String>> {
 
     private static final @NotNull DataType<List<String>> OUTPUT = DataType.list(DataTypes.STRING);
@@ -39,8 +42,29 @@ public final class SplitTransform implements TransformStage<String, List<String>
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("regex", this.regex)
+            .build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable ConcurrentList<String> execute(@NotNull PipelineContext ctx, @Nullable String input) {
+        if (input == null) return null;
+        return Concurrent.newUnmodifiableList(input.split(this.regex));
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_SPLIT;
     }
 
     /** {@inheritDoc} */
@@ -51,21 +75,8 @@ public final class SplitTransform implements TransformStage<String, List<String>
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_SPLIT;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Split on '" + this.regex + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable List<String> execute(@NotNull PipelineContext ctx, @Nullable String input) {
-        if (input == null) return null;
-        return List.of(input.split(this.regex));
     }
 
 }

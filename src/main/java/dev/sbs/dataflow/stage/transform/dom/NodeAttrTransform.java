@@ -3,7 +3,8 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,9 +18,9 @@ import org.jsoup.nodes.Element;
  * {@link TransformStage} that returns a named attribute value of a jsoup {@link Element}.
  * Returns the empty string when the attribute is absent, matching jsoup's convention.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NodeAttrTransform implements TransformStage<Element, String> {
 
     private final @NotNull String attributeName;
@@ -36,8 +37,27 @@ public final class NodeAttrTransform implements TransformStage<Element, String> 
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder().string("attributeName", this.attributeName).build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Element input) {
+        if (input == null) return null;
+        return input.attr(this.attributeName);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_NODE_ATTR;
     }
 
     /** {@inheritDoc} */
@@ -48,21 +68,8 @@ public final class NodeAttrTransform implements TransformStage<Element, String> 
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.TRANSFORM_NODE_ATTR;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Attr '" + this.attributeName + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Element input) {
-        if (input == null) return null;
-        return input.attr(this.attributeName);
     }
 
 }

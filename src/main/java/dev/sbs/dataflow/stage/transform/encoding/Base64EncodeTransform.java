@@ -3,8 +3,13 @@ package dev.sbs.dataflow.stage.transform.encoding;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +19,9 @@ import java.util.Base64;
 /**
  * {@link TransformStage} that base64-encodes the UTF-8 bytes of the input string.
  */
+@Getter
+@Accessors(fluent = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Base64EncodeTransform implements TransformStage<String, String> {
 
     /**
@@ -21,23 +29,44 @@ public final class Base64EncodeTransform implements TransformStage<String, Strin
      *
      * @return the stage
      */
-    public static @NotNull Base64EncodeTransform create() {
+    public static @NotNull Base64EncodeTransform of() {
         return new Base64EncodeTransform();
     }
 
     /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> inputType()  { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> outputType() { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull StageId kind()                { return StageId.TRANSFORM_BASE64_ENCODE; }
-    /** {@inheritDoc} */
-    @Override public @NotNull String summary()              { return "Base64 encode"; }
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.empty();
+    }
 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         return input == null ? null : Base64.getEncoder().encodeToString(input.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> inputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_BASE64_ENCODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Base64 encode";
     }
 
 }

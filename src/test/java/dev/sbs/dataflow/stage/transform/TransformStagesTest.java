@@ -44,7 +44,7 @@ class TransformStagesTest {
     @DisplayName("NodeText returns the visible text")
     void nodeText() {
         Element root = Jsoup.parse("<p>hello <b>world</b></p>").selectFirst("p");
-        assertThat(NodeTextTransform.create().execute(this.ctx, root), is(equalTo("hello world")));
+        assertThat(NodeTextTransform.of().execute(this.ctx, root), is(equalTo("hello world")));
     }
 
     @Test
@@ -117,21 +117,21 @@ class TransformStagesTest {
     @Test
     @DisplayName("ParseInt handles whitespace and invalid input")
     void parseInt() {
-        assertThat(ParseIntTransform.create().execute(this.ctx, "  42  "), is(equalTo(42)));
-        assertThat(ParseIntTransform.create().execute(this.ctx, "nope"), is(nullValue()));
+        assertThat(ParseIntTransform.of().execute(this.ctx, "  42  "), is(equalTo(42)));
+        assertThat(ParseIntTransform.of().execute(this.ctx, "nope"), is(nullValue()));
     }
 
     @Test
     @DisplayName("ParseDouble handles whitespace and invalid input")
     void parseDouble() {
-        assertThat(ParseDoubleTransform.create().execute(this.ctx, " 3.14 "), is(equalTo(3.14)));
-        assertThat(ParseDoubleTransform.create().execute(this.ctx, "x"), is(nullValue()));
+        assertThat(ParseDoubleTransform.of().execute(this.ctx, " 3.14 "), is(equalTo(3.14)));
+        assertThat(ParseDoubleTransform.of().execute(this.ctx, "x"), is(nullValue()));
     }
 
     @Test
     @DisplayName("Trim strips surrounding whitespace")
     void trim() {
-        assertThat(TrimTransform.create().execute(this.ctx, "  hi  "), is(equalTo("hi")));
+        assertThat(TrimTransform.of().execute(this.ctx, "  hi  "), is(equalTo("hi")));
     }
 
     @Test

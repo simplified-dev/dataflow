@@ -3,8 +3,13 @@ package dev.sbs.dataflow.stage.transform.encoding;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +20,9 @@ import java.nio.charset.StandardCharsets;
  * {@link TransformStage} that percent-encodes the input string using the
  * {@code application/x-www-form-urlencoded} convention with UTF-8.
  */
+@Getter
+@Accessors(fluent = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UrlEncodeTransform implements TransformStage<String, String> {
 
     /**
@@ -22,23 +30,44 @@ public final class UrlEncodeTransform implements TransformStage<String, String> 
      *
      * @return the stage
      */
-    public static @NotNull UrlEncodeTransform create() {
+    public static @NotNull UrlEncodeTransform of() {
         return new UrlEncodeTransform();
     }
 
     /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> inputType()  { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull DataType<String> outputType() { return DataTypes.STRING; }
-    /** {@inheritDoc} */
-    @Override public @NotNull StageId kind()                { return StageId.TRANSFORM_URL_ENCODE; }
-    /** {@inheritDoc} */
-    @Override public @NotNull String summary()              { return "URL encode"; }
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.empty();
+    }
 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         return input == null ? null : URLEncoder.encode(input, StandardCharsets.UTF_8);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> inputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.TRANSFORM_URL_ENCODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "URL encode";
     }
 
 }

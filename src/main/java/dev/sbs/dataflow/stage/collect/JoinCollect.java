@@ -4,7 +4,8 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,9 @@ import java.util.List;
  * {@link CollectStage} that joins a {@code List<String>} into a single string with a
  * configurable separator.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JoinCollect implements CollectStage<List<String>, String> {
 
     private static final @NotNull DataType<List<String>> INPUT = DataType.list(DataTypes.STRING);
@@ -39,8 +40,29 @@ public final class JoinCollect implements CollectStage<List<String>, String> {
 
     /** {@inheritDoc} */
     @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("separator", this.separator)
+            .build();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable List<String> input) {
+        if (input == null) return null;
+        return String.join(this.separator, input);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public @NotNull DataType<List<String>> inputType() {
         return INPUT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.COLLECT_JOIN;
     }
 
     /** {@inheritDoc} */
@@ -51,21 +73,8 @@ public final class JoinCollect implements CollectStage<List<String>, String> {
 
     /** {@inheritDoc} */
     @Override
-    public @NotNull StageId kind() {
-        return StageId.COLLECT_JOIN;
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public @NotNull String summary() {
         return "Join with '" + this.separator + "'";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable List<String> input) {
-        if (input == null) return null;
-        return String.join(this.separator, input);
     }
 
 }

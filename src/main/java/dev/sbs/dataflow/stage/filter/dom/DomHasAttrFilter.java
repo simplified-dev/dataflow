@@ -4,7 +4,10 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageId;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,20 +17,20 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * {@link FilterStage} keeping every DOM element that has the configured attribute.
  * If {@link #expectedValue} is non-null, the attribute value must additionally match.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DomHasAttrFilter implements FilterStage<Element> {
 
     private static final @NotNull DataType<List<Element>> LIST_NODE = DataType.list(DataTypes.DOM_NODE);
 
     private final @NotNull String attributeName;
+
     private final @Nullable String expectedValue;
 
     /**
@@ -51,24 +54,49 @@ public final class DomHasAttrFilter implements FilterStage<Element> {
         return new DomHasAttrFilter(attributeName, expectedValue);
     }
 
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<Element>> inputType()  { return LIST_NODE; }
-    /** {@inheritDoc} */ @Override public @NotNull DataType<List<Element>> outputType() { return LIST_NODE; }
-    /** {@inheritDoc} */ @Override public @NotNull StageId kind()                       { return StageId.FILTER_DOM_HAS_ATTR; }
     /** {@inheritDoc} */
-    @Override public @NotNull String summary() {
-        return this.expectedValue == null
-            ? "Has attr '" + this.attributeName + "'"
-            : "Attr " + this.attributeName + "='" + this.expectedValue + "'";
+    @Override
+    public @NotNull StageConfig config() {
+        return StageConfig.builder()
+            .string("attributeName", this.attributeName)
+            .string("expectedValue", this.expectedValue == null ? "" : this.expectedValue)
+            .build();
     }
 
     /** {@inheritDoc} */
     @Override
-    public @Nullable List<Element> execute(@NotNull PipelineContext ctx, @Nullable List<Element> input) {
+    public @Nullable ConcurrentList<Element> execute(@NotNull PipelineContext ctx, @Nullable List<Element> input) {
         if (input == null) return null;
         return input.stream()
             .filter(el -> el.hasAttr(this.attributeName) &&
                 (this.expectedValue == null || this.expectedValue.equals(el.attr(this.attributeName))))
-            .collect(Collectors.toUnmodifiableList());
+            .collect(Concurrent.toUnmodifiableList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Element>> inputType() {
+        return LIST_NODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull StageKind kind() {
+        return StageKind.FILTER_DOM_HAS_ATTR;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Element>> outputType() {
+        return LIST_NODE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return this.expectedValue == null
+            ? "Has attr '" + this.attributeName + "'"
+            : "Attr " + this.attributeName + "='" + this.expectedValue + "'";
     }
 
 }
