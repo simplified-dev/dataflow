@@ -55,8 +55,10 @@ persisted.
 
 When adding a stage: new `StageKind` constant + matching imports + correct `StageCategory`.
 
-`StageCategory`: UI palette grouping. After the round-1/2 reorg: `SOURCE`, `BRANCH`,
-`FILTER_*`, `TRANSFORM_*`, `PREDICATE_*`, `TERMINAL_{COLLECT,SUM,AVERAGE,MINMAX,MATCH}`.
+`StageCategory`: UI palette grouping. Declaration order is `SOURCE` first, `TERMINAL_*`
+last, and everything in between alphabetical (`BRANCH`, `FILTER_*`, `PREDICATE_*`,
+`TRANSFORM_*`). Downstream UI consumers can rely on `Enum#ordinal()` for natural display
+order.
 
 ## Sub-pipeline bodies
 
