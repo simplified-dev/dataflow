@@ -10,6 +10,7 @@ import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.stage.FieldSpec;
+import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
@@ -93,7 +94,7 @@ public final class PipelineGson {
         for (JsonElement el : arr) {
             Stage<?, ?> stage = stageFromJson(el.getAsJsonObject());
             if (first) {
-                b.source((Stage<Void, ?>) stage);
+                b.source((SourceStage<?>) stage);
                 first = false;
             } else
                 b.stage(stage);
