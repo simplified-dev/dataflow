@@ -1,7 +1,21 @@
 package dev.sbs.dataflow.stage.terminal;
 
+import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.terminal.average.AverageDoubleCollect;
+import dev.sbs.dataflow.stage.terminal.average.AverageIntCollect;
+import dev.sbs.dataflow.stage.terminal.average.AverageLongCollect;
+import dev.sbs.dataflow.stage.terminal.match.AllMatchCollect;
+import dev.sbs.dataflow.stage.terminal.match.AnyMatchCollect;
+import dev.sbs.dataflow.stage.terminal.match.FindFirstCollect;
+import dev.sbs.dataflow.stage.terminal.match.NoneMatchCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MaxCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MinCollect;
+import dev.sbs.dataflow.stage.terminal.sum.CountCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumDoubleCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumIntCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumLongCollect;
 import dev.sbs.dataflow.stage.transform.primitive.ParseBooleanTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,11 +56,14 @@ class CollectStreamOpsTest {
         assertThat(MaxCollect.of(DataTypes.STRING).execute(this.ctx, List.of("z", "a", "m")), is(equalTo("z")));
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
     @DisplayName("Min/Max reject unsupported element types")
     void minMaxRejectUnsupported() {
-        assertThrows(IllegalArgumentException.class, () -> MinCollect.of(DataTypes.BOOLEAN));
-        assertThrows(IllegalArgumentException.class, () -> MaxCollect.of(DataTypes.DOM_NODE));
+        // Cast through raw DataType to bypass the Comparable<T> bound at the call site;
+        // the of(...) factory enforces the type list at runtime via IllegalArgumentException.
+        assertThrows(IllegalArgumentException.class, () -> MinCollect.of((DataType) DataTypes.BOOLEAN));
+        assertThrows(IllegalArgumentException.class, () -> MaxCollect.of((DataType) DataTypes.DOM_NODE));
     }
 
     @Test

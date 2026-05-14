@@ -46,9 +46,10 @@ class StreamOpsE2ETest {
             .build();
 
         Integer total = pipeline.execute(PipelineContext.empty());
-        // Fixture's three numeric infobox rows are Dmg=500, Strength=220, Crit Damage=175 (see BranchTest).
-        // Other rows produce no number and are dropped, so the sum is 500 + 220 + 175 = 895.
-        assertThat(total, is(895));
+        // Fixture has five numeric infobox rows: Dmg=500, Strength=220, Crit Damage=175,
+        // Crit Chance=32, Intelligence=50. Non-numeric rows (Rarity, Type) drop out when
+        // RegexExtract(\\d+) returns null. Sum is 500 + 220 + 175 + 32 + 50 = 977.
+        assertThat(total, is(977));
     }
 
     @Test

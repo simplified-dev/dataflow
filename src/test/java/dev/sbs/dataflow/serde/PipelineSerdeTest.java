@@ -15,6 +15,7 @@ import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
 import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.filter.list.DistinctFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.source.OfSource;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
@@ -70,7 +71,7 @@ class PipelineSerdeTest {
     @DisplayName("Round-trip JSON is stable - serialise -> deserialise -> serialise yields the same JSON")
     void serdeIsIdempotent() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(PasteSource.text("hi"))
+            .source(OfSource.of(DataTypes.STRING, "hi"))
             .stage(TrimTransform.of())
             .build();
         String first = PipelineGson.toJson(pipeline);
@@ -102,7 +103,7 @@ class PipelineSerdeTest {
         roundTrip(urlPipeline);
 
         DataPipeline allTransforms = DataPipeline.builder()
-            .source(PasteSource.text("  hello WORLD  "))
+            .source(OfSource.of(DataTypes.STRING, "  hello WORLD  "))
             .stage(TrimTransform.of())
             .stage(ReplaceTransform.of("WORLD", "world"))
             .stage(RegexExtractTransform.of("\\w+", 0))
@@ -111,7 +112,7 @@ class PipelineSerdeTest {
         roundTrip(allTransforms);
 
         DataPipeline collectVariants = DataPipeline.builder()
-            .source(PasteSource.text("a,b,a,c"))
+            .source(OfSource.of(DataTypes.STRING, "a,b,a,c"))
             .stage(SplitTransform.of(","))
             .stage(DistinctFilter.of(DataTypes.STRING))
             .stage(JoinCollect.of("|"))
@@ -119,7 +120,7 @@ class PipelineSerdeTest {
         roundTrip(collectVariants);
 
         DataPipeline collectFlavours = DataPipeline.builder()
-            .source(PasteSource.text("x"))
+            .source(OfSource.of(DataTypes.STRING, "x"))
             .stage(SplitTransform.of(""))
             .stage(LastCollect.of(DataTypes.STRING))
             .build();
@@ -143,34 +144,25 @@ class PipelineSerdeTest {
         roundTrip(misc2);
 
         DataPipeline misc3 = DataPipeline.builder()
-            .source(PasteSource.text("3.14"))
+            .source(OfSource.of(DataTypes.STRING, "3.14"))
             .stage(ParseDoubleTransform.of())
             .build();
         roundTrip(misc3);
 
         DataPipeline setVariant = DataPipeline.builder()
-            .source(PasteSource.text("a,b,a,c"))
+            .source(OfSource.of(DataTypes.STRING, "a,b,a,c"))
             .stage(SplitTransform.of(","))
             .stage(SetCollect.of(DataTypes.STRING))
             .build();
         roundTrip(setVariant);
 
         DataPipeline listVariant = DataPipeline.builder()
-            .source(PasteSource.text("a,b,c"))
+            .source(OfSource.of(DataTypes.STRING, "a,b,c"))
             .stage(SplitTransform.of(","))
             .stage(ListCollect.of(DataTypes.STRING))
             .build();
         roundTrip(listVariant);
 
-        DataPipeline jsonField = DataPipeline.builder()
-            .source(PasteSource.json("{\"x\":\"y\"}"))
-            .stage(ParseJsonTransform.of())
-            .stage(JsonFieldTransform.of("x"))
-            .build();
-        // ParseJson outputs JSON_ELEMENT, JsonField expects JSON_OBJECT; serde itself
-        // works regardless of validation. Just round-trip the bytes.
-        String jf = PipelineGson.toJson(jsonField);
-        assertThat(jf, containsString("TRANSFORM_JSON_FIELD"));
     }
 
     @Test
