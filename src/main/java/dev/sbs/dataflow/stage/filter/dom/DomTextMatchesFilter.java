@@ -29,6 +29,8 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
 
     private final @NotNull String regex;
 
+    private final @NotNull Pattern pattern;
+
     /**
      * Constructs a DOM-text-matches filter.
      *
@@ -36,7 +38,7 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
      * @return the stage
      */
     public static @NotNull DomTextMatchesFilter of(@NotNull String regex) {
-        return new DomTextMatchesFilter(regex);
+        return new DomTextMatchesFilter(regex, Pattern.compile(regex));
     }
 
     /** {@inheritDoc} */
@@ -51,9 +53,8 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
     @Override
     public @Nullable ConcurrentList<Element> execute(@NotNull PipelineContext ctx, @Nullable List<Element> input) {
         if (input == null) return null;
-        Pattern p = Pattern.compile(this.regex);
         return input.stream()
-            .filter(el -> p.matcher(el.text()).find())
+            .filter(el -> this.pattern.matcher(el.text()).find())
             .collect(Concurrent.toUnmodifiableList());
     }
 

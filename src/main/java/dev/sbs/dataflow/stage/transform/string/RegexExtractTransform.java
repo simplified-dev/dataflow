@@ -32,6 +32,8 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
 
     private final int group;
 
+    private final @NotNull Pattern pattern;
+
     /**
      * Constructs a regex-extract stage that returns the entire match.
      *
@@ -39,7 +41,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
      * @return the stage
      */
     public static @NotNull RegexExtractTransform of(@NotNull String regex) {
-        return new RegexExtractTransform(regex, 0);
+        return new RegexExtractTransform(regex, 0, Pattern.compile(regex));
     }
 
     /**
@@ -50,7 +52,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
      * @return the stage
      */
     public static @NotNull RegexExtractTransform of(@NotNull String regex, int group) {
-        return new RegexExtractTransform(regex, group);
+        return new RegexExtractTransform(regex, group, Pattern.compile(regex));
     }
 
     /** {@inheritDoc} */
@@ -66,7 +68,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         if (input == null) return null;
-        Matcher m = Pattern.compile(this.regex).matcher(input);
+        Matcher m = this.pattern.matcher(input);
         if (!m.find()) return null;
         if (this.group < 0 || this.group > m.groupCount()) return null;
         return m.group(this.group);

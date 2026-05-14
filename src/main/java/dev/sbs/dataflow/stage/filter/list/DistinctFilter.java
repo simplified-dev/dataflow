@@ -55,7 +55,10 @@ public final class DistinctFilter<T> implements FilterStage<T> {
     @Override
     public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
-        return Concurrent.newUnmodifiableList(new LinkedHashSet<>(input));
+        LinkedHashSet<T> seen = new LinkedHashSet<>(input);
+        return seen.size() == input.size()
+            ? Concurrent.newUnmodifiableList(input)
+            : Concurrent.newUnmodifiableList(seen);
     }
 
     /** {@inheritDoc} */

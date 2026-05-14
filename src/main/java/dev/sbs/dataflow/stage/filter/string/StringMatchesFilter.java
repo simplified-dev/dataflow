@@ -28,6 +28,8 @@ public final class StringMatchesFilter implements FilterStage<String> {
 
     private final @NotNull String regex;
 
+    private final @NotNull Pattern pattern;
+
     /**
      * Constructs a string-matches filter.
      *
@@ -35,7 +37,7 @@ public final class StringMatchesFilter implements FilterStage<String> {
      * @return the stage
      */
     public static @NotNull StringMatchesFilter of(@NotNull String regex) {
-        return new StringMatchesFilter(regex);
+        return new StringMatchesFilter(regex, Pattern.compile(regex));
     }
 
     /** {@inheritDoc} */
@@ -50,9 +52,8 @@ public final class StringMatchesFilter implements FilterStage<String> {
     @Override
     public @Nullable ConcurrentList<String> execute(@NotNull PipelineContext ctx, @Nullable List<String> input) {
         if (input == null) return null;
-        Pattern p = Pattern.compile(this.regex);
         return input.stream()
-            .filter(s -> s != null && p.matcher(s).find())
+            .filter(s -> s != null && this.pattern.matcher(s).find())
             .collect(Concurrent.toUnmodifiableList());
     }
 

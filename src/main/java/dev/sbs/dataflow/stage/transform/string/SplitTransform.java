@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * {@link TransformStage} that splits a {@link String} on a regex into a list of substrings,
@@ -30,6 +31,8 @@ public final class SplitTransform implements TransformStage<String, List<String>
 
     private final @NotNull String regex;
 
+    private final @NotNull Pattern pattern;
+
     /**
      * Constructs a split stage.
      *
@@ -37,7 +40,7 @@ public final class SplitTransform implements TransformStage<String, List<String>
      * @return the stage
      */
     public static @NotNull SplitTransform of(@NotNull String regex) {
-        return new SplitTransform(regex);
+        return new SplitTransform(regex, Pattern.compile(regex));
     }
 
     /** {@inheritDoc} */
@@ -52,7 +55,7 @@ public final class SplitTransform implements TransformStage<String, List<String>
     @Override
     public @Nullable ConcurrentList<String> execute(@NotNull PipelineContext ctx, @Nullable String input) {
         if (input == null) return null;
-        return Concurrent.newUnmodifiableList(input.split(this.regex));
+        return Concurrent.newUnmodifiableList(this.pattern.split(input));
     }
 
     /** {@inheritDoc} */

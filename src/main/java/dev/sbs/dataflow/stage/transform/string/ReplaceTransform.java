@@ -13,6 +13,8 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.regex.Pattern;
+
 /**
  * {@link TransformStage} that replaces every regex match in the input with a replacement
  * string, equivalent to {@link String#replaceAll(String, String)}.
@@ -26,6 +28,8 @@ public final class ReplaceTransform implements TransformStage<String, String> {
 
     private final @NotNull String replacement;
 
+    private final @NotNull Pattern pattern;
+
     /**
      * Constructs a replace stage.
      *
@@ -34,7 +38,7 @@ public final class ReplaceTransform implements TransformStage<String, String> {
      * @return the stage
      */
     public static @NotNull ReplaceTransform of(@NotNull String regex, @NotNull String replacement) {
-        return new ReplaceTransform(regex, replacement);
+        return new ReplaceTransform(regex, replacement, Pattern.compile(regex));
     }
 
     /** {@inheritDoc} */
@@ -50,7 +54,7 @@ public final class ReplaceTransform implements TransformStage<String, String> {
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
         if (input == null) return null;
-        return input.replaceAll(this.regex, this.replacement);
+        return this.pattern.matcher(input).replaceAll(this.replacement);
     }
 
     /** {@inheritDoc} */
