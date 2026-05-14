@@ -544,6 +544,22 @@ public enum StageKind {
         cfg -> AbsLongTransform.of()
     ),
 
+    TRANSFORM_BASE64_DECODE(
+        "Base64 decode",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_ENCODING,
+        List.of(),
+        cfg -> Base64DecodeTransform.of()
+    ),
+
+    TRANSFORM_BASE64_ENCODE(
+        "Base64 encode",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_ENCODING,
+        List.of(),
+        cfg -> Base64EncodeTransform.of()
+    ),
+
     TRANSFORM_CSS_SELECT(
         "CSS select",
         "DOM_NODE -> List<DOM_NODE>",

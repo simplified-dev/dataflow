@@ -3,6 +3,8 @@ package dev.sbs.dataflow.stage.source;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
@@ -18,6 +20,7 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -75,22 +78,37 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
         return of((DataType) cfg.getDataType("elementType"), cfg.getString("value"));
     }
 
+    private static final @NotNull Set<DataType<?>> SUPPORTED_ELEMENT_TYPES = Set.of(
+        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON, DataTypes.RAW_TEXT,
+        DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.BOOLEAN
+    );
+
     @SuppressWarnings("unchecked")
     private static <T> @NotNull List<T> parseArray(@NotNull DataType<T> elementType, @NotNull String raw) {
+        if (!SUPPORTED_ELEMENT_TYPES.contains(elementType))
+            throw new IllegalArgumentException(
+                "OfListSource does not support elementType " + elementType
+                    + "; wire OfListSource(RAW_*) -> MapTransform(... ParseXxx) instead"
+            );
+
         JsonElement root;
         try {
-            root = JsonParser.parseString(raw);
+            JsonReader reader = new JsonReader(new StringReader(raw));
+            reader.setStrictness(Strictness.STRICT);
+            root = JsonParser.parseReader(reader);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("OfListSource value is not valid JSON: " + raw, e);
         }
+
         if (!root.isJsonArray())
             throw new IllegalArgumentException("OfListSource value must be a JSON array but was: " + raw);
 
         JsonArray array = root.getAsJsonArray();
         List<T> result = new ArrayList<>(array.size());
-        for (JsonElement el : array) {
+
+        for (JsonElement el : array)
             result.add((T) parseElement(elementType, el));
-        }
+
         return result;
     }
 
@@ -103,7 +121,6 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
         if (elementType.equals(DataTypes.BOOLEAN)) return el.getAsBoolean();
         throw new IllegalArgumentException(
             "OfListSource does not support elementType " + elementType
-                + "; wire OfListSource(RAW_*) -> MapTransform(... ParseXxx) instead"
         );
     }
 
