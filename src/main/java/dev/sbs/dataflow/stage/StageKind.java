@@ -138,26 +138,15 @@ import java.util.function.Function;
 public enum StageKind {
 
     /* ---- Source ---- */
-    SOURCE_URL(
-        "URL Source",
-        "() -> RAW_*",
+    SOURCE_EMBED(
+        "Embed pipeline",
+        "() -> O",
         StageCategory.SOURCE,
         List.of(
-            new FieldSpec("url", FieldType.STRING, "URL", "https://example.com/page"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
+            new FieldSpec("embeddedPipelineId", FieldType.STRING, "Saved pipeline id", "wiki_dmg"),
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "INT")
         ),
-        UrlSource::fromConfig
-    ),
-
-    SOURCE_PASTE(
-        "Paste Source",
-        "() -> RAW_*",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("body", FieldType.STRING, "Body", "<inline content>"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
-        ),
-        PasteSource::fromConfig
+        cfg -> EmbedSource.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
     ),
 
     SOURCE_OF(
@@ -182,23 +171,37 @@ public enum StageKind {
         OfListSource::fromConfig
     ),
 
-    /* ---- Filter ---- */
-    FILTER_DOM_TEXT_CONTAINS(
-        "Text contains",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
-        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
-        cfg -> DomTextContainsFilter.of(cfg.getString("needle"))
+    SOURCE_PASTE(
+        "Paste Source",
+        "() -> RAW_*",
+        StageCategory.SOURCE,
+        List.of(
+            new FieldSpec("body", FieldType.STRING, "Body", "<inline content>"),
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
+        ),
+        PasteSource::fromConfig
     ),
 
-    FILTER_DOM_TEXT_MATCHES(
-        "Text matches regex",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
+    SOURCE_URL(
+        "URL Source",
+        "() -> RAW_*",
+        StageCategory.SOURCE,
         List.of(
-            new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")
+            new FieldSpec("url", FieldType.STRING, "URL", "https://example.com/page"),
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
         ),
-        cfg -> DomTextMatchesFilter.of(cfg.getString("regex"))
+        UrlSource::fromConfig
+    ),
+
+    /* ---- Filter ---- */
+    FILTER_DISTINCT(
+        "Distinct",
+        "List<T> -> List<T>",
+        StageCategory.FILTER_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> DistinctFilter.of(cfg.getDataType("elementType"))
     ),
 
     FILTER_DOM_HAS_ATTR(
@@ -228,6 +231,182 @@ public enum StageKind {
         cfg -> DomTagEqualsFilter.of(cfg.getString("tagName"))
     ),
 
+    FILTER_DOM_TEXT_CONTAINS(
+        "Text contains",
+        "List<DOM_NODE> -> List<DOM_NODE>",
+        StageCategory.FILTER_DOM,
+        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
+        cfg -> DomTextContainsFilter.of(cfg.getString("needle"))
+    ),
+
+    FILTER_DOM_TEXT_MATCHES(
+        "Text matches regex",
+        "List<DOM_NODE> -> List<DOM_NODE>",
+        StageCategory.FILTER_DOM,
+        List.of(
+            new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")
+        ),
+        cfg -> DomTextMatchesFilter.of(cfg.getString("regex"))
+    ),
+
+    FILTER_DOUBLE_GREATER_THAN(
+        "Double >",
+        "List<DOUBLE> -> List<DOUBLE>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
+        ),
+        cfg -> DoubleGreaterThanFilter.of(cfg.getDouble("threshold"))
+    ),
+
+    FILTER_DOUBLE_IN_RANGE(
+        "Double in [min, max]",
+        "List<DOUBLE> -> List<DOUBLE>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
+            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
+        ),
+        cfg -> DoubleInRangeFilter.of(cfg.getDouble("min"), cfg.getDouble("max"))
+    ),
+
+    FILTER_DOUBLE_LESS_THAN(
+        "Double <",
+        "List<DOUBLE> -> List<DOUBLE>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
+        ),
+        cfg -> DoubleLessThanFilter.of(cfg.getDouble("threshold"))
+    ),
+
+    FILTER_DROP_WHILE(
+        "DropWhile",
+        "List<T> -> List<T> (body: T -> BOOLEAN)",
+        StageCategory.FILTER_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
+        ),
+        DropWhileFilter::fromConfig
+    ),
+
+    FILTER_INDEX_IN_RANGE(
+        "Index in [from, to)",
+        "List<T> -> List<T>",
+        StageCategory.FILTER_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("fromInclusive", FieldType.INT, "From (inclusive)", "0"),
+            new FieldSpec("toExclusive", FieldType.INT, "To (exclusive)", "10")
+        ),
+        cfg -> IndexInRangeFilter.of(cfg.getDataType("elementType"), cfg.getInt("fromInclusive"), cfg.getInt("toExclusive"))
+    ),
+
+    FILTER_INT_GREATER_THAN(
+        "Int >",
+        "List<INT> -> List<INT>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
+        ),
+        cfg -> IntGreaterThanFilter.of(cfg.getInt("threshold"))
+    ),
+
+    FILTER_INT_IN_RANGE(
+        "Int in [min, max]",
+        "List<INT> -> List<INT>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
+            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
+        ),
+        cfg -> IntInRangeFilter.of(cfg.getInt("min"), cfg.getInt("max"))
+    ),
+
+    FILTER_INT_LESS_THAN(
+        "Int <",
+        "List<INT> -> List<INT>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
+        ),
+        cfg -> IntLessThanFilter.of(cfg.getInt("threshold"))
+    ),
+
+    FILTER_JSON_FIELD_EQUALS(
+        "Field equals",
+        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
+        StageCategory.FILTER_JSON,
+        List.of(
+            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
+            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
+        ),
+        cfg -> JsonFieldEqualsFilter.of(cfg.getString("fieldName"), cfg.getString("expectedValue"))
+    ),
+
+    FILTER_JSON_HAS_FIELD(
+        "Has field",
+        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
+        StageCategory.FILTER_JSON,
+        List.of(
+            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")
+        ),
+        cfg -> JsonHasFieldFilter.of(cfg.getString("fieldName"))
+    ),
+
+    FILTER_LONG_GREATER_THAN(
+        "Long >",
+        "List<LONG> -> List<LONG>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
+        ),
+        cfg -> LongGreaterThanFilter.of(cfg.getLong("threshold"))
+    ),
+
+    FILTER_LONG_IN_RANGE(
+        "Long in [min, max]",
+        "List<LONG> -> List<LONG>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
+            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
+        ),
+        cfg -> LongInRangeFilter.of(cfg.getLong("min"), cfg.getLong("max"))
+    ),
+
+    FILTER_LONG_LESS_THAN(
+        "Long <",
+        "List<LONG> -> List<LONG>",
+        StageCategory.FILTER_NUMERIC,
+        List.of(
+            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
+        ),
+        cfg -> LongLessThanFilter.of(cfg.getLong("threshold"))
+    ),
+
+    FILTER_NOT_NULL(
+        "Not null",
+        "List<T> -> List<T>",
+        StageCategory.FILTER_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> NotNullFilter.of(cfg.getDataType("elementType"))
+    ),
+
+    FILTER_SKIP(
+        "Skip first N",
+        "List<T> -> List<T>",
+        StageCategory.FILTER_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("count", FieldType.INT, "Count", "10")
+        ),
+        cfg -> SkipFilter.of(cfg.getDataType("elementType"), cfg.getInt("count"))
+    ),
+
     FILTER_STRING_CONTAINS(
         "Contains",
         "List<STRING> -> List<STRING>",
@@ -236,26 +415,6 @@ public enum StageKind {
             new FieldSpec("needle", FieldType.STRING, "Contains", "foo")
         ),
         cfg -> StringContainsFilter.of(cfg.getString("needle"))
-    ),
-
-    FILTER_STRING_MATCHES(
-        "Matches regex",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "^foo")
-        ),
-        cfg -> StringMatchesFilter.of(cfg.getString("regex"))
-    ),
-
-    FILTER_STRING_STARTS_WITH(
-        "Starts with",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")
-        ),
-        cfg -> StringStartsWithFilter.of(cfg.getString("prefix"))
     ),
 
     FILTER_STRING_ENDS_WITH(
@@ -278,6 +437,16 @@ public enum StageKind {
         cfg -> StringEqualsFilter.of(cfg.getString("target"))
     ),
 
+    FILTER_STRING_MATCHES(
+        "Matches regex",
+        "List<STRING> -> List<STRING>",
+        StageCategory.FILTER_STRING,
+        List.of(
+            new FieldSpec("regex", FieldType.STRING, "Regex", "^foo")
+        ),
+        cfg -> StringMatchesFilter.of(cfg.getString("regex"))
+    ),
+
     FILTER_STRING_NON_EMPTY(
         "Non-empty",
         "List<STRING> -> List<STRING>",
@@ -286,128 +455,14 @@ public enum StageKind {
         cfg -> StringNonEmptyFilter.of()
     ),
 
-    FILTER_JSON_HAS_FIELD(
-        "Has field",
-        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
-        StageCategory.FILTER_JSON,
+    FILTER_STRING_STARTS_WITH(
+        "Starts with",
+        "List<STRING> -> List<STRING>",
+        StageCategory.FILTER_STRING,
         List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")
+            new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")
         ),
-        cfg -> JsonHasFieldFilter.of(cfg.getString("fieldName"))
-    ),
-
-    FILTER_JSON_FIELD_EQUALS(
-        "Field equals",
-        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
-        StageCategory.FILTER_JSON,
-        List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
-        ),
-        cfg -> JsonFieldEqualsFilter.of(cfg.getString("fieldName"), cfg.getString("expectedValue"))
-    ),
-
-    FILTER_INT_GREATER_THAN(
-        "Int >",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
-        ),
-        cfg -> IntGreaterThanFilter.of(cfg.getInt("threshold"))
-    ),
-
-    FILTER_INT_LESS_THAN(
-        "Int <",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
-        ),
-        cfg -> IntLessThanFilter.of(cfg.getInt("threshold"))
-    ),
-
-    FILTER_INT_IN_RANGE(
-        "Int in [min, max]",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
-        ),
-        cfg -> IntInRangeFilter.of(cfg.getInt("min"), cfg.getInt("max"))
-    ),
-
-    FILTER_LONG_GREATER_THAN(
-        "Long >",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
-        ),
-        cfg -> LongGreaterThanFilter.of(cfg.getLong("threshold"))
-    ),
-
-    FILTER_LONG_LESS_THAN(
-        "Long <",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
-        ),
-        cfg -> LongLessThanFilter.of(cfg.getLong("threshold"))
-    ),
-
-    FILTER_LONG_IN_RANGE(
-        "Long in [min, max]",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
-        ),
-        cfg -> LongInRangeFilter.of(cfg.getLong("min"), cfg.getLong("max"))
-    ),
-
-    FILTER_DOUBLE_GREATER_THAN(
-        "Double >",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
-        ),
-        cfg -> DoubleGreaterThanFilter.of(cfg.getDouble("threshold"))
-    ),
-
-    FILTER_DOUBLE_LESS_THAN(
-        "Double <",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
-        ),
-        cfg -> DoubleLessThanFilter.of(cfg.getDouble("threshold"))
-    ),
-
-    FILTER_DOUBLE_IN_RANGE(
-        "Double in [min, max]",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
-            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
-        ),
-        cfg -> DoubleInRangeFilter.of(cfg.getDouble("min"), cfg.getDouble("max"))
-    ),
-
-    FILTER_NOT_NULL(
-        "Not null",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        cfg -> NotNullFilter.of(cfg.getDataType("elementType"))
+        cfg -> StringStartsWithFilter.of(cfg.getString("prefix"))
     ),
 
     FILTER_TAKE(
@@ -421,39 +476,6 @@ public enum StageKind {
         cfg -> TakeFilter.of(cfg.getDataType("elementType"), cfg.getInt("count"))
     ),
 
-    FILTER_SKIP(
-        "Skip first N",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("count", FieldType.INT, "Count", "10")
-        ),
-        cfg -> SkipFilter.of(cfg.getDataType("elementType"), cfg.getInt("count"))
-    ),
-
-    FILTER_INDEX_IN_RANGE(
-        "Index in [from, to)",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("fromInclusive", FieldType.INT, "From (inclusive)", "0"),
-            new FieldSpec("toExclusive", FieldType.INT, "To (exclusive)", "10")
-        ),
-        cfg -> IndexInRangeFilter.of(cfg.getDataType("elementType"), cfg.getInt("fromInclusive"), cfg.getInt("toExclusive"))
-    ),
-
-    FILTER_DISTINCT(
-        "Distinct",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        cfg -> DistinctFilter.of(cfg.getDataType("elementType"))
-    ),
-
     FILTER_TAKE_WHILE(
         "TakeWhile",
         "List<T> -> List<T> (body: T -> BOOLEAN)",
@@ -465,17 +487,6 @@ public enum StageKind {
         TakeWhileFilter::fromConfig
     ),
 
-    FILTER_DROP_WHILE(
-        "DropWhile",
-        "List<T> -> List<T> (body: T -> BOOLEAN)",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        DropWhileFilter::fromConfig
-    ),
-
     /* ---- Transform ---- */
     PARSE_HTML(
         "Parse HTML",
@@ -483,14 +494,6 @@ public enum StageKind {
         StageCategory.TRANSFORM_DOM,
         List.of(),
         cfg -> ParseHtmlTransform.of()
-    ),
-
-    PARSE_XML(
-        "Parse XML",
-        "RAW_XML -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> ParseXmlTransform.of()
     ),
 
     PARSE_JSON(
@@ -501,6 +504,46 @@ public enum StageKind {
         cfg -> ParseJsonTransform.of()
     ),
 
+    PARSE_XML(
+        "Parse XML",
+        "RAW_XML -> JSON_ELEMENT",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> ParseXmlTransform.of()
+    ),
+
+    TRANSFORM_ABS_DOUBLE(
+        "Abs double",
+        "DOUBLE -> DOUBLE",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> AbsDoubleTransform.of()
+    ),
+
+    TRANSFORM_ABS_FLOAT(
+        "Abs float",
+        "FLOAT -> FLOAT",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> AbsFloatTransform.of()
+    ),
+
+    TRANSFORM_ABS_INT(
+        "Abs int",
+        "INT -> INT",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> AbsIntTransform.of()
+    ),
+
+    TRANSFORM_ABS_LONG(
+        "Abs long",
+        "LONG -> LONG",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> AbsLongTransform.of()
+    ),
+
     TRANSFORM_CSS_SELECT(
         "CSS select",
         "DOM_NODE -> List<DOM_NODE>",
@@ -509,12 +552,184 @@ public enum StageKind {
         cfg -> CssSelectTransform.of(cfg.getString("selector"))
     ),
 
-    TRANSFORM_NODE_TEXT(
-        "Node text",
+    TRANSFORM_DOM_CHILDREN(
+        "DOM children",
+        "DOM_NODE -> List<DOM_NODE>",
+        StageCategory.TRANSFORM_DOM,
+        List.of(),
+        cfg -> DomChildrenTransform.of()
+    ),
+
+    TRANSFORM_DOM_OUTER_HTML(
+        "DOM outerHtml",
         "DOM_NODE -> STRING",
         StageCategory.TRANSFORM_DOM,
         List.of(),
-        cfg -> NodeTextTransform.of()
+        cfg -> DomOuterHtmlTransform.of()
+    ),
+
+    TRANSFORM_DOM_OWN_TEXT(
+        "DOM ownText",
+        "DOM_NODE -> STRING",
+        StageCategory.TRANSFORM_DOM,
+        List.of(),
+        cfg -> DomOwnTextTransform.of()
+    ),
+
+    TRANSFORM_DOM_PARENT(
+        "DOM parent",
+        "DOM_NODE -> DOM_NODE",
+        StageCategory.TRANSFORM_DOM,
+        List.of(),
+        cfg -> DomParentTransform.of()
+    ),
+
+    TRANSFORM_FLATTEN(
+        "Flatten",
+        "List<List<T>> -> List<T>",
+        StageCategory.TRANSFORM_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> FlattenTransform.of(cfg.getDataType("elementType"))
+    ),
+
+    TRANSFORM_FLAT_MAP(
+        "FlatMap sub-pipeline",
+        "List<X> -> List<Y> (body: X -> List<Y>)",
+        StageCategory.TRANSFORM_LIST,
+        List.of(
+            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
+            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "STRING"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body (yields List<Y>)", "")
+        ),
+        FlatMapTransform::fromConfig
+    ),
+
+    TRANSFORM_JSON_AS_BOOLEAN(
+        "JSON as boolean",
+        "JSON_ELEMENT -> BOOLEAN",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonAsBooleanTransform.of()
+    ),
+
+    TRANSFORM_JSON_AS_DOUBLE(
+        "JSON as double",
+        "JSON_ELEMENT -> DOUBLE",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonAsDoubleTransform.of()
+    ),
+
+    TRANSFORM_JSON_AS_INT(
+        "JSON as int",
+        "JSON_ELEMENT -> INT",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonAsIntTransform.of()
+    ),
+
+    TRANSFORM_JSON_AS_LONG(
+        "JSON as long",
+        "JSON_ELEMENT -> LONG",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonAsLongTransform.of()
+    ),
+
+    TRANSFORM_JSON_AS_STRING(
+        "JSON as string",
+        "JSON_ELEMENT -> STRING",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonAsStringTransform.of()
+    ),
+
+    TRANSFORM_JSON_FIELD(
+        "JSON field",
+        "JSON_OBJECT -> JSON_ELEMENT",
+        StageCategory.TRANSFORM_JSON,
+        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "stats")),
+        cfg -> JsonFieldTransform.of(cfg.getString("fieldName"))
+    ),
+
+    TRANSFORM_JSON_PATH(
+        "JSON path",
+        "JSON_ELEMENT -> JSON_ELEMENT",
+        StageCategory.TRANSFORM_JSON,
+        List.of(new FieldSpec("path", FieldType.STRING, "Path", "stats.combat.dmg")),
+        cfg -> JsonPathTransform.of(cfg.getString("path"))
+    ),
+
+    TRANSFORM_JSON_STRINGIFY(
+        "JSON stringify",
+        "JSON_ELEMENT -> STRING",
+        StageCategory.TRANSFORM_JSON,
+        List.of(),
+        cfg -> JsonStringifyTransform.of()
+    ),
+
+    TRANSFORM_LIST_LENGTH(
+        "List length",
+        "List<T> -> INT",
+        StageCategory.TRANSFORM_LIST,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> ListLengthTransform.of(cfg.getDataType("elementType"))
+    ),
+
+    TRANSFORM_LOWERCASE(
+        "Lowercase",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_STRING,
+        List.of(),
+        cfg -> LowerCaseTransform.of()
+    ),
+
+    TRANSFORM_MAP(
+        "Map sub-pipeline",
+        "List<X> -> List<Y>",
+        StageCategory.TRANSFORM_LIST,
+        List.of(
+            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
+            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "INT"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body", "")
+        ),
+        MapTransform::fromConfig
+    ),
+
+    TRANSFORM_NEGATE_DOUBLE(
+        "Negate double",
+        "DOUBLE -> DOUBLE",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> NegateDoubleTransform.of()
+    ),
+
+    TRANSFORM_NEGATE_FLOAT(
+        "Negate float",
+        "FLOAT -> FLOAT",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> NegateFloatTransform.of()
+    ),
+
+    TRANSFORM_NEGATE_INT(
+        "Negate int",
+        "INT -> INT",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> NegateIntTransform.of()
+    ),
+
+    TRANSFORM_NEGATE_LONG(
+        "Negate long",
+        "LONG -> LONG",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> NegateLongTransform.of()
     ),
 
     TRANSFORM_NODE_ATTR(
@@ -523,6 +738,14 @@ public enum StageKind {
         StageCategory.TRANSFORM_DOM,
         List.of(new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "href")),
         cfg -> NodeAttrTransform.of(cfg.getString("attributeName"))
+    ),
+
+    TRANSFORM_NODE_TEXT(
+        "Node text",
+        "DOM_NODE -> STRING",
+        StageCategory.TRANSFORM_DOM,
+        List.of(),
+        cfg -> NodeTextTransform.of()
     ),
 
     TRANSFORM_NTH_CHILD(
@@ -536,31 +759,28 @@ public enum StageKind {
         cfg -> NthChildTransform.of(cfg.getString("childSelector"), cfg.getInt("index"))
     ),
 
-    TRANSFORM_JSON_PATH(
-        "JSON path",
-        "JSON_ELEMENT -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(new FieldSpec("path", FieldType.STRING, "Path", "stats.combat.dmg")),
-        cfg -> JsonPathTransform.of(cfg.getString("path"))
+    TRANSFORM_PARSE_BOOLEAN(
+        "Parse boolean",
+        "STRING -> BOOLEAN",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> ParseBooleanTransform.of()
     ),
 
-    TRANSFORM_JSON_FIELD(
-        "JSON field",
-        "JSON_OBJECT -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "stats")),
-        cfg -> JsonFieldTransform.of(cfg.getString("fieldName"))
+    TRANSFORM_PARSE_DOUBLE(
+        "Parse double",
+        "STRING -> DOUBLE",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> ParseDoubleTransform.of()
     ),
 
-    TRANSFORM_REGEX_EXTRACT(
-        "Regex extract",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "\\d+"),
-            new FieldSpec("group", FieldType.INT, "Capture group", "0")
-        ),
-        cfg -> RegexExtractTransform.of(cfg.getString("regex"), cfg.getInt("group"))
+    TRANSFORM_PARSE_FLOAT(
+        "Parse float",
+        "STRING -> FLOAT",
+        StageCategory.TRANSFORM_PRIMITIVE,
+        List.of(),
+        cfg -> ParseFloatTransform.of()
     ),
 
     TRANSFORM_PARSE_INT(
@@ -579,115 +799,15 @@ public enum StageKind {
         cfg -> ParseLongTransform.of()
     ),
 
-    TRANSFORM_PARSE_FLOAT(
-        "Parse float",
-        "STRING -> FLOAT",
+    TRANSFORM_PEEK(
+        "Peek (log)",
+        "T -> T",
         StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseFloatTransform.of()
-    ),
-
-    TRANSFORM_PARSE_DOUBLE(
-        "Parse double",
-        "STRING -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseDoubleTransform.of()
-    ),
-
-    TRANSFORM_PARSE_BOOLEAN(
-        "Parse boolean",
-        "STRING -> BOOLEAN",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseBooleanTransform.of()
-    ),
-
-    TRANSFORM_TRIM(
-        "Trim",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> TrimTransform.of()
-    ),
-
-    TRANSFORM_REPLACE(
-        "Replace regex",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
         List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "\\s+"),
-            new FieldSpec("replacement", FieldType.STRING, "Replacement", "_")
+            new FieldSpec("valueType", FieldType.DATA_TYPE, "Value type", "STRING"),
+            new FieldSpec("label", FieldType.STRING, "Label", "stage")
         ),
-        cfg -> ReplaceTransform.of(cfg.getString("regex"), cfg.getString("replacement"))
-    ),
-
-    TRANSFORM_SPLIT(
-        "Split on regex",
-        "STRING -> List<STRING>",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", ",")
-        ),
-        cfg -> SplitTransform.of(cfg.getString("regex"))
-    ),
-
-    TRANSFORM_MAP(
-        "Map sub-pipeline",
-        "List<X> -> List<Y>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
-            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "INT"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body", "")
-        ),
-        MapTransform::fromConfig
-    ),
-
-    TRANSFORM_FLAT_MAP(
-        "FlatMap sub-pipeline",
-        "List<X> -> List<Y> (body: X -> List<Y>)",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
-            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body (yields List<Y>)", "")
-        ),
-        FlatMapTransform::fromConfig
-    ),
-
-    TRANSFORM_FLATTEN(
-        "Flatten",
-        "List<List<T>> -> List<T>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        cfg -> FlattenTransform.of(cfg.getDataType("elementType"))
-    ),
-
-    TRANSFORM_LOWERCASE(
-        "Lowercase",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> LowerCaseTransform.of()
-    ),
-
-    TRANSFORM_UPPERCASE(
-        "Uppercase",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> UpperCaseTransform.of()
-    ),
-
-    TRANSFORM_STRING_LENGTH(
-        "String length",
-        "STRING -> INT",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> StringLengthTransform.of()
+        cfg -> PeekTransform.of(cfg.getDataType("valueType"), cfg.getString("label"))
     ),
 
     TRANSFORM_PREFIX(
@@ -700,24 +820,26 @@ public enum StageKind {
         cfg -> PrefixTransform.of(cfg.getString("prefix"))
     ),
 
-    TRANSFORM_SUFFIX(
-        "Suffix",
+    TRANSFORM_REGEX_EXTRACT(
+        "Regex extract",
         "STRING -> STRING",
         StageCategory.TRANSFORM_STRING,
         List.of(
-            new FieldSpec("suffix", FieldType.STRING, "Suffix", "<<<")
+            new FieldSpec("regex", FieldType.STRING, "Regex", "\\d+"),
+            new FieldSpec("group", FieldType.INT, "Capture group", "0")
         ),
-        cfg -> SuffixTransform.of(cfg.getString("suffix"))
+        cfg -> RegexExtractTransform.of(cfg.getString("regex"), cfg.getInt("group"))
     ),
 
-    TRANSFORM_LIST_LENGTH(
-        "List length",
-        "List<T> -> INT",
-        StageCategory.TRANSFORM_LIST,
+    TRANSFORM_REPLACE(
+        "Replace regex",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_STRING,
         List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+            new FieldSpec("regex", FieldType.STRING, "Regex", "\\s+"),
+            new FieldSpec("replacement", FieldType.STRING, "Replacement", "_")
         ),
-        cfg -> ListLengthTransform.of(cfg.getDataType("elementType"))
+        cfg -> ReplaceTransform.of(cfg.getString("regex"), cfg.getString("replacement"))
     ),
 
     TRANSFORM_REVERSE(
@@ -754,79 +876,32 @@ public enum StageKind {
         SortByTransform::fromConfig
     ),
 
-    TRANSFORM_PEEK(
-        "Peek (log)",
-        "T -> T",
-        StageCategory.TRANSFORM_PRIMITIVE,
+    TRANSFORM_SPLIT(
+        "Split on regex",
+        "STRING -> List<STRING>",
+        StageCategory.TRANSFORM_STRING,
         List.of(
-            new FieldSpec("valueType", FieldType.DATA_TYPE, "Value type", "STRING"),
-            new FieldSpec("label", FieldType.STRING, "Label", "stage")
+            new FieldSpec("regex", FieldType.STRING, "Regex", ",")
         ),
-        cfg -> PeekTransform.of(cfg.getDataType("valueType"), cfg.getString("label"))
+        cfg -> SplitTransform.of(cfg.getString("regex"))
     ),
 
-    TRANSFORM_ABS_INT(
-        "Abs int",
-        "INT -> INT",
-        StageCategory.TRANSFORM_PRIMITIVE,
+    TRANSFORM_STRING_LENGTH(
+        "String length",
+        "STRING -> INT",
+        StageCategory.TRANSFORM_STRING,
         List.of(),
-        cfg -> AbsIntTransform.of()
+        cfg -> StringLengthTransform.of()
     ),
 
-    TRANSFORM_ABS_LONG(
-        "Abs long",
-        "LONG -> LONG",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsLongTransform.of()
-    ),
-
-    TRANSFORM_ABS_FLOAT(
-        "Abs float",
-        "FLOAT -> FLOAT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsFloatTransform.of()
-    ),
-
-    TRANSFORM_ABS_DOUBLE(
-        "Abs double",
-        "DOUBLE -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsDoubleTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_INT(
-        "Negate int",
-        "INT -> INT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateIntTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_LONG(
-        "Negate long",
-        "LONG -> LONG",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateLongTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_FLOAT(
-        "Negate float",
-        "FLOAT -> FLOAT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateFloatTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_DOUBLE(
-        "Negate double",
-        "DOUBLE -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateDoubleTransform.of()
+    TRANSFORM_SUFFIX(
+        "Suffix",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_STRING,
+        List.of(
+            new FieldSpec("suffix", FieldType.STRING, "Suffix", "<<<")
+        ),
+        cfg -> SuffixTransform.of(cfg.getString("suffix"))
     ),
 
     TRANSFORM_TO_STRING(
@@ -839,108 +914,20 @@ public enum StageKind {
         cfg -> ToStringTransform.of(cfg.getDataType("inputType"))
     ),
 
-    TRANSFORM_DOM_CHILDREN(
-        "DOM children",
-        "DOM_NODE -> List<DOM_NODE>",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomChildrenTransform.of()
-    ),
-
-    TRANSFORM_DOM_PARENT(
-        "DOM parent",
-        "DOM_NODE -> DOM_NODE",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomParentTransform.of()
-    ),
-
-    TRANSFORM_DOM_OUTER_HTML(
-        "DOM outerHtml",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomOuterHtmlTransform.of()
-    ),
-
-    TRANSFORM_DOM_OWN_TEXT(
-        "DOM ownText",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomOwnTextTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_STRING(
-        "JSON as string",
-        "JSON_ELEMENT -> STRING",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsStringTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_INT(
-        "JSON as int",
-        "JSON_ELEMENT -> INT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsIntTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_LONG(
-        "JSON as long",
-        "JSON_ELEMENT -> LONG",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsLongTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_DOUBLE(
-        "JSON as double",
-        "JSON_ELEMENT -> DOUBLE",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsDoubleTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_BOOLEAN(
-        "JSON as boolean",
-        "JSON_ELEMENT -> BOOLEAN",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsBooleanTransform.of()
-    ),
-
-    TRANSFORM_JSON_STRINGIFY(
-        "JSON stringify",
-        "JSON_ELEMENT -> STRING",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonStringifyTransform.of()
-    ),
-
-    TRANSFORM_BASE64_ENCODE(
-        "Base64 encode",
+    TRANSFORM_TRIM(
+        "Trim",
         "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
+        StageCategory.TRANSFORM_STRING,
         List.of(),
-        cfg -> Base64EncodeTransform.of()
+        cfg -> TrimTransform.of()
     ),
 
-    TRANSFORM_BASE64_DECODE(
-        "Base64 decode",
+    TRANSFORM_UPPERCASE(
+        "Uppercase",
         "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
+        StageCategory.TRANSFORM_STRING,
         List.of(),
-        cfg -> Base64DecodeTransform.of()
-    ),
-
-    TRANSFORM_URL_ENCODE(
-        "URL encode",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
-        List.of(),
-        cfg -> UrlEncodeTransform.of()
+        cfg -> UpperCaseTransform.of()
     ),
 
     TRANSFORM_URL_DECODE(
@@ -951,21 +938,194 @@ public enum StageKind {
         cfg -> UrlDecodeTransform.of()
     ),
 
+    TRANSFORM_URL_ENCODE(
+        "URL encode",
+        "STRING -> STRING",
+        StageCategory.TRANSFORM_ENCODING,
+        List.of(),
+        cfg -> UrlEncodeTransform.of()
+    ),
+
     /* ---- Predicate ---- */
+    PREDICATE_AND(
+        "And",
+        "T -> BOOLEAN (AND over N predicate bodies)",
+        StageCategory.PREDICATE_COMMON,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
+        ),
+        AndPredicate::fromConfig
+    ),
+
+    PREDICATE_DOM_HAS_ATTR(
+        "Has attribute",
+        "DOM_NODE -> BOOLEAN",
+        StageCategory.PREDICATE_DOM,
+        List.of(
+            new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "class"),
+            new FieldSpec("expectedValue", FieldType.STRING, "Expected value (optional)", "primary")
+        ),
+        DomHasAttrPredicate::fromConfig
+    ),
+
+    PREDICATE_DOM_TAG_EQUALS(
+        "Tag equals",
+        "DOM_NODE -> BOOLEAN",
+        StageCategory.PREDICATE_DOM,
+        List.of(new FieldSpec("tagName", FieldType.STRING, "Tag", "a")),
+        DomTagEqualsPredicate::fromConfig
+    ),
+
+    PREDICATE_DOM_TEXT_CONTAINS(
+        "Text contains",
+        "DOM_NODE -> BOOLEAN",
+        StageCategory.PREDICATE_DOM,
+        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
+        DomTextContainsPredicate::fromConfig
+    ),
+
+    PREDICATE_DOM_TEXT_MATCHES(
+        "Text matches regex",
+        "DOM_NODE -> BOOLEAN",
+        StageCategory.PREDICATE_DOM,
+        List.of(new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")),
+        DomTextMatchesPredicate::fromConfig
+    ),
+
+    PREDICATE_DOUBLE_GREATER_THAN(
+        "Double >",
+        "DOUBLE -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
+        DoubleGreaterThanPredicate::fromConfig
+    ),
+
+    PREDICATE_DOUBLE_IN_RANGE(
+        "Double in [min, max]",
+        "DOUBLE -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
+            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
+        ),
+        DoubleInRangePredicate::fromConfig
+    ),
+
+    PREDICATE_DOUBLE_LESS_THAN(
+        "Double <",
+        "DOUBLE -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
+        DoubleLessThanPredicate::fromConfig
+    ),
+
+    PREDICATE_INT_GREATER_THAN(
+        "Int >",
+        "INT -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
+        IntGreaterThanPredicate::fromConfig
+    ),
+
+    PREDICATE_INT_IN_RANGE(
+        "Int in [min, max]",
+        "INT -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
+            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
+        ),
+        IntInRangePredicate::fromConfig
+    ),
+
+    PREDICATE_INT_LESS_THAN(
+        "Int <",
+        "INT -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
+        IntLessThanPredicate::fromConfig
+    ),
+
+    PREDICATE_JSON_FIELD_EQUALS(
+        "Field equals",
+        "JSON_OBJECT -> BOOLEAN",
+        StageCategory.PREDICATE_JSON,
+        List.of(
+            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
+            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
+        ),
+        JsonFieldEqualsPredicate::fromConfig
+    ),
+
+    PREDICATE_JSON_HAS_FIELD(
+        "Has field",
+        "JSON_OBJECT -> BOOLEAN",
+        StageCategory.PREDICATE_JSON,
+        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")),
+        JsonHasFieldPredicate::fromConfig
+    ),
+
+    PREDICATE_LONG_GREATER_THAN(
+        "Long >",
+        "LONG -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
+        LongGreaterThanPredicate::fromConfig
+    ),
+
+    PREDICATE_LONG_IN_RANGE(
+        "Long in [min, max]",
+        "LONG -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(
+            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
+            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
+        ),
+        LongInRangePredicate::fromConfig
+    ),
+
+    PREDICATE_LONG_LESS_THAN(
+        "Long <",
+        "LONG -> BOOLEAN",
+        StageCategory.PREDICATE_NUMERIC,
+        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
+        LongLessThanPredicate::fromConfig
+    ),
+
+    PREDICATE_NOT(
+        "Not",
+        "BOOLEAN -> BOOLEAN",
+        StageCategory.PREDICATE_COMMON,
+        List.of(),
+        cfg -> NotPredicate.of()
+    ),
+
+    PREDICATE_NOT_NULL(
+        "Not null",
+        "T -> BOOLEAN",
+        StageCategory.PREDICATE_COMMON,
+        List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")),
+        NotNullPredicate::fromConfig
+    ),
+
+    PREDICATE_OR(
+        "Or",
+        "T -> BOOLEAN (OR over N predicate bodies)",
+        StageCategory.PREDICATE_COMMON,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
+        ),
+        OrPredicate::fromConfig
+    ),
+
     PREDICATE_STRING_CONTAINS(
         "Contains",
         "STRING -> BOOLEAN",
         StageCategory.PREDICATE_STRING,
         List.of(new FieldSpec("needle", FieldType.STRING, "Contains", "foo")),
         StringContainsPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_STARTS_WITH(
-        "Starts with",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")),
-        StringStartsWithPredicate::fromConfig
     ),
 
     PREDICATE_STRING_ENDS_WITH(
@@ -1000,186 +1160,98 @@ public enum StageKind {
         cfg -> StringNonEmptyPredicate.of()
     ),
 
-    PREDICATE_INT_GREATER_THAN(
-        "Int >",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
-        IntGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_INT_LESS_THAN(
-        "Int <",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
-        IntLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_INT_IN_RANGE(
-        "Int in [min, max]",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
-        ),
-        IntInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_GREATER_THAN(
-        "Long >",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
-        LongGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_LESS_THAN(
-        "Long <",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
-        LongLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_IN_RANGE(
-        "Long in [min, max]",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
-        ),
-        LongInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_GREATER_THAN(
-        "Double >",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
-        DoubleGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_LESS_THAN(
-        "Double <",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
-        DoubleLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_IN_RANGE(
-        "Double in [min, max]",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
-            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
-        ),
-        DoubleInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TEXT_CONTAINS(
-        "Text contains",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
-        DomTextContainsPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TEXT_MATCHES(
-        "Text matches regex",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")),
-        DomTextMatchesPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_HAS_ATTR(
-        "Has attribute",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(
-            new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "class"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Expected value (optional)", "primary")
-        ),
-        DomHasAttrPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TAG_EQUALS(
-        "Tag equals",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("tagName", FieldType.STRING, "Tag", "a")),
-        DomTagEqualsPredicate::fromConfig
-    ),
-
-    PREDICATE_JSON_HAS_FIELD(
-        "Has field",
-        "JSON_OBJECT -> BOOLEAN",
-        StageCategory.PREDICATE_JSON,
-        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")),
-        JsonHasFieldPredicate::fromConfig
-    ),
-
-    PREDICATE_JSON_FIELD_EQUALS(
-        "Field equals",
-        "JSON_OBJECT -> BOOLEAN",
-        StageCategory.PREDICATE_JSON,
-        List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
-        ),
-        JsonFieldEqualsPredicate::fromConfig
-    ),
-
-    PREDICATE_NOT_NULL(
-        "Not null",
-        "T -> BOOLEAN",
-        StageCategory.PREDICATE_COMMON,
-        List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")),
-        NotNullPredicate::fromConfig
-    ),
-
-    PREDICATE_NOT(
-        "Not",
-        "BOOLEAN -> BOOLEAN",
-        StageCategory.PREDICATE_COMMON,
-        List.of(),
-        cfg -> NotPredicate.of()
-    ),
-
-    PREDICATE_AND(
-        "And",
-        "T -> BOOLEAN (AND over N predicate bodies)",
-        StageCategory.PREDICATE_COMMON,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
-        ),
-        AndPredicate::fromConfig
-    ),
-
-    PREDICATE_OR(
-        "Or",
-        "T -> BOOLEAN (OR over N predicate bodies)",
-        StageCategory.PREDICATE_COMMON,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
-        ),
-        OrPredicate::fromConfig
+    PREDICATE_STRING_STARTS_WITH(
+        "Starts with",
+        "STRING -> BOOLEAN",
+        StageCategory.PREDICATE_STRING,
+        List.of(new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")),
+        StringStartsWithPredicate::fromConfig
     ),
 
     /* ---- Collect ---- */
+    COLLECT_ALL_MATCH(
+        "AllMatch",
+        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
+        StageCategory.TERMINAL_MATCH,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
+        ),
+        AllMatchCollect::fromConfig
+    ),
+
+    COLLECT_ANY_MATCH(
+        "AnyMatch",
+        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
+        StageCategory.TERMINAL_MATCH,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
+        ),
+        AnyMatchCollect::fromConfig
+    ),
+
+    COLLECT_AVERAGE_DOUBLE(
+        "Average DOUBLE",
+        "List<DOUBLE> -> DOUBLE",
+        StageCategory.TERMINAL_AVERAGE,
+        List.of(),
+        cfg -> AverageDoubleCollect.of()
+    ),
+
+    COLLECT_AVERAGE_INT(
+        "Average INT",
+        "List<INT> -> DOUBLE",
+        StageCategory.TERMINAL_AVERAGE,
+        List.of(),
+        cfg -> AverageIntCollect.of()
+    ),
+
+    COLLECT_AVERAGE_LONG(
+        "Average LONG",
+        "List<LONG> -> DOUBLE",
+        StageCategory.TERMINAL_AVERAGE,
+        List.of(),
+        cfg -> AverageLongCollect.of()
+    ),
+
+    COLLECT_COUNT(
+        "Count",
+        "List<T> -> INT",
+        StageCategory.TERMINAL_SUM,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> CountCollect.of(cfg.getDataType("elementType"))
+    ),
+
+    COLLECT_FIND_FIRST(
+        "FindFirst (predicate)",
+        "List<T> -> T (body: T -> BOOLEAN)",
+        StageCategory.TERMINAL_MATCH,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
+        ),
+        FindFirstCollect::fromConfig
+    ),
+
     COLLECT_FIRST(
         "First",
         "List<T> -> T",
         StageCategory.TERMINAL_COLLECT,
         List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "DOM_NODE")),
         cfg -> FirstCollect.of(cfg.getDataType("elementType"))
+    ),
+
+    COLLECT_JOIN(
+        "Join",
+        "List<STRING> -> STRING",
+        StageCategory.TERMINAL_COLLECT,
+        List.of(
+            new FieldSpec("separator", FieldType.STRING, "Separator", ", ")
+        ),
+        cfg -> JoinCollect.of(cfg.getString("separator"))
     ),
 
     COLLECT_LAST(
@@ -1202,34 +1274,26 @@ public enum StageKind {
         cfg -> ListCollect.of(cfg.getDataType("elementType"))
     ),
 
-    COLLECT_SET(
-        "Set",
-        "List<T> -> Set<T>",
-        StageCategory.TERMINAL_COLLECT,
+    COLLECT_MAX(
+        "Max",
+        "List<T> -> T",
+        StageCategory.TERMINAL_MINMAX,
         List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT")
         ),
-        cfg -> SetCollect.of(cfg.getDataType("elementType"))
+        MaxCollect::fromConfig
     ),
 
-    COLLECT_JOIN(
-        "Join",
-        "List<STRING> -> STRING",
-        StageCategory.TERMINAL_COLLECT,
+    COLLECT_MAX_BY(
+        "MaxBy (key)",
+        "List<T> -> T (body: T -> K)",
+        StageCategory.TERMINAL_MINMAX,
         List.of(
-            new FieldSpec("separator", FieldType.STRING, "Separator", ", ")
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
+            new FieldSpec("keyType", FieldType.DATA_TYPE, "Key type", "INT"),
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Key extractor body", "")
         ),
-        cfg -> JoinCollect.of(cfg.getString("separator"))
-    ),
-
-    COLLECT_COUNT(
-        "Count",
-        "List<T> -> INT",
-        StageCategory.TERMINAL_SUM,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        cfg -> CountCollect.of(cfg.getDataType("elementType"))
+        MaxByCollect::fromConfig
     ),
 
     COLLECT_MIN(
@@ -1240,16 +1304,6 @@ public enum StageKind {
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT")
         ),
         MinCollect::fromConfig
-    ),
-
-    COLLECT_MAX(
-        "Max",
-        "List<T> -> T",
-        StageCategory.TERMINAL_MINMAX,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT")
-        ),
-        MaxCollect::fromConfig
     ),
 
     COLLECT_MIN_BY(
@@ -1264,16 +1318,33 @@ public enum StageKind {
         MinByCollect::fromConfig
     ),
 
-    COLLECT_MAX_BY(
-        "MaxBy (key)",
-        "List<T> -> T (body: T -> K)",
-        StageCategory.TERMINAL_MINMAX,
+    COLLECT_NONE_MATCH(
+        "NoneMatch",
+        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
+        StageCategory.TERMINAL_MATCH,
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("keyType", FieldType.DATA_TYPE, "Key type", "INT"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Key extractor body", "")
+            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
         ),
-        MaxByCollect::fromConfig
+        NoneMatchCollect::fromConfig
+    ),
+
+    COLLECT_SET(
+        "Set",
+        "List<T> -> Set<T>",
+        StageCategory.TERMINAL_COLLECT,
+        List.of(
+            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
+        ),
+        cfg -> SetCollect.of(cfg.getDataType("elementType"))
+    ),
+
+    COLLECT_SUM_DOUBLE(
+        "Sum DOUBLE",
+        "List<DOUBLE> -> DOUBLE",
+        StageCategory.TERMINAL_SUM,
+        List.of(),
+        cfg -> SumDoubleCollect.of()
     ),
 
     COLLECT_SUM_INT(
@@ -1292,82 +1363,6 @@ public enum StageKind {
         cfg -> SumLongCollect.of()
     ),
 
-    COLLECT_SUM_DOUBLE(
-        "Sum DOUBLE",
-        "List<DOUBLE> -> DOUBLE",
-        StageCategory.TERMINAL_SUM,
-        List.of(),
-        cfg -> SumDoubleCollect.of()
-    ),
-
-    COLLECT_AVERAGE_INT(
-        "Average INT",
-        "List<INT> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageIntCollect.of()
-    ),
-
-    COLLECT_AVERAGE_LONG(
-        "Average LONG",
-        "List<LONG> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageLongCollect.of()
-    ),
-
-    COLLECT_AVERAGE_DOUBLE(
-        "Average DOUBLE",
-        "List<DOUBLE> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageDoubleCollect.of()
-    ),
-
-    COLLECT_FIND_FIRST(
-        "FindFirst (predicate)",
-        "List<T> -> T (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        FindFirstCollect::fromConfig
-    ),
-
-    COLLECT_ANY_MATCH(
-        "AnyMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        AnyMatchCollect::fromConfig
-    ),
-
-    COLLECT_ALL_MATCH(
-        "AllMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        AllMatchCollect::fromConfig
-    ),
-
-    COLLECT_NONE_MATCH(
-        "NoneMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        NoneMatchCollect::fromConfig
-    ),
-
     /* ---- Compound ---- */
     BRANCH(
         "Branch",
@@ -1378,17 +1373,6 @@ public enum StageKind {
             new FieldSpec("outputs", FieldType.SUB_PIPELINES_MAP, "Outputs", "")
         ),
         Branch::fromConfig
-    ),
-
-    SOURCE_EMBED(
-        "Embed pipeline",
-        "() -> O",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("embeddedPipelineId", FieldType.STRING, "Saved pipeline id", "wiki_dmg"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "INT")
-        ),
-        cfg -> EmbedSource.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
     );
 
     /** Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone. */
