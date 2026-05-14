@@ -3,10 +3,10 @@ package dev.sbs.dataflow.stage.source;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.source.UrlFetcher;
 import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.client.fetch.UrlFetcher;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.UncheckedIOException;
 import java.net.URI;
 
 /**
@@ -87,14 +86,7 @@ public final class UrlSource implements SourceStage<String> {
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Void input) {
-        try {
-            return UrlFetcher.of(ctx.http()).fetch(URI.create(this.url)).body();
-        } catch (java.io.IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Fetch interrupted", e);
-        }
+        return ctx.fetcher().get(URI.create(this.url)).getBody();
     }
 
     /** {@inheritDoc} */

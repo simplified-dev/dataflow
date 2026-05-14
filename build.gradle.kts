@@ -33,6 +33,7 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
+    api("com.github.simplified-dev:client:master-SNAPSHOT")
     api("com.github.simplified-dev:collections:master-SNAPSHOT")
     api("com.github.simplified-dev:gson-extras:master-SNAPSHOT")
 

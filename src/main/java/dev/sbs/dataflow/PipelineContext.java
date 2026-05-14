@@ -1,6 +1,9 @@
 package dev.sbs.dataflow;
 
-import dev.sbs.dataflow.stage.PipelineEmbedStage;
+import com.google.gson.Gson;
+import dev.sbs.dataflow.stage.source.PipelineEmbed;
+import dev.simplified.client.fetch.UrlFetcher;
+import dev.simplified.client.fetch.UrlFetcherConfig;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.ConcurrentSet;
@@ -12,17 +15,13 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
-
 /**
  * Per-execution state and dependencies threaded through a {@link DataPipeline}.
  * <p>
- * Discord-agnostic by design: holds an {@link HttpClient}, a {@link Logger}, a
+ * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link Logger}, a
  * {@link DataPipelineResolver}, and an opaque key/value bag that the host application can
  * use to attach whatever extra context it needs without invading the pipeline core. The
- * mutable {@code activeIds} set guards against {@link PipelineEmbedStage}
- * cycles.
+ * mutable {@code activeIds} set guards against {@link PipelineEmbed} cycles.
  */
 @Getter
 @Accessors(fluent = true)
@@ -30,12 +29,11 @@ import java.time.Duration;
 public final class PipelineContext {
 
     private static final @NotNull Logger DEFAULT_LOG = LoggerFactory.getLogger(PipelineContext.class);
-    private static final @NotNull HttpClient DEFAULT_HTTP = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .followRedirects(HttpClient.Redirect.NORMAL)
-        .build();
+    private static final @NotNull UrlFetcher DEFAULT_FETCHER = UrlFetcher.create(
+        UrlFetcherConfig.builder(new Gson()).build()
+    );
 
-    private final @NotNull HttpClient http;
+    private final @NotNull UrlFetcher fetcher;
     private final @NotNull Logger log;
     private final @NotNull DataPipelineResolver resolver;
     private final @NotNull ConcurrentMap<String, Object> bag;
@@ -44,7 +42,7 @@ public final class PipelineContext {
     /**
      * Convenience factory for tests and ad-hoc usage where no real resolver or bag is needed.
      *
-     * @return a context with a default HTTP client, default logger, NOOP resolver, and empty bag
+     * @return a context with a default fetcher, default logger, NOOP resolver, and empty bag
      */
     public static @NotNull PipelineContext empty() {
         return builder().build();
@@ -86,15 +84,15 @@ public final class PipelineContext {
      */
     public static final class Builder {
 
-        private @NotNull HttpClient http = DEFAULT_HTTP;
+        private @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
         private @NotNull Logger log = DEFAULT_LOG;
         private @NotNull DataPipelineResolver resolver = DataPipelineResolver.NOOP;
         private final @NotNull ConcurrentMap<String, Object> bag = Concurrent.newMap();
 
         private Builder() {}
 
-        public @NotNull Builder withHttpClient(@NotNull HttpClient http) {
-            this.http = http;
+        public @NotNull Builder withFetcher(@NotNull UrlFetcher fetcher) {
+            this.fetcher = fetcher;
             return this;
         }
 
@@ -114,7 +112,7 @@ public final class PipelineContext {
         }
 
         public @NotNull PipelineContext build() {
-            return new PipelineContext(this.http, this.log, this.resolver, this.bag, Concurrent.newSet());
+            return new PipelineContext(this.fetcher, this.log, this.resolver, this.bag, Concurrent.newSet());
         }
 
     }

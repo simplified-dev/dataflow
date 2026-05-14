@@ -78,7 +78,7 @@ DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `RAW_TEXT`, `STRING`, `INT
 
 | Kind                       | Input | Output                 | Notes                              |
 |----------------------------|-------|------------------------|------------------------------------|
-| `SOURCE_URL`               | NONE  | `RAW_*`                | jdk `HttpClient`, body cap 5 MiB   |
+| `SOURCE_URL`               | NONE  | `RAW_*`                | shared `UrlFetcher`, body cap 5 MiB |
 | `SOURCE_PASTE`             | NONE  | `RAW_*`                | inline body string                 |
 | `PIPELINE_EMBED`           | NONE  | declared at construction| resolves saved pipeline by id     |
 
