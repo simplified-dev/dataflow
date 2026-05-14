@@ -12,14 +12,23 @@ public enum StageCategory {
     /** Source stages that produce a value with no upstream input. */
     SOURCE,
 
-    /** Stages that run a saved pipeline as a single step. */
-    EMBED,
-
     /** Terminal stages that fan an input into named sub-pipelines. */
     BRANCH,
 
-    /** List-reducing terminal stages (first / last / list / set / join). */
-    COLLECT,
+    /** Structural-reduction terminals (first / last / list / set / join). */
+    TERMINAL_COLLECT,
+
+    /** Numeric-summation terminals (count, sum-int / sum-long / sum-double). */
+    TERMINAL_SUM,
+
+    /** Arithmetic-mean terminals (average-int / average-long / average-double). */
+    TERMINAL_AVERAGE,
+
+    /** Ordering-based selection terminals (min, max, min-by, max-by). */
+    TERMINAL_MINMAX,
+
+    /** Predicate-based short-circuit terminals (any-match, all-match, none-match, find-first). */
+    TERMINAL_MATCH,
 
     /** String-valued list filters (contains, matches, starts-with, ends-with, equals, non-empty). */
     FILTER_STRING,
@@ -53,5 +62,20 @@ public enum StageCategory {
 
     /** Encoding transforms (base64, url-encode/decode). */
     TRANSFORM_ENCODING,
+
+    /** String-valued single-element predicates (contains, starts/ends-with, equals, matches, non-empty). */
+    PREDICATE_STRING,
+
+    /** Numeric single-element predicates (greater-than, less-than, in-range for int / long / double). */
+    PREDICATE_NUMERIC,
+
+    /** DOM single-element predicates (text-contains, text-matches, has-attr, tag-equals). */
+    PREDICATE_DOM,
+
+    /** JSON single-element predicates (has-field, field-equals). */
+    PREDICATE_JSON,
+
+    /** Type-agnostic single-element predicates (not-null, not, and, or). */
+    PREDICATE_COMMON,
 
 }

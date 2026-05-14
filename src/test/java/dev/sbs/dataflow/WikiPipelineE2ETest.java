@@ -1,6 +1,6 @@
 package dev.sbs.dataflow;
 
-import dev.sbs.dataflow.stage.collect.FirstCollect;
+import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;

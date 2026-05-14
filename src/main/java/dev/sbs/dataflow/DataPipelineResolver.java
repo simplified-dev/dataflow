@@ -1,15 +1,15 @@
 package dev.sbs.dataflow;
 
-import dev.sbs.dataflow.stage.PipelineEmbedStage;
+import dev.sbs.dataflow.stage.source.PipelineEmbed;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 /**
- * Bridge that lets {@link PipelineEmbedStage} look up another saved
- * {@link DataPipeline} at execute-time without the {@code dataflow} module knowing about
- * persistence, authorisation, or any specific storage layer.
+ * Bridge that lets {@link PipelineEmbed} look up another saved {@link DataPipeline} at
+ * execute-time without the {@code dataflow} module knowing about persistence,
+ * authorisation, or any specific storage layer.
  * <p>
  * The host application supplies an implementation - typically wrapping a database repository
  * with its own visibility/permission rules - and registers it on {@link PipelineContext}.

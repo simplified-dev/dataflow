@@ -23,12 +23,20 @@ class DataPipelineTest {
     }
 
     @Test
-    @DisplayName("Empty pipeline cannot execute")
-    void emptyPipelineRejectsExecute() {
+    @DisplayName("Empty pipeline returns null on execute - the stage loop simply iterates zero stages")
+    void emptyPipelineExecutesToNull() {
+        Object result = DataPipeline.empty().execute(PipelineContext.empty());
+        assertThat(result, is(equalTo(null)));
+    }
+
+    @Test
+    @DisplayName("Building an empty pipeline throws because validate() reports 'no stages'")
+    void emptyBuilderRejectsBuild() {
         try {
-            DataPipeline.empty().execute(PipelineContext.empty());
+            DataPipeline.builder().build();
         } catch (IllegalStateException expected) {
             assertThat(expected.getMessage(), containsString("invalid pipeline"));
+            assertThat(expected.getMessage(), containsString("no stages"));
             return;
         }
         throw new AssertionError("Expected IllegalStateException");
