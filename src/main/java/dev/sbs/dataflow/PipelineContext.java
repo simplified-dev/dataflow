@@ -1,7 +1,7 @@
 package dev.sbs.dataflow;
 
 import com.google.gson.Gson;
-import dev.sbs.dataflow.stage.source.PipelineEmbed;
+import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.client.fetch.UrlFetcherConfig;
 import dev.simplified.collection.Concurrent;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link Logger}, a
  * {@link DataPipelineResolver}, and an opaque key/value bag that the host application can
  * use to attach whatever extra context it needs without invading the pipeline core. The
- * mutable {@code activeIds} set guards against {@link PipelineEmbed} cycles.
+ * mutable {@code activeIds} set guards against {@link EmbedSource} cycles.
  */
 @Getter
 @Accessors(fluent = true)

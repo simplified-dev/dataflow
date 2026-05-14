@@ -24,14 +24,14 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The {@link #embeddedPipelineId()} accessor stays on this concrete class for tooling
  * (UI, dependency-graph analysis) that wants to inspect the embed without execution: use
- * {@code if (stage instanceof PipelineEmbed<?> embed) ...}.
+ * {@code if (stage instanceof EmbedSource<?> embed) ...}.
  *
  * @param <O> output type of the inner pipeline
  */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class PipelineEmbed<O> implements SourceStage<O> {
+public final class EmbedSource<O> implements SourceStage<O> {
 
     private final @NotNull String embeddedPipelineId;
 
@@ -46,11 +46,11 @@ public final class PipelineEmbed<O> implements SourceStage<O> {
      * @return the stage
      * @param <O> output type
      */
-    public static <O> @NotNull PipelineEmbed<O> of(
+    public static <O> @NotNull EmbedSource<O> of(
         @NotNull String embeddedPipelineId,
         @NotNull DataType<O> outputType
     ) {
-        return new PipelineEmbed<>(embeddedPipelineId, outputType);
+        return new EmbedSource<>(embeddedPipelineId, outputType);
     }
 
     /** {@inheritDoc} */
@@ -80,7 +80,7 @@ public final class PipelineEmbed<O> implements SourceStage<O> {
     /** {@inheritDoc} */
     @Override
     public @NotNull StageKind kind() {
-        return StageKind.PIPELINE_EMBED;
+        return StageKind.SOURCE_EMBED;
     }
 
     /** {@inheritDoc} */

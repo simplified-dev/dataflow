@@ -21,7 +21,7 @@ import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
 import dev.sbs.dataflow.stage.terminal.sum.SumDoubleCollect;
 import dev.sbs.dataflow.stage.terminal.sum.SumIntCollect;
 import dev.sbs.dataflow.stage.terminal.sum.SumLongCollect;
-import dev.sbs.dataflow.stage.source.PipelineEmbed;
+import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.filter.dom.DomHasAttrFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTagEqualsFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
@@ -1380,7 +1380,7 @@ public enum StageKind {
         Branch::fromConfig
     ),
 
-    PIPELINE_EMBED(
+    SOURCE_EMBED(
         "Embed pipeline",
         "() -> O",
         StageCategory.SOURCE,
@@ -1388,7 +1388,7 @@ public enum StageKind {
             new FieldSpec("embeddedPipelineId", FieldType.STRING, "Saved pipeline id", "wiki_dmg"),
             new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "INT")
         ),
-        cfg -> PipelineEmbed.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
+        cfg -> EmbedSource.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
     );
 
     /** Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone. */

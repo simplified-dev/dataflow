@@ -34,7 +34,7 @@ Suffix convention (commit `60ff9d9`):
 ## Packages (`stage/`)
 
 ```
-source/                 UrlSource, PasteSource, OfSource, OfListSource, PipelineEmbed
+source/                 UrlSource, PasteSource, OfSource, OfListSource, EmbedSource
 filter/{string,list,numeric,dom,json}/
 transform/{string,primitive,list,dom,json,encoding}/
 predicate/{string,numeric,dom,json,common}/
@@ -49,8 +49,9 @@ sum / minmax / match) for terminals.
 
 `StageKind` (enum, `stage/StageKind.java`) is the wire-format discriminator. Each constant
 carries display name, type signature, `StageCategory`, `List<FieldSpec>` schema, and
-`Function<StageConfig, Stage<?, ?>>` factory. **Never rename a constant** - stored pipeline
-JSON references it.
+`Function<StageConfig, Stage<?, ?>>` factory. **Renaming a constant invalidates stored
+pipeline JSON** - safe pre-production, but require an explicit migration once anything is
+persisted.
 
 When adding a stage: new `StageKind` constant + matching imports + correct `StageCategory`.
 

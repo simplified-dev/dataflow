@@ -125,7 +125,7 @@ public final class DataPipeline {
 
         /**
          * Sets the source stage. Must be called exactly once before {@link #build()}.
-         * Accepts any {@link SourceStage}, including the special {@code PipelineEmbed}
+         * Accepts any {@link SourceStage}, including the special {@code EmbedSource}
          * source that delegates to a saved pipeline.
          *
          * @param source the first stage

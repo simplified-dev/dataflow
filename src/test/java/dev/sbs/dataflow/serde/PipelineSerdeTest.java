@@ -12,7 +12,7 @@ import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
 import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
 import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
 import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
-import dev.sbs.dataflow.stage.source.PipelineEmbed;
+import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.filter.list.DistinctFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.source.PasteSource;
@@ -209,17 +209,17 @@ class PipelineSerdeTest {
     }
 
     @Test
-    @DisplayName("PipelineEmbed round-trips")
+    @DisplayName("EmbedSource round-trips")
     void embedRoundTrips() {
         DataPipeline outer = DataPipeline.builder()
-            .source(PipelineEmbed.of("saved-id", DataTypes.STRING))
+            .source(EmbedSource.of("saved-id", DataTypes.STRING))
             .build();
         String json = PipelineGson.toJson(outer);
         assertThat(json, containsString("\"embeddedPipelineId\":\"saved-id\""));
 
         DataPipeline rebuilt = PipelineGson.fromJson(json);
         Stage<?, ?> first = rebuilt.stages().getFirst();
-        assertThat(first.kind().name(), is(equalTo("PIPELINE_EMBED")));
+        assertThat(first.kind().name(), is(equalTo("SOURCE_EMBED")));
     }
 
     @Test

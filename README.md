@@ -4,7 +4,7 @@ Standalone, Discord-free Java library for authoring **typed data-extraction pipe
 over arbitrary HTML / XML / JSON / text input.
 
 Pipelines are flat sequences of stages - `Source -> (Filter | Transform | Predicate)* -> Terminal` -
-with optional `Branch` (named multi-output) and `PipelineEmbed` (run a saved pipeline as a
+with optional `Branch` (named multi-output) and `EmbedSource` (run a saved pipeline as a
 single source-like stage). Modeled after Java 8 Streams; the stage taxonomy mirrors Stream
 operation categories.
 
@@ -49,7 +49,7 @@ Integer dmg = pipeline.execute(PipelineContext.empty()); // 500 - generic <T> in
 
 ```
 dev.sbs.dataflow.stage
-  .source                 UrlSource, PasteSource, OfSource, OfListSource, PipelineEmbed
+  .source                 UrlSource, PasteSource, OfSource, OfListSource, EmbedSource
   .filter.string          Contains, Matches, StartsWith, EndsWith, Equals, NonEmpty
   .filter.list            Distinct, NotNull, Take, Skip, IndexInRange, TakeWhile, DropWhile
   .filter.numeric         Int/Long/Double x {GreaterThan, LessThan, InRange}
@@ -91,7 +91,7 @@ DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `RAW_TEXT`, `STRING`, `INT
 | `SOURCE_PASTE`             | NONE  | `RAW_*`                 | inline body string                 |
 | `SOURCE_OF`                | NONE  | `T`                     | literal value parsed from config   |
 | `SOURCE_OF_LIST`           | NONE  | `List<T>`               | literal list from JSON array       |
-| `PIPELINE_EMBED`           | NONE  | declared at construction| resolves saved pipeline by id      |
+| `SOURCE_EMBED`             | NONE  | declared at construction| resolves saved pipeline by id      |
 
 ### Parse / DOM / JSON / encoding transforms
 
@@ -265,7 +265,7 @@ discriminator plus its configuration fields.
 
 ```java
 DataPipeline outer = DataPipeline.builder()
-    .source(PipelineEmbed.of("wiki_dmg", DataTypes.INT))   // resolves at execute-time
+    .source(EmbedSource.of("wiki_dmg", DataTypes.INT))   // resolves at execute-time
     .build();
 
 PipelineContext ctx = PipelineContext.builder()

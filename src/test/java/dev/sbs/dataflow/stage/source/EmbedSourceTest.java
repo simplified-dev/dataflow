@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-class PipelineEmbedTest {
+class EmbedSourceTest {
 
     /** Map-backed resolver that captures pipeline ids for cycle detection. */
     private static final class MapResolver implements DataPipelineResolver {
@@ -54,7 +54,7 @@ class PipelineEmbedTest {
         resolver.pipelines.put("B", b);
 
         DataPipeline outer = DataPipeline.builder()
-            .source(PipelineEmbed.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
             .build();
 
         PipelineContext ctx = PipelineContext.builder().withResolver(resolver).build();
@@ -67,7 +67,7 @@ class PipelineEmbedTest {
     void selfCycleDetected() {
         MapResolver resolver = new MapResolver();
         DataPipeline a = DataPipeline.builder()
-            .source(PipelineEmbed.of("A", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("A", DataTypes.RAW_TEXT))
             .build();
         resolver.pipelines.put("A", a);
 
@@ -89,10 +89,10 @@ class PipelineEmbedTest {
         MapResolver resolver = new MapResolver();
 
         DataPipeline a = DataPipeline.builder()
-            .source(PipelineEmbed.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
             .build();
         DataPipeline b = DataPipeline.builder()
-            .source(PipelineEmbed.of("A", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("A", DataTypes.RAW_TEXT))
             .build();
         resolver.pipelines.put("A", a);
         resolver.pipelines.put("B", b);
@@ -115,7 +115,7 @@ class PipelineEmbedTest {
     void missingPipelineThrows() {
         MapResolver resolver = new MapResolver();
         DataPipeline a = DataPipeline.builder()
-            .source(PipelineEmbed.of("does-not-exist", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("does-not-exist", DataTypes.RAW_TEXT))
             .build();
 
         PipelineContext ctx = PipelineContext.builder().withResolver(resolver).build();
@@ -130,10 +130,10 @@ class PipelineEmbedTest {
     }
 
     @Test
-    @DisplayName("PipelineEmbed is a valid first stage of a DataPipeline")
+    @DisplayName("EmbedSource is a valid first stage of a DataPipeline")
     void embedIsValidFirstStage() {
         DataPipeline outer = DataPipeline.builder()
-            .source(PipelineEmbed.of("X", DataTypes.STRING))
+            .source(EmbedSource.of("X", DataTypes.STRING))
             .build();
         assertThat(outer.validate().isValid(), is(true));
     }
@@ -146,10 +146,10 @@ class PipelineEmbedTest {
             .source(PasteSource.text("deep"))
             .build();
         DataPipeline b = DataPipeline.builder()
-            .source(PipelineEmbed.of("C", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("C", DataTypes.RAW_TEXT))
             .build();
         DataPipeline a = DataPipeline.builder()
-            .source(PipelineEmbed.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
             .build();
         resolver.pipelines.put("A", a);
         resolver.pipelines.put("B", b);
