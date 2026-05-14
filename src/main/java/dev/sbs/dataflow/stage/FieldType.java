@@ -32,4 +32,10 @@ public enum FieldType {
      */
     SUB_PIPELINES_MAP,
 
+    /**
+     * Single sub-pipeline, an ordered list of {@link Stage} instances. Carried by stages
+     * such as map / flatMap / takeWhile that run one inner chain per element.
+     */
+    SUB_PIPELINE,
+
 }

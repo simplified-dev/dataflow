@@ -75,6 +75,19 @@ public final class StageConfig {
         }
 
         /**
+         * Stores a singular sub-pipeline under {@code name}. Used by stages such as map /
+         * flatMap / takeWhile that carry exactly one inner chain.
+         *
+         * @param name the field name
+         * @param chain the inner chain
+         * @return this builder
+         */
+        public @NotNull Builder subPipeline(@NotNull String name, @NotNull List<? extends Stage<?, ?>> chain) {
+            this.values.put(name, chain);
+            return this;
+        }
+
+        /**
          * Generic store - inserts the value as-is. Caller is responsible for matching
          * {@link FieldType} expectations declared by the {@link FieldSpec}.
          *
@@ -169,6 +182,21 @@ public final class StageConfig {
         for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : raw.entrySet())
             frozen.put(entry.getKey(), Concurrent.newUnmodifiableList((List<Stage<?, ?>>) entry.getValue()));
         return Map.copyOf(frozen);
+    }
+
+    /**
+     * Returns the singular sub-pipeline stored under {@code name}, frozen to a
+     * {@link ConcurrentList}.
+     *
+     * @param name the field name
+     * @return the sub-pipeline
+     * @throws ClassCastException when the field is present but not a list of stages
+     * @throws NullPointerException when the field is absent
+     */
+    @SuppressWarnings("unchecked")
+    public @NotNull ConcurrentList<Stage<?, ?>> getSubPipeline(@NotNull String name) {
+        List<? extends Stage<?, ?>> raw = (List<? extends Stage<?, ?>>) this.values.get(name);
+        return Concurrent.newUnmodifiableList((List<Stage<?, ?>>) raw);
     }
 
     /**
