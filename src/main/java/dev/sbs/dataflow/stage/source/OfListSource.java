@@ -42,7 +42,7 @@ import java.util.Set;
 public final class OfListSource<T> implements SourceStage<List<T>> {
 
     private static final @NotNull Set<DataType<?>> STRING_LIKE = Set.of(
-        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON, DataTypes.RAW_TEXT
+        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
     );
 
     private final @NotNull DataType<T> elementType;
@@ -79,7 +79,7 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
     }
 
     private static final @NotNull Set<DataType<?>> SUPPORTED_ELEMENT_TYPES = Set.of(
-        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON, DataTypes.RAW_TEXT,
+        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON,
         DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.BOOLEAN
     );
 

@@ -77,7 +77,6 @@ import dev.sbs.dataflow.stage.predicate.string.StringNonEmptyPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringStartsWithPredicate;
 import dev.sbs.dataflow.stage.source.OfListSource;
 import dev.sbs.dataflow.stage.source.OfSource;
-import dev.sbs.dataflow.stage.source.PasteSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.DomChildrenTransform;
@@ -171,24 +170,13 @@ public enum StageKind {
         OfListSource::fromConfig
     ),
 
-    SOURCE_PASTE(
-        "Paste Source",
-        "() -> RAW_*",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("body", FieldType.STRING, "Body", "<inline content>"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
-        ),
-        PasteSource::fromConfig
-    ),
-
     SOURCE_URL(
         "URL Source",
         "() -> RAW_*",
         StageCategory.SOURCE,
         List.of(
             new FieldSpec("url", FieldType.STRING, "URL", "https://example.com/page"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON / RAW_TEXT")
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON")
         ),
         UrlSource::fromConfig
     ),

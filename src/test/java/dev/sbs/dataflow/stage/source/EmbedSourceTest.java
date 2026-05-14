@@ -4,7 +4,7 @@ import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataPipelineResolver;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.source.PasteSource;
+import dev.sbs.dataflow.stage.source.OfSource;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,15 +46,12 @@ class EmbedSourceTest {
         MapResolver resolver = new MapResolver();
         // B: produces integer 42
         DataPipeline b = DataPipeline.builder()
-            .source(PasteSource.text("42"))
-            // PasteSource.text emits RAW_TEXT, but ParseIntTransform expects STRING.
-            // For now the embed test focuses on the embed mechanics, so we use a
-            // simple chain: paste TEXT then we accept it as-is via a no-op chain.
+            .source(OfSource.text("42"))
             .build();
         resolver.pipelines.put("B", b);
 
         DataPipeline outer = DataPipeline.builder()
-            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
 
         PipelineContext ctx = PipelineContext.builder().withResolver(resolver).build();
@@ -67,7 +64,7 @@ class EmbedSourceTest {
     void selfCycleDetected() {
         MapResolver resolver = new MapResolver();
         DataPipeline a = DataPipeline.builder()
-            .source(EmbedSource.of("A", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("A", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
 
@@ -89,10 +86,10 @@ class EmbedSourceTest {
         MapResolver resolver = new MapResolver();
 
         DataPipeline a = DataPipeline.builder()
-            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
         DataPipeline b = DataPipeline.builder()
-            .source(EmbedSource.of("A", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("A", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
         resolver.pipelines.put("B", b);
@@ -115,7 +112,7 @@ class EmbedSourceTest {
     void missingPipelineThrows() {
         MapResolver resolver = new MapResolver();
         DataPipeline a = DataPipeline.builder()
-            .source(EmbedSource.of("does-not-exist", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("does-not-exist", DataTypes.STRING))
             .build();
 
         PipelineContext ctx = PipelineContext.builder().withResolver(resolver).build();
@@ -143,13 +140,13 @@ class EmbedSourceTest {
     void threeDeepNonCycle() {
         MapResolver resolver = new MapResolver();
         DataPipeline c = DataPipeline.builder()
-            .source(PasteSource.text("deep"))
+            .source(OfSource.text("deep"))
             .build();
         DataPipeline b = DataPipeline.builder()
-            .source(EmbedSource.of("C", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("C", DataTypes.STRING))
             .build();
         DataPipeline a = DataPipeline.builder()
-            .source(EmbedSource.of("B", DataTypes.RAW_TEXT))
+            .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
         resolver.pipelines.put("B", b);

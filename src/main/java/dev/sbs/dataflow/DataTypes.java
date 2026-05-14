@@ -34,9 +34,6 @@ public final class DataTypes {
     /** Raw JSON document body, not yet parsed. */
     public static final @NotNull DataType<String> RAW_JSON = new DataType.Basic<>(String.class, "RAW_JSON");
 
-    /** Raw plain-text body, not yet parsed. */
-    public static final @NotNull DataType<String> RAW_TEXT = new DataType.Basic<>(String.class, "RAW_TEXT");
-
     /** General-purpose UTF-8 string value. */
     public static final @NotNull DataType<String> STRING = new DataType.Basic<>(String.class, "STRING");
 

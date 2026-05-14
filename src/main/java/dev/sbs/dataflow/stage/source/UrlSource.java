@@ -50,13 +50,13 @@ public final class UrlSource implements SourceStage<String> {
     }
 
     /**
-     * Constructs a URL source whose body is treated as plain text.
+     * Constructs a URL source whose body is emitted as a plain {@link String}.
      *
      * @param url the URL to fetch
      * @return a new source
      */
     public static @NotNull UrlSource text(@NotNull String url) {
-        return new UrlSource(url, DataTypes.RAW_TEXT);
+        return new UrlSource(url, DataTypes.STRING);
     }
 
     /**

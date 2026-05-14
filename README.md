@@ -49,7 +49,7 @@ Integer dmg = pipeline.execute(PipelineContext.empty()); // 500 - generic <T> in
 
 ```
 dev.sbs.dataflow.stage
-  .source                 UrlSource, PasteSource, OfSource, OfListSource, EmbedSource
+  .source                 UrlSource, OfSource, OfListSource, EmbedSource
   .filter.string          Contains, Matches, StartsWith, EndsWith, Equals, NonEmpty
   .filter.list            Distinct, NotNull, Take, Skip, IndexInRange, TakeWhile, DropWhile
   .filter.numeric         Int/Long/Double x {GreaterThan, LessThan, InRange}
@@ -79,7 +79,7 @@ dev.sbs.dataflow.stage
 
 ## Stage catalog
 
-DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `RAW_TEXT`, `STRING`, `INT`, `LONG`,
+DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `STRING`, `INT`, `LONG`,
 `FLOAT`, `DOUBLE`, `BOOLEAN`, `DOM_NODE`, `JSON_ELEMENT`, `JSON_OBJECT`, `JSON_ARRAY`,
 `BRANCH_OUTPUT`, plus `List<X>` / `Set<X>` constructors.
 
@@ -88,7 +88,6 @@ DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `RAW_TEXT`, `STRING`, `INT
 | Kind                       | Input | Output                  | Notes                              |
 |----------------------------|-------|-------------------------|------------------------------------|
 | `SOURCE_URL`               | NONE  | `RAW_*`                 | shared `UrlFetcher`, body cap 5 MiB |
-| `SOURCE_PASTE`             | NONE  | `RAW_*`                 | inline body string                 |
 | `SOURCE_OF`                | NONE  | `T`                     | literal value parsed from config   |
 | `SOURCE_OF_LIST`           | NONE  | `List<T>`               | literal list from JSON array       |
 | `SOURCE_EMBED`             | NONE  | declared at construction| resolves saved pipeline by id      |
@@ -285,8 +284,8 @@ Use `Builder.validate()` to inspect a report on a still-under-construction build
 
 ```java
 ValidationReport report = DataPipeline.builder()
-    .source(PasteSource.text("hi"))
-    .stage(ParseHtmlTransform.of())  // expects RAW_HTML, got RAW_TEXT
+    .source(OfSource.text("hi"))
+    .stage(ParseHtmlTransform.of())  // expects RAW_HTML, got STRING
     .validate();
 if (!report.isValid()) {
     for (ValidationReport.Issue issue : report.issues())
@@ -295,7 +294,7 @@ if (!report.isValid()) {
 ```
 
 Diagnostic example: `Stage #1 (PARSE_HTML) expects input RAW_HTML but previous
-stage produced RAW_TEXT`.
+stage produced STRING`.
 
 Sub-pipeline bodies (used by `Map`, `FlatMap`, match collectors, `TakeWhile` / `DropWhile`,
 `SortBy` / `MinBy` / `MaxBy`, `And` / `Or`) are validated the same way via

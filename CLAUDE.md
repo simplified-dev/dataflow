@@ -34,7 +34,7 @@ Suffix convention (commit `60ff9d9`):
 ## Packages (`stage/`)
 
 ```
-source/                 UrlSource, PasteSource, OfSource, OfListSource, EmbedSource
+source/                 UrlSource, OfSource, OfListSource, EmbedSource
 filter/{string,list,numeric,dom,json}/
 transform/{string,primitive,list,dom,json,encoding}/
 predicate/{string,numeric,dom,json,common}/

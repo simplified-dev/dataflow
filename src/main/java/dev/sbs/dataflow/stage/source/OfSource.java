@@ -20,10 +20,10 @@ import java.util.Set;
  * Equivalent to {@link java.util.stream.Stream#of(Object)}.
  * <p>
  * Supported {@code outputType}s parse from the configured string verbatim
- * ({@code STRING}, {@code RAW_*}) or via the matching {@code parseXxx}
- * ({@code INT}, {@code LONG}, {@code FLOAT}, {@code DOUBLE}, {@code BOOLEAN}). Structured
- * types ({@code DOM_NODE}, {@code JSON_*}) are rejected at build time and should be wired
- * via {@code OfSource(RAW_*) -> ParseXxxTransform}.
+ * ({@code STRING}, {@code RAW_HTML}, {@code RAW_XML}, {@code RAW_JSON}) or via the matching
+ * {@code parseXxx} ({@code INT}, {@code LONG}, {@code FLOAT}, {@code DOUBLE},
+ * {@code BOOLEAN}). Structured types ({@code DOM_NODE}, {@code JSON_*}) are rejected at
+ * build time and should be wired via {@code OfSource(RAW_*) -> ParseXxxTransform}.
  *
  * @param <T> the value type
  */
@@ -33,7 +33,7 @@ import java.util.Set;
 public final class OfSource<T> implements SourceStage<T> {
 
     private static final @NotNull Set<DataType<?>> STRING_LIKE = Set.of(
-        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON, DataTypes.RAW_TEXT
+        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
     );
 
     private final @NotNull DataType<T> outputType;
@@ -55,6 +55,50 @@ public final class OfSource<T> implements SourceStage<T> {
     public static <T> @NotNull OfSource<T> of(@NotNull DataType<T> outputType, @NotNull String value) {
         T parsed = (T) parse(outputType, value);
         return new OfSource<>(outputType, value, parsed);
+    }
+
+    /**
+     * Convenience factory for an HTML body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_HTML, body)}.
+     *
+     * @param body the HTML body
+     * @return the stage
+     */
+    public static @NotNull OfSource<String> html(@NotNull String body) {
+        return of(DataTypes.RAW_HTML, body);
+    }
+
+    /**
+     * Convenience factory for an XML body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_XML, body)}.
+     *
+     * @param body the XML body
+     * @return the stage
+     */
+    public static @NotNull OfSource<String> xml(@NotNull String body) {
+        return of(DataTypes.RAW_XML, body);
+    }
+
+    /**
+     * Convenience factory for a JSON body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_JSON, body)}.
+     *
+     * @param body the JSON body
+     * @return the stage
+     */
+    public static @NotNull OfSource<String> json(@NotNull String body) {
+        return of(DataTypes.RAW_JSON, body);
+    }
+
+    /**
+     * Convenience factory for a plain string value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.STRING, body)}.
+     *
+     * @param body the string value
+     * @return the stage
+     */
+    public static @NotNull OfSource<String> text(@NotNull String body) {
+        return of(DataTypes.STRING, body);
     }
 
     /**
