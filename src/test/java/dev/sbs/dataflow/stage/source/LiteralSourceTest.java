@@ -71,7 +71,7 @@ class LiteralSourceTest {
         assertThat(LiteralSource.rawHtml("<html/>").outputType(), is(DataTypes.RAW_HTML));
         assertThat(LiteralSource.rawXml("<x/>").outputType(),    is(DataTypes.RAW_XML));
         assertThat(LiteralSource.rawJson("{}").outputType(),     is(DataTypes.RAW_JSON));
-        assertThat(LiteralSource.stringVal("hi").outputType(),   is(DataTypes.STRING));
+        assertThat(LiteralSource.text("hi").outputType(),   is(DataTypes.STRING));
 
         assertThat(LiteralSource.integerVal(42).execute(this.ctx, null),       is(equalTo(42)));
         assertThat(LiteralSource.longVal(9999999999L).execute(this.ctx, null), is(equalTo(9999999999L)));

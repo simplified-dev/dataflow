@@ -97,7 +97,7 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @param value the string value
      * @return the stage
      */
-    public static @NotNull LiteralSource<String> stringVal(@NotNull String value) {
+    public static @NotNull LiteralSource<String> text(@NotNull String value) {
         return of(DataTypes.STRING, value);
     }
 

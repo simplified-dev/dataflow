@@ -284,7 +284,7 @@ Use `Builder.validate()` to inspect a report on a still-under-construction build
 
 ```java
 ValidationReport report = DataPipeline.builder()
-    .source(LiteralSource.stringVal("hi"))
+    .source(LiteralSource.text("hi"))
     .stage(ParseHtmlTransform.of())  // expects RAW_HTML, got STRING
     .validate();
 if (!report.isValid()) {

@@ -23,7 +23,7 @@ class DataTypeChainTest {
     void mismatchEmitsKindAndTypes() {
         // LiteralSource.text emits STRING; ParseHtmlTransform expects RAW_HTML.
         ValidationReport report = DataPipeline.builder()
-            .source(LiteralSource.stringVal("hi"))
+            .source(LiteralSource.text("hi"))
             .stage(ParseHtmlTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));

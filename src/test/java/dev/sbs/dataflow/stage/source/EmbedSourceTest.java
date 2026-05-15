@@ -46,7 +46,7 @@ class EmbedSourceTest {
         MapResolver resolver = new MapResolver();
         // B: produces integer 42
         DataPipeline b = DataPipeline.builder()
-            .source(LiteralSource.stringVal("42"))
+            .source(LiteralSource.text("42"))
             .build();
         resolver.pipelines.put("B", b);
 
@@ -140,7 +140,7 @@ class EmbedSourceTest {
     void threeDeepNonCycle() {
         MapResolver resolver = new MapResolver();
         DataPipeline c = DataPipeline.builder()
-            .source(LiteralSource.stringVal("deep"))
+            .source(LiteralSource.text("deep"))
             .build();
         DataPipeline b = DataPipeline.builder()
             .source(EmbedSource.of("C", DataTypes.STRING))
