@@ -63,7 +63,7 @@ class PipelineSerdeTest {
         DataPipeline rebuilt = PipelineGson.fromJson(json);
 
         assertThat(rebuilt.validate().isValid(), is(true));
-        assertThat(rebuilt.execute(PipelineContext.defaults()), is(equalTo(500)));
+        assertThat(rebuilt.execute(), is(equalTo(500)));
     }
 
     @Test
@@ -194,7 +194,7 @@ class PipelineSerdeTest {
 
         String json = PipelineGson.toJson(original);
         DataPipeline rebuilt = PipelineGson.fromJson(json);
-        Object result = rebuilt.execute(PipelineContext.defaults());
+        Object result = rebuilt.execute();
 
         assertThat(result, is(equalTo(java.util.Map.of("dmg", 500, "strength", 220))));
     }

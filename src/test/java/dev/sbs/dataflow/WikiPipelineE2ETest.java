@@ -65,7 +65,7 @@ class WikiPipelineE2ETest {
             .build();
 
         assertThat(pipeline.validate().isValid(), is(true));
-        Object result = pipeline.execute(PipelineContext.defaults());
+        Object result = pipeline.execute();
         assertThat(result, is(equalTo(500)));
     }
 
@@ -85,7 +85,7 @@ class WikiPipelineE2ETest {
             .build();
 
         // T is inferred from the assignment - no explicit cast needed.
-        Integer dmg = pipeline.execute(PipelineContext.defaults());
+        Integer dmg = pipeline.execute();
         assertThat(dmg, is(equalTo(500)));
     }
 
@@ -101,7 +101,7 @@ class WikiPipelineE2ETest {
             .stage(GsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
-        DarkClaymore result = pipeline.execute(PipelineContext.defaults());
+        DarkClaymore result = pipeline.execute();
 
         assertThat(result, is(notNullValue()));
         assertThat(result.type(), is(equalTo("Longsword")));
@@ -129,13 +129,13 @@ class WikiPipelineE2ETest {
             .stage(GsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
-        DarkClaymore firstResult = original.execute(PipelineContext.defaults());
+        DarkClaymore firstResult = original.execute();
         assertThat("Live wiki returned an empty infobox (likely bot challenge); set DATAFLOW_LIVE=false or run locally",
             firstResult, is(notNullValue()));
 
         String json = PipelineGson.toJson(original);
         DataPipeline rebuilt = PipelineGson.fromJson(json);
-        DarkClaymore secondResult = rebuilt.execute(PipelineContext.defaults());
+        DarkClaymore secondResult = rebuilt.execute();
 
         assertThat(secondResult, is(equalTo(firstResult)));
     }

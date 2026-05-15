@@ -6,6 +6,7 @@ import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -77,15 +78,38 @@ public final class DataPipeline {
         for (int i = 1; i < this.stages.size(); i++) {
             Stage<?, ?> stage = this.stages.get(i);
             DataType<?> expected = stage.inputType();
-            if (!expected.equals(previousOutput))
-                issues.add(new ValidationReport.Issue(i,
+
+            if (!expected.equals(previousOutput)) {
+                issues.add(new ValidationReport.Issue(
+                    i,
                     "Stage #" + i + " (" + stage.kind() + ") expects input " + expected
                         + " but previous stage produced " + previousOutput
                 ));
+            }
+
             previousOutput = stage.outputType();
         }
 
         return new ValidationReport(List.copyOf(issues));
+    }
+
+    /**
+     * Executes the pipeline against {@link PipelineContext#defaults()}, returning the final
+     * value with the type inferred at the call site.
+     * <p>
+     * The cast from the runtime {@link Object} to {@code T} is unchecked - the compiler
+     * trusts the inferred type. A mismatch surfaces as a {@link ClassCastException} at
+     * the assignment site, the same way {@link Map#get(Object)} behaves with a
+     * casted return.
+     * <p>
+     * Validation runs once at build time (see {@link Builder#build()}) so this method does
+     * not re-validate before each execution.
+     *
+     * @return the final value, possibly {@code null} when a stage rejects its input
+     * @param <T> inferred result type
+     */
+    public <T> @Nullable T execute() {
+        return execute(PipelineContext.defaults());
     }
 
     /**
@@ -107,21 +131,22 @@ public final class DataPipeline {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public <T> @Nullable T execute(@NotNull PipelineContext ctx) {
         Object current = null;
+
         for (Stage stage : this.stages) {
             current = stage.execute(ctx, current);
             if (current == null) break;
         }
+
         return (T) current;
     }
 
     /**
      * Mutable builder for assembling a {@link DataPipeline} from {@link Stage} instances.
      */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Builder {
 
         private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
-
-        private Builder() {}
 
         /**
          * Sets the source stage. Must be called exactly once before {@link #build()}.
@@ -134,6 +159,7 @@ public final class DataPipeline {
         public @NotNull Builder source(@NotNull SourceStage<?> source) {
             if (!this.stages.isEmpty())
                 throw new IllegalStateException("Source already set");
+
             this.stages.add(source);
             return this;
         }
@@ -170,10 +196,10 @@ public final class DataPipeline {
         public @NotNull DataPipeline build() {
             DataPipeline pipeline = new DataPipeline(Concurrent.newUnmodifiableList(this.stages));
             ValidationReport report = pipeline.validate();
+
             if (!report.isValid())
-                throw new IllegalStateException(
-                    "Cannot build invalid pipeline: " + report.issues()
-                );
+                throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
+
             return pipeline;
         }
 

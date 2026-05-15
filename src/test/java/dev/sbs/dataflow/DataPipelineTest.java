@@ -25,7 +25,7 @@ class DataPipelineTest {
     @Test
     @DisplayName("Empty pipeline returns null on execute - the stage loop simply iterates zero stages")
     void emptyPipelineExecutesToNull() {
-        Object result = DataPipeline.empty().execute(PipelineContext.defaults());
+        Object result = DataPipeline.empty().execute();
         assertThat(result, is(equalTo(null)));
     }
 

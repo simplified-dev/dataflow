@@ -40,7 +40,7 @@ public final class PipelineContext {
     private final @NotNull ConcurrentSet<String> activeIds;
 
     /**
-     * Convenience factory returning a fully-defaulted context: default fetcher, default
+     * Convenience factory returning a fully defaulted context: default fetcher, default
      * logger, {@link DataPipelineResolver#NOOP NOOP} resolver, empty bag. Suitable for
      * tests and ad-hoc usage where no host-supplied wiring is needed.
      *
