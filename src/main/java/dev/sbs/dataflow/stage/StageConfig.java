@@ -41,6 +41,20 @@ public final class StageConfig {
             return this;
         }
 
+        /**
+         * Stores a string under {@code name} only when {@code value} is non-null. Used by
+         * fields whose absence is semantically distinct from an empty string, so serde
+         * round-trips do not collapse {@code null} and {@code ""} together.
+         *
+         * @param name the field name
+         * @param value the string to store, or {@code null} to leave the field unset
+         * @return this builder
+         */
+        public @NotNull Builder optionalString(@NotNull String name, @Nullable String value) {
+            if (value != null) this.values.put(name, value);
+            return this;
+        }
+
         public @NotNull Builder integer(@NotNull String name, int value) {
             this.values.put(name, value);
             return this;

@@ -62,10 +62,10 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <T> the runtime java type
      */
-    @RequiredArgsConstructor
     @Getter
     @Accessors(fluent = true)
     @EqualsAndHashCode(of = "label")
+    @RequiredArgsConstructor
     final class Basic<T> implements DataType<T> {
 
         private final @NotNull Class<T> javaType;
@@ -83,14 +83,13 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <E> element type
      */
+    @Getter
+    @Accessors(fluent = true)
     @EqualsAndHashCode
+    @RequiredArgsConstructor
     final class ListType<E> implements DataType<List<E>> {
 
-        @Getter @Accessors(fluent = true) private final @NotNull DataType<E> element;
-
-        ListType(@NotNull DataType<E> element) {
-            this.element = element;
-        }
+        private final @NotNull DataType<E> element;
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         @Override
@@ -115,14 +114,13 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <E> element type
      */
+    @Getter
+    @Accessors(fluent = true)
     @EqualsAndHashCode
+    @RequiredArgsConstructor
     final class SetType<E> implements DataType<Set<E>> {
 
-        @Getter @Accessors(fluent = true) private final @NotNull DataType<E> element;
-
-        SetType(@NotNull DataType<E> element) {
-            this.element = element;
-        }
+        private final @NotNull DataType<E> element;
 
         @SuppressWarnings({ "unchecked", "rawtypes" })
         @Override

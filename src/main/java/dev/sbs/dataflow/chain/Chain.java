@@ -27,7 +27,10 @@ import java.util.List;
 public record Chain(@NotNull ConcurrentList<Stage<?, ?>> stages) {
 
     /**
-     * Wraps {@code stages} as an immutable {@link Chain}.
+     * Wraps {@code stages} as an immutable {@link Chain}. Delegates to
+     * {@link Concurrent#newUnmodifiableList(java.util.Collection)} which adopts a
+     * {@code ConcurrentArrayList} input view-style (no copy) and otherwise copies into a
+     * fresh unmodifiable list.
      *
      * @param stages the body stages in execution order
      * @return a chain whose backing list is frozen
@@ -108,6 +111,7 @@ public record Chain(@NotNull ConcurrentList<Stage<?, ?>> stages) {
         for (Stage stage : this.stages) {
             if (current == null) break;
             current = stage.execute(ctx, current);
+            ctx.traceStage(stage, current);
         }
         return (T) current;
     }

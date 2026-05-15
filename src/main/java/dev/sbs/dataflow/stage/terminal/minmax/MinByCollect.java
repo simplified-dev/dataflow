@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * {@link CollectStage} that returns the element of the input list whose key (extracted via
@@ -31,10 +30,6 @@ import java.util.Set;
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MinByCollect<T, K extends Comparable<K>> implements CollectStage<List<T>, T> {
-
-    private static final @NotNull Set<DataType<?>> SUPPORTED_KEYS = Set.of(
-        DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.STRING
-    );
 
     private final @NotNull DataType<T> elementType;
 
@@ -60,9 +55,9 @@ public final class MinByCollect<T, K extends Comparable<K>> implements CollectSt
         @NotNull DataType<K> keyType,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        if (!SUPPORTED_KEYS.contains(keyType))
+        if (!DataTypes.COMPARABLE_KEYS.contains(keyType))
             throw new IllegalArgumentException(
-                "MinByCollect supports key types " + SUPPORTED_KEYS + " but got " + keyType
+                "MinByCollect supports key types " + DataTypes.COMPARABLE_KEYS + " but got " + keyType
             );
         ValidationReport report = Chain.validate(elementType, body, keyType);
         if (!report.isValid())

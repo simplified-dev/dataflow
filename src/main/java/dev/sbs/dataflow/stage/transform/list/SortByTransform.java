@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * {@link TransformStage} that sorts a list by a key extracted from each element via a
@@ -35,10 +34,6 @@ import java.util.Set;
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SortByTransform<T, K extends Comparable<K>> implements TransformStage<List<T>, List<T>> {
-
-    private static final @NotNull Set<DataType<?>> SUPPORTED_KEYS = Set.of(
-        DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.STRING
-    );
 
     private final @NotNull DataType<T> elementType;
 
@@ -69,9 +64,9 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
         boolean ascending,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        if (!SUPPORTED_KEYS.contains(keyType))
+        if (!DataTypes.COMPARABLE_KEYS.contains(keyType))
             throw new IllegalArgumentException(
-                "SortByTransform supports key types " + SUPPORTED_KEYS + " but got " + keyType
+                "SortByTransform supports key types " + DataTypes.COMPARABLE_KEYS + " but got " + keyType
             );
         ValidationReport report = Chain.validate(elementType, body, keyType);
         if (!report.isValid())

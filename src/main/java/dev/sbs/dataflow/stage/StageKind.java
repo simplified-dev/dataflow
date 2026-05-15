@@ -177,7 +177,7 @@ public enum StageKind {
         StageCategory.SOURCE,
         List.of(
             new FieldSpec("url", FieldType.STRING, "URL", "https://example.com/page"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "RAW_HTML / RAW_XML / RAW_JSON")
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type (RAW_HTML / RAW_XML / RAW_JSON / STRING)", "RAW_HTML")
         ),
         UrlSource::fromConfig
     ),
@@ -203,10 +203,9 @@ public enum StageKind {
         ),
         cfg -> {
             String name = cfg.getString("attributeName");
-            String value = cfg.getString("expectedValue");
-            return value.isEmpty()
-                ? DomHasAttrFilter.of(name)
-                : DomHasAttrFilter.of(name, value);
+            return cfg.has("expectedValue")
+                ? DomHasAttrFilter.of(name, cfg.getString("expectedValue"))
+                : DomHasAttrFilter.of(name);
         }
     ),
 
@@ -1428,15 +1427,6 @@ public enum StageKind {
         return Arrays.stream(CACHED_VALUES)
             .filter(id -> id.category == category)
             .toList();
-    }
-
-    /**
-     * Returns whether this kind needs a configuration modal (any non-empty schema).
-     *
-     * @return {@code true} when {@link #schema()} has at least one slot
-     */
-    public boolean requiresModal() {
-        return !this.schema.isEmpty();
     }
 
 }

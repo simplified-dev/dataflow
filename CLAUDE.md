@@ -4,12 +4,11 @@ Typed pipeline lib (Java 21, Gradle, Lombok). Java-8-Streams shape.
 
 ## Stage hierarchy
 
-`Stage<I,O>` sealed (`stage/Stage.java`), 5 non-sealed permits:
+`Stage<I,O>` sealed (`stage/Stage.java`), 4 non-sealed permits:
 - `SourceStage<O>` - `()->O` (input = `DataTypes.NONE`)
 - `FilterStage<T>` - `List<T>->List<T>` (subset)
-- `TransformStage<I,O>` - 1:1 (also `T->BOOLEAN` predicates)
-- `CollectStage<I,O>` - terminal reduction
-- `BranchStage<I>` - terminal fan-out `I->Map<String,Object>`
+- `TransformStage<I,O>` - 1:1 (also `T->BOOLEAN` predicates, `I->JSON_OBJECT` via `JsonObjectBuildTransform`)
+- `CollectStage<I,O>` - terminal reduction (incl. `MapCollect`: named fan-out `I->Map<String,Object>`)
 
 ## Concrete stage template
 

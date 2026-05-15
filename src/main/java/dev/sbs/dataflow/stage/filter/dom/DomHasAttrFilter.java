@@ -59,7 +59,7 @@ public final class DomHasAttrFilter implements FilterStage<Element> {
     public @NotNull StageConfig config() {
         return StageConfig.builder()
             .string("attributeName", this.attributeName)
-            .string("expectedValue", this.expectedValue == null ? "" : this.expectedValue)
+            .optionalString("expectedValue", this.expectedValue)
             .build();
     }
 

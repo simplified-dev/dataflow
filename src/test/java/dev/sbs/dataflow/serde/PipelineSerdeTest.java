@@ -5,7 +5,11 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.FieldSpec;
+import dev.sbs.dataflow.stage.FieldType;
 import dev.sbs.dataflow.stage.Stage;
+import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
@@ -35,12 +39,20 @@ import dev.sbs.dataflow.stage.transform.string.TrimTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
+
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 class PipelineSerdeTest {
 
@@ -232,6 +244,60 @@ class PipelineSerdeTest {
             return;
         }
         throw new AssertionError("Expected IllegalArgumentException for unknown kind");
+    }
+
+    /**
+     * Per-kind smoke test: every {@link StageKind} with a non-chain schema must instantiate
+     * cleanly from its {@link FieldSpec#placeholder()} defaults, and the resulting stage's
+     * {@code config()} must round-trip through the factory back to an equivalent stage.
+     * Chain-bearing kinds are excluded because their bodies have no schema-level default.
+     */
+    @TestFactory
+    Stream<DynamicTest> everyNonChainKindFactoryRoundTrips() {
+        Set<FieldType> chainFieldTypes = EnumSet.of(
+            FieldType.SUB_PIPELINE,
+            FieldType.SUB_PIPELINES_MAP,
+            FieldType.TYPED_SUB_PIPELINES_MAP
+        );
+
+        return Arrays.stream(StageKind.values())
+            .filter(k -> k.factory() != null)
+            .filter(k -> k.schema().stream().noneMatch(s -> chainFieldTypes.contains(s.type())))
+            .map(k -> DynamicTest.dynamicTest(k.name(), () -> {
+                StageConfig cfg = buildDefaultConfig(k);
+                Stage<?, ?> stage = k.factory().apply(cfg);
+                assertThat(stage, is(notNullValue()));
+                assertThat(stage.kind(), is(equalTo(k)));
+                // Round-trip the stage's own config back through the factory.
+                Stage<?, ?> rebuilt = k.factory().apply(stage.config());
+                assertThat(rebuilt.kind(), is(equalTo(k)));
+                assertThat(rebuilt.inputType(), is(equalTo(stage.inputType())));
+                assertThat(rebuilt.outputType(), is(equalTo(stage.outputType())));
+            }));
+    }
+
+    private static StageConfig buildDefaultConfig(StageKind kind) {
+        StageConfig.Builder b = StageConfig.builder();
+        for (FieldSpec spec : kind.schema()) {
+            String placeholder = spec.placeholder();
+            switch (spec.type()) {
+                case STRING -> b.string(spec.name(), placeholder);
+                case INT    -> b.integer(spec.name(), placeholder.isEmpty() ? 0 : Integer.parseInt(placeholder));
+                case LONG   -> b.longVal(spec.name(), placeholder.isEmpty() ? 0L : Long.parseLong(placeholder));
+                case DOUBLE -> b.doubleVal(spec.name(), placeholder.isEmpty() ? 0d : Double.parseDouble(placeholder));
+                case BOOLEAN -> b.bool(spec.name(), Boolean.parseBoolean(placeholder));
+                case DATA_TYPE -> {
+                    DataType<?> resolved = DataTypes.byLabel(placeholder);
+                    if (resolved == null)
+                        throw new AssertionError(
+                            "StageKind " + kind + " field '" + spec.name() + "' has unknown DataType placeholder '" + placeholder + "'"
+                        );
+                    b.dataType(spec.name(), resolved);
+                }
+                default -> {} // chain field types skipped via filter()
+            }
+        }
+        return b.build();
     }
 
     private static void roundTrip(DataPipeline pipeline) {

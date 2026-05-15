@@ -70,6 +70,14 @@ public final class DataTypes {
     public static final @NotNull DataType<Map<String, Object>> MAP_OUTPUT =
         new DataType.Basic<>((Class) Map.class, "MAP_OUTPUT");
 
+    /**
+     * Comparable key types accepted by {@code Sort* / Min* / Max*} stages. Java's primitive
+     * comparables that round-trip through wire format unchanged.
+     */
+    public static final @NotNull java.util.Set<DataType<?>> COMPARABLE_KEYS = java.util.Set.of(
+        INT, LONG, FLOAT, DOUBLE, STRING
+    );
+
     private static final @NotNull Map<String, DataType<?>> BASICS = collectBasics();
 
     private static final @NotNull ConcurrentHashMap<String, DataType<?>> REGISTERED = new ConcurrentHashMap<>();

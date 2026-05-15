@@ -56,8 +56,7 @@ public final class DomHasAttrPredicate implements TransformStage<Element, Boolea
      */
     public static @NotNull DomHasAttrPredicate fromConfig(@NotNull StageConfig cfg) {
         String name = cfg.getString("attributeName");
-        String value = cfg.getString("expectedValue");
-        return value.isEmpty() ? of(name) : of(name, value);
+        return cfg.has("expectedValue") ? of(name, cfg.getString("expectedValue")) : of(name);
     }
 
     /** {@inheritDoc} */
@@ -65,7 +64,7 @@ public final class DomHasAttrPredicate implements TransformStage<Element, Boolea
     public @NotNull StageConfig config() {
         return StageConfig.builder()
             .string("attributeName", this.attributeName)
-            .string("expectedValue", this.expectedValue == null ? "" : this.expectedValue)
+            .optionalString("expectedValue", this.expectedValue)
             .build();
     }
 

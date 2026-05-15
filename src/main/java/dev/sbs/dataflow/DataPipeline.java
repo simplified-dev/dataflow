@@ -134,6 +134,7 @@ public final class DataPipeline {
 
         for (Stage stage : this.stages) {
             current = stage.execute(ctx, current);
+            ctx.traceStage(stage, current);
             if (current == null) break;
         }
 
