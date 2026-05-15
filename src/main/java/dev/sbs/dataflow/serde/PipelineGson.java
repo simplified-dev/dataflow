@@ -13,7 +13,9 @@ import dev.sbs.dataflow.stage.FieldSpec;
 import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.StageConfig.TypedSubPipeline;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.simplified.collection.Concurrent;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
@@ -46,6 +48,17 @@ public final class PipelineGson {
         .registerTypeAdapterFactory(new PostInitTypeAdapterFactory())
         .disableHtmlEscaping()
         .create();
+
+    /**
+     * Returns the shared {@link Gson} instance used for pipeline serde. Reuse it from
+     * stages that need Gson-backed coercion (e.g. {@code JsonObjectBuildTransform},
+     * {@code GsonDeserializeTransform}) so the configuration stays consistent.
+     *
+     * @return the shared Gson instance
+     */
+    public static @NotNull Gson gson() {
+        return GSON;
+    }
 
     /**
      * Serialises a {@link DataPipeline} into its on-disk JSON form.
@@ -133,6 +146,31 @@ public final class PipelineGson {
 
                     o.add(spec.name(), outputs);
                 }
+                case SUB_PIPELINE -> {
+                    JsonArray sub = new JsonArray();
+
+                    for (Stage<?, ?> child : (List<? extends Stage<?, ?>>) v)
+                        sub.add(stageToJson(child));
+
+                    o.add(spec.name(), sub);
+                }
+                case TYPED_SUB_PIPELINES_MAP -> {
+                    JsonObject outputs = new JsonObject();
+
+                    for (Map.Entry<String, TypedSubPipeline> entry : ((Map<String, TypedSubPipeline>) v).entrySet()) {
+                        JsonObject typed = new JsonObject();
+                        typed.addProperty("outputType", entry.getValue().outputType().label());
+                        JsonArray sub = new JsonArray();
+
+                        for (Stage<?, ?> child : entry.getValue().chain())
+                            sub.add(stageToJson(child));
+
+                        typed.add("chain", sub);
+                        outputs.add(entry.getKey(), typed);
+                    }
+
+                    o.add(spec.name(), outputs);
+                }
             }
         }
         return o;
@@ -170,6 +208,33 @@ public final class PipelineGson {
                     }
 
                     b.subPipelines(spec.name(), map);
+                }
+                case SUB_PIPELINE -> {
+                    JsonArray sub = raw.getAsJsonArray();
+                    List<Stage<?, ?>> stages = new ArrayList<>();
+
+                    for (JsonElement el : sub)
+                        stages.add(stageFromJson(el.getAsJsonObject()));
+
+                    b.subPipeline(spec.name(), stages);
+                }
+                case TYPED_SUB_PIPELINES_MAP -> {
+                    JsonObject outputs = raw.getAsJsonObject();
+                    LinkedHashMap<String, TypedSubPipeline> map = new LinkedHashMap<>();
+
+                    for (Map.Entry<String, JsonElement> entry : outputs.entrySet()) {
+                        JsonObject typed = entry.getValue().getAsJsonObject();
+                        DataType<?> outputType = requireType(typed.get("outputType").getAsString());
+                        JsonArray sub = typed.get("chain").getAsJsonArray();
+                        List<Stage<?, ?>> stages = new ArrayList<>();
+
+                        for (JsonElement el : sub)
+                            stages.add(stageFromJson(el.getAsJsonObject()));
+
+                        map.put(entry.getKey(), new TypedSubPipeline(outputType, Concurrent.newUnmodifiableList(stages)));
+                    }
+
+                    b.typedSubPipelines(spec.name(), map);
                 }
             }
         }

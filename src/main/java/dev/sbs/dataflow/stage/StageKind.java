@@ -1,6 +1,6 @@
 package dev.sbs.dataflow.stage;
 
-import dev.sbs.dataflow.stage.terminal.Branch;
+import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.match.AllMatchCollect;
 import dev.sbs.dataflow.stage.terminal.match.AnyMatchCollect;
 import dev.sbs.dataflow.stage.terminal.average.AverageDoubleCollect;
@@ -10,6 +10,7 @@ import dev.sbs.dataflow.stage.terminal.sum.CountCollect;
 import dev.sbs.dataflow.stage.terminal.match.FindFirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
+import dev.sbs.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
 import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
 import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
 import dev.sbs.dataflow.stage.terminal.minmax.MaxByCollect;
@@ -610,6 +611,17 @@ public enum StageKind {
         FlatMapTransform::fromConfig
     ),
 
+    TRANSFORM_GSON_DESERIALIZE(
+        "Gson deserialize",
+        "JSON_* -> T",
+        StageCategory.TRANSFORM_JSON,
+        List.of(
+            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "JSON_ELEMENT"),
+            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "STRING")
+        ),
+        GsonDeserializeTransform::fromConfig
+    ),
+
     TRANSFORM_JSON_AS_BOOLEAN(
         "JSON as boolean",
         "JSON_ELEMENT -> BOOLEAN",
@@ -656,6 +668,17 @@ public enum StageKind {
         StageCategory.TRANSFORM_JSON,
         List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "stats")),
         cfg -> JsonFieldTransform.of(cfg.getString("fieldName"))
+    ),
+
+    TRANSFORM_JSON_OBJECT_BUILD(
+        "JsonObject build",
+        "I -> JSON_OBJECT",
+        StageCategory.TRANSFORM_JSON,
+        List.of(
+            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "STRING"),
+            new FieldSpec("outputs", FieldType.TYPED_SUB_PIPELINES_MAP, "Outputs (typed)", "")
+        ),
+        JsonObjectBuildTransform::fromConfig
     ),
 
     TRANSFORM_JSON_PATH(
@@ -1258,6 +1281,14 @@ public enum StageKind {
         cfg -> JoinCollect.of(cfg.getString("separator"))
     ),
 
+    COLLECT_JSON_OBJECT_FROM_ENTRIES(
+        "JsonObject from entries",
+        "List<JSON_OBJECT> -> JSON_OBJECT",
+        StageCategory.TERMINAL_COLLECT,
+        List.of(),
+        cfg -> JsonObjectFromEntriesCollect.of()
+    ),
+
     COLLECT_LAST(
         "Last",
         "List<T> -> T",
@@ -1276,6 +1307,17 @@ public enum StageKind {
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
         cfg -> ListCollect.of(cfg.getDataType("elementType"))
+    ),
+
+    COLLECT_MAP(
+        "Map (named outputs)",
+        "I -> Map<String, Object>",
+        StageCategory.TERMINAL_COLLECT,
+        List.of(
+            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "STRING"),
+            new FieldSpec("outputs", FieldType.SUB_PIPELINES_MAP, "Outputs", "")
+        ),
+        MapCollect::fromConfig
     ),
 
     COLLECT_MAX(
@@ -1365,18 +1407,6 @@ public enum StageKind {
         StageCategory.TERMINAL_SUM,
         List.of(),
         cfg -> SumLongCollect.of()
-    ),
-
-    /* ---- Compound ---- */
-    BRANCH(
-        "Branch",
-        "I -> Map<String, Object>",
-        StageCategory.BRANCH,
-        List.of(
-            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "STRING"),
-            new FieldSpec("outputs", FieldType.SUB_PIPELINES_MAP, "Outputs", "")
-        ),
-        Branch::fromConfig
     );
 
     /** Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone. */

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <O> the runtime output type
  */
 public sealed interface Stage<I, O> permits
-    SourceStage, FilterStage, TransformStage, BranchStage, CollectStage {
+    SourceStage, FilterStage, TransformStage, CollectStage {
 
     /**
      * Runtime descriptor of the input value this stage expects.

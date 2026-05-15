@@ -1,10 +1,9 @@
-package dev.sbs.dataflow.stage.terminal;
+package dev.sbs.dataflow.stage.terminal.collect;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
@@ -25,18 +24,18 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-class BranchTest {
+class MapCollectTest {
 
     @Test
-    @DisplayName("Branch fans the same row list out to three named integer outputs")
-    void branchProducesNamedOutputs() {
+    @DisplayName("MapCollect fans the same row list out to three named integer outputs")
+    void mapCollectProducesNamedOutputs() {
         Element root = Jsoup.parse(Fixtures.load("dark_claymore.html"));
         List<Element> rows = CssSelectTransform.of("table.infobox tr")
             .execute(PipelineContext.empty(), root);
         assertThat(rows, is(notNullValue()));
 
         DataType<List<Element>> input = DataType.list(DataTypes.DOM_NODE);
-        Branch<List<Element>> branch = Branch.over(input)
+        MapCollect<List<Element>> collect = MapCollect.over(input)
             .output("dmg", chain -> chain
                 .stage(DomTextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
@@ -63,7 +62,7 @@ class BranchTest {
             )
             .build();
 
-        Map<String, Object> result = branch.execute(PipelineContext.empty(), rows);
+        Map<String, Object> result = collect.execute(PipelineContext.empty(), rows);
 
         assertThat(result, hasEntry(equalTo("dmg"), equalTo(500)));
         assertThat(result, hasEntry(equalTo("strength"), equalTo(220)));
@@ -71,11 +70,11 @@ class BranchTest {
     }
 
     @Test
-    @DisplayName("Branch outputType is BRANCH_OUTPUT and kind is BRANCH")
-    void branchAdvertisesContract() {
-        Branch<String> branch = Branch.over(DataTypes.STRING).build();
-        assertThat(branch.outputType(), is(DataTypes.BRANCH_OUTPUT));
-        assertThat(branch.kind().name(), is(equalTo("BRANCH")));
+    @DisplayName("MapCollect outputType is MAP_OUTPUT and kind is COLLECT_MAP")
+    void mapCollectAdvertisesContract() {
+        MapCollect<String> collect = MapCollect.over(DataTypes.STRING).build();
+        assertThat(collect.outputType(), is(DataTypes.MAP_OUTPUT));
+        assertThat(collect.kind().name(), is(equalTo("COLLECT_MAP")));
     }
 
 }

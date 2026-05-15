@@ -6,8 +6,8 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.terminal.Branch;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
+import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
 import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
 import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
@@ -165,10 +165,10 @@ class PipelineSerdeTest {
     }
 
     @Test
-    @DisplayName("Branch with three outputs round-trips and re-executes to identical map")
-    void branchRoundTrips() {
+    @DisplayName("MapCollect with three outputs round-trips and re-executes to identical map")
+    void mapCollectRoundTrips() {
         DataType<List<org.jsoup.nodes.Element>> input = DataType.list(DataTypes.DOM_NODE);
-        Branch<List<org.jsoup.nodes.Element>> branch = Branch.over(input)
+        MapCollect<List<org.jsoup.nodes.Element>> collect = MapCollect.over(input)
             .output("dmg", c -> c
                 .stage(DomTextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
@@ -189,7 +189,7 @@ class PipelineSerdeTest {
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
-            .stage(branch)
+            .stage(collect)
             .build();
 
         String json = PipelineGson.toJson(original);

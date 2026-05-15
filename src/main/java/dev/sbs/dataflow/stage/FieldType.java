@@ -38,4 +38,12 @@ public enum FieldType {
      */
     SUB_PIPELINE,
 
+    /**
+     * Map of named sub-pipelines that each declare an explicit output {@link DataType}.
+     * Storage value is {@code Map<String, StageConfig.TypedSubPipeline>}. Used by stages
+     * that build a structured output where each named slot has its own static type, such as
+     * the JSON object builder.
+     */
+    TYPED_SUB_PIPELINES_MAP,
+
 }

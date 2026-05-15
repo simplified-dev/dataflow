@@ -15,9 +15,6 @@ public enum StageCategory {
     /** Source stages that produce a value with no upstream input. */
     SOURCE,
 
-    /** Terminal stages that fan an input into named sub-pipelines. */
-    BRANCH,
-
     /** DOM filters (text-contains, text-matches, has-attr, tag-equals). */
     FILTER_DOM,
 

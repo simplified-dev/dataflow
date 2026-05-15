@@ -3,7 +3,7 @@ package dev.sbs.dataflow;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.sbs.dataflow.stage.BranchStage;
+import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Catalog of well-known {@link DataType} instances used by the built-in stage catalog.
@@ -64,12 +65,35 @@ public final class DataTypes {
     /** Gson {@link JsonArray}. */
     public static final @NotNull DataType<JsonArray> JSON_ARRAY = new DataType.Basic<>(JsonArray.class, "JSON_ARRAY");
 
-    /** Output type of {@link BranchStage}, a map of named sub-pipeline results. */
+    /** Output type of {@link MapCollect}, a map of named sub-pipeline results. */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static final @NotNull DataType<Map<String, Object>> BRANCH_OUTPUT =
-        new DataType.Basic<>((Class) Map.class, "BRANCH_OUTPUT");
+    public static final @NotNull DataType<Map<String, Object>> MAP_OUTPUT =
+        new DataType.Basic<>((Class) Map.class, "MAP_OUTPUT");
 
     private static final @NotNull Map<String, DataType<?>> BASICS = collectBasics();
+
+    private static final @NotNull ConcurrentHashMap<String, DataType<?>> REGISTERED = new ConcurrentHashMap<>();
+
+    /**
+     * Registers a {@link DataType} so {@link #byLabel(String)} can resolve it. Use to make
+     * ad-hoc POJO types (e.g. a {@code Basic<MyRecord>}) round-trippable through serde
+     * without modifying this class.
+     * <p>
+     * Registrations are add-only and idempotent: re-registering a type with the same label
+     * is a no-op. The overlay never shadows {@linkplain #byLabel built-in basics}.
+     *
+     * @param type the data type to register
+     * @throws IllegalStateException when a different type is already registered under the
+     *         same label, or when the label collides with a built-in basic
+     */
+    public static void register(@NotNull DataType<?> type) {
+        String label = type.label();
+        if (BASICS.containsKey(label) && !BASICS.get(label).equals(type))
+            throw new IllegalStateException("Label '" + label + "' is already a built-in DataType");
+        DataType<?> previous = REGISTERED.putIfAbsent(label, type);
+        if (previous != null && !previous.equals(type))
+            throw new IllegalStateException("Label '" + label + "' is already registered with a different DataType");
+    }
 
     private static @NotNull Map<String, DataType<?>> collectBasics() {
         Map<String, DataType<?>> map = new HashMap<>();
@@ -88,7 +112,8 @@ public final class DataTypes {
 
     /**
      * Looks up a {@link DataType} by its label. Recognises every {@code public static final}
-     * field declared in this class plus the {@code List<...>} and {@code Set<...>} forms.
+     * field declared in this class, every type added via {@link #register}, plus the
+     * {@code List<...>} and {@code Set<...>} forms.
      *
      * @param label the label to look up
      * @return the matching {@link DataType}, or {@code null} when unknown
@@ -102,7 +127,8 @@ public final class DataTypes {
             DataType<?> inner = byLabel(label.substring(4, label.length() - 1));
             return inner == null ? null : DataType.set(inner);
         }
-        return BASICS.get(label);
+        DataType<?> basic = BASICS.get(label);
+        return basic != null ? basic : REGISTERED.get(label);
     }
 
 }

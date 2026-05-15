@@ -22,6 +22,18 @@ import java.util.Map;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StageConfig {
 
+    /**
+     * Pairs a named sub-pipeline with the {@link DataType} its body must produce. Carried
+     * inside {@link FieldType#TYPED_SUB_PIPELINES_MAP} values.
+     *
+     * @param outputType expected output type of the body's last stage
+     * @param chain the body stages, in execution order
+     */
+    public record TypedSubPipeline(
+        @NotNull DataType<?> outputType,
+        @NotNull ConcurrentList<Stage<?, ?>> chain
+    ) {}
+
     private static final @NotNull StageConfig EMPTY = new StageConfig(Concurrent.newUnmodifiableMap());
 
     private final @NotNull Map<String, Object> values;
@@ -70,6 +82,19 @@ public final class StageConfig {
         }
 
         public @NotNull Builder subPipelines(@NotNull String name, @NotNull Map<String, ? extends List<? extends Stage<?, ?>>> value) {
+            this.values.put(name, value);
+            return this;
+        }
+
+        /**
+         * Stores a named sub-pipelines map whose values pair each chain with its declared
+         * output {@link DataType}.
+         *
+         * @param name the field name
+         * @param value the typed sub-pipelines map
+         * @return this builder
+         */
+        public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedSubPipeline> value) {
             this.values.put(name, value);
             return this;
         }
@@ -197,6 +222,29 @@ public final class StageConfig {
     public @NotNull ConcurrentList<Stage<?, ?>> getSubPipeline(@NotNull String name) {
         List<? extends Stage<?, ?>> raw = (List<? extends Stage<?, ?>>) this.values.get(name);
         return Concurrent.newUnmodifiableList((List<Stage<?, ?>>) raw);
+    }
+
+    /**
+     * Returns the typed sub-pipelines map stored under {@code name}, with each chain frozen
+     * to a {@link ConcurrentList}.
+     *
+     * @param name the field name
+     * @return the typed sub-pipelines map
+     * @throws ClassCastException when the field is present but not a typed sub-pipelines map
+     * @throws NullPointerException when the field is absent
+     */
+    @SuppressWarnings("unchecked")
+    public @NotNull Map<String, TypedSubPipeline> getTypedSubPipelines(@NotNull String name) {
+        Map<String, TypedSubPipeline> raw = (Map<String, TypedSubPipeline>) this.values.get(name);
+        LinkedHashMap<String, TypedSubPipeline> frozen = new LinkedHashMap<>();
+        for (Map.Entry<String, TypedSubPipeline> entry : raw.entrySet()) {
+            TypedSubPipeline v = entry.getValue();
+            frozen.put(entry.getKey(), new TypedSubPipeline(
+                v.outputType(),
+                Concurrent.newUnmodifiableList((List<Stage<?, ?>>) v.chain())
+            ));
+        }
+        return Map.copyOf(frozen);
     }
 
     /**
