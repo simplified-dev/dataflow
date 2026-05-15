@@ -66,11 +66,10 @@ public final class AllMatchCollect<T> implements CollectStage<List<T>, Boolean> 
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull AllMatchCollect<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> elementType = cfg.getDataType("elementType");
         Chain body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, body.stages());
+        return of(elementType, body.stages());
     }
 
     /** {@inheritDoc} */

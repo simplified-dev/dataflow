@@ -40,6 +40,16 @@ public final class ListLengthTransform<T> implements TransformStage<List<T>, Int
         return new ListLengthTransform<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull ListLengthTransform<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

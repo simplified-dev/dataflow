@@ -41,6 +41,16 @@ public final class ReplaceTransform implements TransformStage<String, String> {
         return new ReplaceTransform(regex, replacement, Pattern.compile(regex));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull ReplaceTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("regex"), cfg.getString("replacement"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

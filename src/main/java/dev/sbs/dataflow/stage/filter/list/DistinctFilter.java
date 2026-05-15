@@ -43,6 +43,16 @@ public final class DistinctFilter<T> implements FilterStage<T> {
         return new DistinctFilter<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DistinctFilter<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

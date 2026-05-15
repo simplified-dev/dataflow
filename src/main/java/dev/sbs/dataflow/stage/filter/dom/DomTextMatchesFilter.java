@@ -43,6 +43,16 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
         return new DomTextMatchesFilter(regex, Pattern.compile(regex));
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DomTextMatchesFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("regex"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

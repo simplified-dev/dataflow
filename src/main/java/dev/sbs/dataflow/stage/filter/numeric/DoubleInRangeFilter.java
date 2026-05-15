@@ -42,6 +42,16 @@ public final class DoubleInRangeFilter implements FilterStage<Double> {
         return new DoubleInRangeFilter(min, max);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DoubleInRangeFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDouble("min"), cfg.getDouble("max"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

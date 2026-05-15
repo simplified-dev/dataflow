@@ -40,6 +40,16 @@ public final class CountCollect<T> implements CollectStage<List<T>, Integer> {
         return new CountCollect<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the collect from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull CountCollect<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

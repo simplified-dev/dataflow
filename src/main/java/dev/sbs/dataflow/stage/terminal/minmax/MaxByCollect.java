@@ -81,7 +81,7 @@ public final class MaxByCollect<T, K extends Comparable<K>> implements CollectSt
         DataType<?> elementType = cfg.getDataType("elementType");
         DataType<?> keyType = cfg.getDataType("keyType");
         Chain body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, (DataType) keyType, body.stages());
+        return of(elementType, (DataType) keyType, body.stages());
     }
 
     /** {@inheritDoc} */

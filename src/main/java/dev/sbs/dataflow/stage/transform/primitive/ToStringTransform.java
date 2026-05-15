@@ -37,6 +37,16 @@ public final class ToStringTransform<T> implements TransformStage<T, String> {
         return new ToStringTransform<>(inputType);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull ToStringTransform<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("inputType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

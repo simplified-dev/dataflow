@@ -40,6 +40,16 @@ public final class JsonHasFieldFilter implements FilterStage<JsonObject> {
         return new JsonHasFieldFilter(fieldName);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull JsonHasFieldFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("fieldName"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

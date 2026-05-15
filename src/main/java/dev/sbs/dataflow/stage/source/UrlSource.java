@@ -95,9 +95,8 @@ public final class UrlSource implements SourceStage<String> {
         return of(DataTypes.STRING, url);
     }
 
-    @SuppressWarnings("unchecked")
     public static @NotNull UrlSource fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType<String>) cfg.getDataType("outputType"), cfg.getString("url"));
+        return of(cfg.getDataType("outputType"), cfg.getString("url"));
     }
 
     /** {@inheritDoc} */

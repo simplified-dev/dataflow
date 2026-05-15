@@ -43,9 +43,8 @@ public final class NotNullPredicate<T> implements TransformStage<T, Boolean> {
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull NotNullPredicate<?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("elementType"));
+        return of(cfg.getDataType("elementType"));
     }
 
     /** {@inheritDoc} */

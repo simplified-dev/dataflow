@@ -44,6 +44,16 @@ public final class ReverseTransform<T> implements TransformStage<List<T>, List<T
         return new ReverseTransform<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull ReverseTransform<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

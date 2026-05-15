@@ -53,6 +53,16 @@ public final class EmbedSource<O> implements SourceStage<O> {
         return new EmbedSource<>(embeddedPipelineId, outputType);
     }
 
+    /**
+     * Reconstructs the source from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull EmbedSource<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

@@ -48,6 +48,16 @@ public final class IndexInRangeFilter<T> implements FilterStage<T> {
         return new IndexInRangeFilter<>(elementType, DataType.list(elementType), fromInclusive, toExclusive);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull IndexInRangeFilter<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"), cfg.getInt("fromInclusive"), cfg.getInt("toExclusive"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

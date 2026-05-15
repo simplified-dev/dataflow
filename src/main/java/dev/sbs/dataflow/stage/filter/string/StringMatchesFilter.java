@@ -42,6 +42,16 @@ public final class StringMatchesFilter implements FilterStage<String> {
         return new StringMatchesFilter(regex, Pattern.compile(regex));
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull StringMatchesFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("regex"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

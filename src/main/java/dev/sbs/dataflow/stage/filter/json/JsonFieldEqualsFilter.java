@@ -46,6 +46,16 @@ public final class JsonFieldEqualsFilter implements FilterStage<JsonObject> {
         return new JsonFieldEqualsFilter(fieldName, expectedValue);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull JsonFieldEqualsFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("fieldName"), cfg.getString("expectedValue"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

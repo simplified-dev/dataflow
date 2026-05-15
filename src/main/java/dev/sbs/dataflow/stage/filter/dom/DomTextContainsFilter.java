@@ -41,6 +41,16 @@ public final class DomTextContainsFilter implements FilterStage<Element> {
         return new DomTextContainsFilter(needle);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DomTextContainsFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("needle"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

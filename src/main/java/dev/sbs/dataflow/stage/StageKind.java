@@ -146,7 +146,7 @@ public enum StageKind {
             new FieldSpec("embeddedPipelineId", FieldType.STRING, "Saved pipeline id", "wiki_dmg"),
             new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "INT")
         ),
-        cfg -> EmbedSource.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
+        EmbedSource::fromConfig
     ),
 
     SOURCE_LITERAL(
@@ -190,7 +190,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> DistinctFilter.of(cfg.getDataType("elementType"))
+        DistinctFilter::fromConfig
     ),
 
     FILTER_DOM_HAS_ATTR(
@@ -201,12 +201,7 @@ public enum StageKind {
             new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "class"),
             new FieldSpec("expectedValue", FieldType.STRING, "Expected value (optional)", "primary")
         ),
-        cfg -> {
-            String name = cfg.getString("attributeName");
-            return cfg.has("expectedValue")
-                ? DomHasAttrFilter.of(name, cfg.getString("expectedValue"))
-                : DomHasAttrFilter.of(name);
-        }
+        DomHasAttrFilter::fromConfig
     ),
 
     FILTER_DOM_TAG_EQUALS(
@@ -216,7 +211,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("tagName", FieldType.STRING, "Tag", "a")
         ),
-        cfg -> DomTagEqualsFilter.of(cfg.getString("tagName"))
+        DomTagEqualsFilter::fromConfig
     ),
 
     FILTER_DOM_TEXT_CONTAINS(
@@ -224,7 +219,7 @@ public enum StageKind {
         "List<DOM_NODE> -> List<DOM_NODE>",
         StageCategory.FILTER_DOM,
         List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
-        cfg -> DomTextContainsFilter.of(cfg.getString("needle"))
+        DomTextContainsFilter::fromConfig
     ),
 
     FILTER_DOM_TEXT_MATCHES(
@@ -234,7 +229,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")
         ),
-        cfg -> DomTextMatchesFilter.of(cfg.getString("regex"))
+        DomTextMatchesFilter::fromConfig
     ),
 
     FILTER_DOUBLE_GREATER_THAN(
@@ -244,7 +239,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
         ),
-        cfg -> DoubleGreaterThanFilter.of(cfg.getDouble("threshold"))
+        DoubleGreaterThanFilter::fromConfig
     ),
 
     FILTER_DOUBLE_IN_RANGE(
@@ -255,7 +250,7 @@ public enum StageKind {
             new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
             new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
         ),
-        cfg -> DoubleInRangeFilter.of(cfg.getDouble("min"), cfg.getDouble("max"))
+        DoubleInRangeFilter::fromConfig
     ),
 
     FILTER_DOUBLE_LESS_THAN(
@@ -265,7 +260,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
         ),
-        cfg -> DoubleLessThanFilter.of(cfg.getDouble("threshold"))
+        DoubleLessThanFilter::fromConfig
     ),
 
     FILTER_DROP_WHILE(
@@ -288,7 +283,7 @@ public enum StageKind {
             new FieldSpec("fromInclusive", FieldType.INT, "From (inclusive)", "0"),
             new FieldSpec("toExclusive", FieldType.INT, "To (exclusive)", "10")
         ),
-        cfg -> IndexInRangeFilter.of(cfg.getDataType("elementType"), cfg.getInt("fromInclusive"), cfg.getInt("toExclusive"))
+        IndexInRangeFilter::fromConfig
     ),
 
     FILTER_INT_GREATER_THAN(
@@ -298,7 +293,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
         ),
-        cfg -> IntGreaterThanFilter.of(cfg.getInt("threshold"))
+        IntGreaterThanFilter::fromConfig
     ),
 
     FILTER_INT_IN_RANGE(
@@ -309,7 +304,7 @@ public enum StageKind {
             new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
             new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
         ),
-        cfg -> IntInRangeFilter.of(cfg.getInt("min"), cfg.getInt("max"))
+        IntInRangeFilter::fromConfig
     ),
 
     FILTER_INT_LESS_THAN(
@@ -319,7 +314,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
         ),
-        cfg -> IntLessThanFilter.of(cfg.getInt("threshold"))
+        IntLessThanFilter::fromConfig
     ),
 
     FILTER_JSON_FIELD_EQUALS(
@@ -330,7 +325,7 @@ public enum StageKind {
             new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
             new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
         ),
-        cfg -> JsonFieldEqualsFilter.of(cfg.getString("fieldName"), cfg.getString("expectedValue"))
+        JsonFieldEqualsFilter::fromConfig
     ),
 
     FILTER_JSON_HAS_FIELD(
@@ -340,7 +335,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")
         ),
-        cfg -> JsonHasFieldFilter.of(cfg.getString("fieldName"))
+        JsonHasFieldFilter::fromConfig
     ),
 
     FILTER_LONG_GREATER_THAN(
@@ -350,7 +345,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
         ),
-        cfg -> LongGreaterThanFilter.of(cfg.getLong("threshold"))
+        LongGreaterThanFilter::fromConfig
     ),
 
     FILTER_LONG_IN_RANGE(
@@ -361,7 +356,7 @@ public enum StageKind {
             new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
             new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
         ),
-        cfg -> LongInRangeFilter.of(cfg.getLong("min"), cfg.getLong("max"))
+        LongInRangeFilter::fromConfig
     ),
 
     FILTER_LONG_LESS_THAN(
@@ -371,7 +366,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
         ),
-        cfg -> LongLessThanFilter.of(cfg.getLong("threshold"))
+        LongLessThanFilter::fromConfig
     ),
 
     FILTER_NOT_NULL(
@@ -381,7 +376,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> NotNullFilter.of(cfg.getDataType("elementType"))
+        NotNullFilter::fromConfig
     ),
 
     FILTER_SKIP(
@@ -392,7 +387,7 @@ public enum StageKind {
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
             new FieldSpec("count", FieldType.INT, "Count", "10")
         ),
-        cfg -> SkipFilter.of(cfg.getDataType("elementType"), cfg.getInt("count"))
+        SkipFilter::fromConfig
     ),
 
     FILTER_STRING_CONTAINS(
@@ -402,7 +397,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("needle", FieldType.STRING, "Contains", "foo")
         ),
-        cfg -> StringContainsFilter.of(cfg.getString("needle"))
+        StringContainsFilter::fromConfig
     ),
 
     FILTER_STRING_ENDS_WITH(
@@ -412,7 +407,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("suffix", FieldType.STRING, "Suffix", "bar")
         ),
-        cfg -> StringEndsWithFilter.of(cfg.getString("suffix"))
+        StringEndsWithFilter::fromConfig
     ),
 
     FILTER_STRING_EQUALS(
@@ -422,7 +417,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("target", FieldType.STRING, "Equals", "foo")
         ),
-        cfg -> StringEqualsFilter.of(cfg.getString("target"))
+        StringEqualsFilter::fromConfig
     ),
 
     FILTER_STRING_MATCHES(
@@ -432,7 +427,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("regex", FieldType.STRING, "Regex", "^foo")
         ),
-        cfg -> StringMatchesFilter.of(cfg.getString("regex"))
+        StringMatchesFilter::fromConfig
     ),
 
     FILTER_STRING_NON_EMPTY(
@@ -450,7 +445,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")
         ),
-        cfg -> StringStartsWithFilter.of(cfg.getString("prefix"))
+        StringStartsWithFilter::fromConfig
     ),
 
     FILTER_TAKE(
@@ -461,7 +456,7 @@ public enum StageKind {
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
             new FieldSpec("count", FieldType.INT, "Count", "10")
         ),
-        cfg -> TakeFilter.of(cfg.getDataType("elementType"), cfg.getInt("count"))
+        TakeFilter::fromConfig
     ),
 
     FILTER_TAKE_WHILE(
@@ -553,7 +548,7 @@ public enum StageKind {
         "DOM_NODE -> List<DOM_NODE>",
         StageCategory.TRANSFORM_DOM,
         List.of(new FieldSpec("selector", FieldType.STRING, "Selector", "table.infobox tr")),
-        cfg -> CssSelectTransform.of(cfg.getString("selector"))
+        CssSelectTransform::fromConfig
     ),
 
     TRANSFORM_DOM_CHILDREN(
@@ -595,7 +590,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> FlattenTransform.of(cfg.getDataType("elementType"))
+        FlattenTransform::fromConfig
     ),
 
     TRANSFORM_FLAT_MAP(
@@ -666,7 +661,7 @@ public enum StageKind {
         "JSON_OBJECT -> JSON_ELEMENT",
         StageCategory.TRANSFORM_JSON,
         List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "stats")),
-        cfg -> JsonFieldTransform.of(cfg.getString("fieldName"))
+        JsonFieldTransform::fromConfig
     ),
 
     TRANSFORM_JSON_OBJECT_BUILD(
@@ -685,7 +680,7 @@ public enum StageKind {
         "JSON_ELEMENT -> JSON_ELEMENT",
         StageCategory.TRANSFORM_JSON,
         List.of(new FieldSpec("path", FieldType.STRING, "Path", "stats.combat.dmg")),
-        cfg -> JsonPathTransform.of(cfg.getString("path"))
+        JsonPathTransform::fromConfig
     ),
 
     TRANSFORM_JSON_STRINGIFY(
@@ -703,7 +698,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> ListLengthTransform.of(cfg.getDataType("elementType"))
+        ListLengthTransform::fromConfig
     ),
 
     TRANSFORM_LOWERCASE(
@@ -763,7 +758,7 @@ public enum StageKind {
         "DOM_NODE -> STRING",
         StageCategory.TRANSFORM_DOM,
         List.of(new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "href")),
-        cfg -> NodeAttrTransform.of(cfg.getString("attributeName"))
+        NodeAttrTransform::fromConfig
     ),
 
     TRANSFORM_NODE_TEXT(
@@ -782,7 +777,7 @@ public enum StageKind {
             new FieldSpec("childSelector", FieldType.STRING, "Child selector", "td"),
             new FieldSpec("index", FieldType.INT, "Index (0-based)", "0")
         ),
-        cfg -> NthChildTransform.of(cfg.getString("childSelector"), cfg.getInt("index"))
+        NthChildTransform::fromConfig
     ),
 
     TRANSFORM_PARSE_BOOLEAN(
@@ -833,7 +828,7 @@ public enum StageKind {
             new FieldSpec("valueType", FieldType.DATA_TYPE, "Value type", "STRING"),
             new FieldSpec("label", FieldType.STRING, "Label", "stage")
         ),
-        cfg -> PeekTransform.of(cfg.getDataType("valueType"), cfg.getString("label"))
+        PeekTransform::fromConfig
     ),
 
     TRANSFORM_PREFIX(
@@ -843,7 +838,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("prefix", FieldType.STRING, "Prefix", ">>>")
         ),
-        cfg -> PrefixTransform.of(cfg.getString("prefix"))
+        PrefixTransform::fromConfig
     ),
 
     TRANSFORM_REGEX_EXTRACT(
@@ -854,7 +849,7 @@ public enum StageKind {
             new FieldSpec("regex", FieldType.STRING, "Regex", "\\d+"),
             new FieldSpec("group", FieldType.INT, "Capture group", "0")
         ),
-        cfg -> RegexExtractTransform.of(cfg.getString("regex"), cfg.getInt("group"))
+        RegexExtractTransform::fromConfig
     ),
 
     TRANSFORM_REPLACE(
@@ -865,7 +860,7 @@ public enum StageKind {
             new FieldSpec("regex", FieldType.STRING, "Regex", "\\s+"),
             new FieldSpec("replacement", FieldType.STRING, "Replacement", "_")
         ),
-        cfg -> ReplaceTransform.of(cfg.getString("regex"), cfg.getString("replacement"))
+        ReplaceTransform::fromConfig
     ),
 
     TRANSFORM_REVERSE(
@@ -875,7 +870,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> ReverseTransform.of(cfg.getDataType("elementType"))
+        ReverseTransform::fromConfig
     ),
 
     TRANSFORM_SORT(
@@ -909,7 +904,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("regex", FieldType.STRING, "Regex", ",")
         ),
-        cfg -> SplitTransform.of(cfg.getString("regex"))
+        SplitTransform::fromConfig
     ),
 
     TRANSFORM_STRING_LENGTH(
@@ -927,7 +922,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("suffix", FieldType.STRING, "Suffix", "<<<")
         ),
-        cfg -> SuffixTransform.of(cfg.getString("suffix"))
+        SuffixTransform::fromConfig
     ),
 
     TRANSFORM_TO_STRING(
@@ -937,7 +932,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "INT")
         ),
-        cfg -> ToStringTransform.of(cfg.getDataType("inputType"))
+        ToStringTransform::fromConfig
     ),
 
     TRANSFORM_TRIM(
@@ -1248,7 +1243,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> CountCollect.of(cfg.getDataType("elementType"))
+        CountCollect::fromConfig
     ),
 
     COLLECT_FIND_FIRST(
@@ -1267,7 +1262,7 @@ public enum StageKind {
         "List<T> -> T",
         StageCategory.TERMINAL_COLLECT,
         List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "DOM_NODE")),
-        cfg -> FirstCollect.of(cfg.getDataType("elementType"))
+        FirstCollect::fromConfig
     ),
 
     COLLECT_JOIN(
@@ -1277,7 +1272,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("separator", FieldType.STRING, "Separator", ", ")
         ),
-        cfg -> JoinCollect.of(cfg.getString("separator"))
+        JoinCollect::fromConfig
     ),
 
     COLLECT_JSON_OBJECT_FROM_ENTRIES(
@@ -1295,7 +1290,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> LastCollect.of(cfg.getDataType("elementType"))
+        LastCollect::fromConfig
     ),
 
     COLLECT_LIST(
@@ -1305,7 +1300,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> ListCollect.of(cfg.getDataType("elementType"))
+        ListCollect::fromConfig
     ),
 
     COLLECT_MAP(
@@ -1381,7 +1376,7 @@ public enum StageKind {
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
         ),
-        cfg -> SetCollect.of(cfg.getDataType("elementType"))
+        SetCollect::fromConfig
     ),
 
     COLLECT_SUM_DOUBLE(

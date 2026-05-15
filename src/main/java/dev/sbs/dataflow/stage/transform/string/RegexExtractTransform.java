@@ -55,6 +55,16 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
         return new RegexExtractTransform(regex, group, Pattern.compile(regex));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull RegexExtractTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("regex"), cfg.getInt("group"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

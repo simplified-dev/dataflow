@@ -40,6 +40,16 @@ public final class NthChildTransform implements TransformStage<Element, Element>
         return new NthChildTransform(childSelector, index);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull NthChildTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("childSelector"), cfg.getInt("index"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

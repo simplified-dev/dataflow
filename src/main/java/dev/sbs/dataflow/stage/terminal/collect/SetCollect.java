@@ -44,6 +44,16 @@ public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
         return new SetCollect<>(elementType, DataType.list(elementType), DataType.set(elementType));
     }
 
+    /**
+     * Reconstructs the collect from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull SetCollect<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

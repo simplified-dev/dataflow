@@ -54,6 +54,17 @@ public final class DomHasAttrFilter implements FilterStage<Element> {
         return new DomHasAttrFilter(attributeName, expectedValue);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DomHasAttrFilter fromConfig(@NotNull StageConfig cfg) {
+        String name = cfg.getString("attributeName");
+        return cfg.has("expectedValue") ? of(name, cfg.getString("expectedValue")) : of(name);
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

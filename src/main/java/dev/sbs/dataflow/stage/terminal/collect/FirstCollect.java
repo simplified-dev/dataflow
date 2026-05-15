@@ -40,6 +40,16 @@ public final class FirstCollect<T> implements CollectStage<List<T>, T> {
         return new FirstCollect<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the collect from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull FirstCollect<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

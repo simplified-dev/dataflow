@@ -39,6 +39,16 @@ public final class DoubleLessThanFilter implements FilterStage<Double> {
         return new DoubleLessThanFilter(threshold);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DoubleLessThanFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDouble("threshold"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

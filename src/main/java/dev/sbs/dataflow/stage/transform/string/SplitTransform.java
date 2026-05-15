@@ -43,6 +43,16 @@ public final class SplitTransform implements TransformStage<String, List<String>
         return new SplitTransform(regex, Pattern.compile(regex));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull SplitTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("regex"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

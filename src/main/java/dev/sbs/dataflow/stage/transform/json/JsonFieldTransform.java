@@ -36,6 +36,16 @@ public final class JsonFieldTransform implements TransformStage<JsonObject, Json
         return new JsonFieldTransform(fieldName);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull JsonFieldTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("fieldName"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

@@ -41,6 +41,16 @@ public final class CssSelectTransform implements TransformStage<Element, List<El
         return new CssSelectTransform(selector);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull CssSelectTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("selector"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

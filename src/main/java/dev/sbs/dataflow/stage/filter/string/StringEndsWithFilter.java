@@ -39,6 +39,16 @@ public final class StringEndsWithFilter implements FilterStage<String> {
         return new StringEndsWithFilter(suffix);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull StringEndsWithFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("suffix"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

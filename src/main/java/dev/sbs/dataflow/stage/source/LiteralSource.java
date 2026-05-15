@@ -163,9 +163,8 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull LiteralSource<?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("outputType"), cfg.getString("value"));
+        return of(cfg.getDataType("outputType"), cfg.getString("value"));
     }
 
     private static @NotNull Object parse(@NotNull DataType<?> type, @NotNull String raw) {

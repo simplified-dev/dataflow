@@ -6,6 +6,7 @@ import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.chain.TypedChain;
 import dev.simplified.collection.Concurrent;
 import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,11 +31,10 @@ public final class StageConfig {
     /**
      * Mutable builder. Order is preserved (insertion order).
      */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Builder {
 
         private final @NotNull LinkedHashMap<String, Object> values = new LinkedHashMap<>();
-
-        private Builder() {}
 
         public @NotNull Builder string(@NotNull String name, @NotNull String value) {
             this.values.put(name, value);
@@ -140,6 +140,7 @@ public final class StageConfig {
         public @NotNull StageConfig build() {
             return new StageConfig(Concurrent.adoptMap(this.values).toUnmodifiable());
         }
+
     }
 
     /**
@@ -169,9 +170,18 @@ public final class StageConfig {
 
     /**
      * Returns the {@link DataType} stored under {@code name}.
+     * <p>
+     * The element type {@code T} is inferred from the call site; the cast is unchecked
+     * because the schema contract - not the type system - guarantees the stored value
+     * matches the caller's expected parameterization.
+     *
+     * @param name the field name
+     * @return the stored data type
+     * @param <T> caller-inferred element type
      */
-    public @NotNull DataType<?> getDataType(@NotNull String name) {
-        return (DataType<?>) this.values.get(name);
+    @SuppressWarnings("unchecked")
+    public <T> @NotNull DataType<T> getDataType(@NotNull String name) {
+        return (DataType<T>) this.values.get(name);
     }
 
     /**

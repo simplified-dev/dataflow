@@ -42,6 +42,16 @@ public final class IntInRangeFilter implements FilterStage<Integer> {
         return new IntInRangeFilter(min, max);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull IntInRangeFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getInt("min"), cfg.getInt("max"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

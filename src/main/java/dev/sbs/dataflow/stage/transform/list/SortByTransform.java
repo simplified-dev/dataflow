@@ -92,7 +92,7 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
         DataType<?> keyType = cfg.getDataType("keyType");
         boolean ascending = cfg.getBoolean("ascending");
         Chain body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, (DataType) keyType, ascending, body.stages());
+        return of(elementType, (DataType) keyType, ascending, body.stages());
     }
 
     /** {@inheritDoc} */

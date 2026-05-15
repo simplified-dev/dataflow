@@ -46,6 +46,16 @@ public final class FlattenTransform<T> implements TransformStage<List<List<T>>, 
         return new FlattenTransform<>(elementType, inner, DataType.list(inner));
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull FlattenTransform<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

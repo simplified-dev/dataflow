@@ -91,9 +91,8 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull GsonDeserializeTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("inputType"), (DataType) cfg.getDataType("outputType"));
+        return of(cfg.getDataType("inputType"), cfg.getDataType("outputType"));
     }
 
     /** {@inheritDoc} */

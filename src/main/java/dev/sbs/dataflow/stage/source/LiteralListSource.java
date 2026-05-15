@@ -181,9 +181,8 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull LiteralListSource<?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("elementType"), cfg.getString("value"));
+        return of(cfg.getDataType("elementType"), cfg.getString("value"));
     }
 
     private static final @NotNull Set<DataType<?>> SUPPORTED_ELEMENT_TYPES = Set.of(

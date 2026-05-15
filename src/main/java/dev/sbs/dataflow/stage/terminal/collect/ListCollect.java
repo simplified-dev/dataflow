@@ -42,6 +42,16 @@ public final class ListCollect<T> implements CollectStage<List<T>, List<T>> {
         return new ListCollect<>(elementType, DataType.list(elementType));
     }
 
+    /**
+     * Reconstructs the collect from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull ListCollect<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

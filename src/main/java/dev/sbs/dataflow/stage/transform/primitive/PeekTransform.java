@@ -42,6 +42,16 @@ public final class PeekTransform<T> implements TransformStage<T, T> {
         return new PeekTransform<>(valueType, label);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull PeekTransform<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("valueType"), cfg.getString("label"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

@@ -42,6 +42,16 @@ public final class LongInRangeFilter implements FilterStage<Long> {
         return new LongInRangeFilter(min, max);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull LongInRangeFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getLong("min"), cfg.getLong("max"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

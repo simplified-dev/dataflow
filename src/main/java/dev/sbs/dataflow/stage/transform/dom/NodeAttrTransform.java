@@ -35,6 +35,16 @@ public final class NodeAttrTransform implements TransformStage<Element, String> 
         return new NodeAttrTransform(attributeName);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull NodeAttrTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("attributeName"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

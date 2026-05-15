@@ -38,6 +38,16 @@ public final class JoinCollect implements CollectStage<List<String>, String> {
         return new JoinCollect(separator);
     }
 
+    /**
+     * Reconstructs the collect from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull JoinCollect fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("separator"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

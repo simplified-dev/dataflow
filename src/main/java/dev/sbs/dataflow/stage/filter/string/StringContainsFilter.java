@@ -39,6 +39,16 @@ public final class StringContainsFilter implements FilterStage<String> {
         return new StringContainsFilter(needle);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull StringContainsFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("needle"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

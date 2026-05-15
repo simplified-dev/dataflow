@@ -33,6 +33,16 @@ public final class PrefixTransform implements TransformStage<String, String> {
         return new PrefixTransform(prefix);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull PrefixTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("prefix"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

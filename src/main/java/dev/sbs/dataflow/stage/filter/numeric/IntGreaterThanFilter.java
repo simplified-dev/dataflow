@@ -39,6 +39,16 @@ public final class IntGreaterThanFilter implements FilterStage<Integer> {
         return new IntGreaterThanFilter(threshold);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull IntGreaterThanFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getInt("threshold"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

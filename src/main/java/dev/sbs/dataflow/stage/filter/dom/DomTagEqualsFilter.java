@@ -40,6 +40,16 @@ public final class DomTagEqualsFilter implements FilterStage<Element> {
         return new DomTagEqualsFilter(tagName);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull DomTagEqualsFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("tagName"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

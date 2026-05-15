@@ -39,6 +39,16 @@ public final class LongGreaterThanFilter implements FilterStage<Long> {
         return new LongGreaterThanFilter(threshold);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull LongGreaterThanFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getLong("threshold"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

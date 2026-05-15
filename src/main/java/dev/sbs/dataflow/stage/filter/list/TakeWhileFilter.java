@@ -68,11 +68,10 @@ public final class TakeWhileFilter<T> implements FilterStage<T> {
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull TakeWhileFilter<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> elementType = cfg.getDataType("elementType");
         Chain body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, body.stages());
+        return of(elementType, body.stages());
     }
 
     /** {@inheritDoc} */

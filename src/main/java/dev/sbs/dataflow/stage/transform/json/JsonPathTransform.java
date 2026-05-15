@@ -39,6 +39,16 @@ public final class JsonPathTransform implements TransformStage<JsonElement, Json
         return new JsonPathTransform(path);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull JsonPathTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("path"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

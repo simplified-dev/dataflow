@@ -77,12 +77,11 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull MapTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> inputElementType = cfg.getDataType("elementInputType");
         DataType<?> outputElementType = cfg.getDataType("elementOutputType");
         Chain body = cfg.getSubPipeline("body");
-        return of((DataType) inputElementType, (DataType) outputElementType, body.stages());
+        return of(inputElementType, outputElementType, body.stages());
     }
 
     /** {@inheritDoc} */

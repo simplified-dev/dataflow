@@ -67,14 +67,13 @@ public final class AndPredicate<T> implements TransformStage<T, Boolean> {
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull AndPredicate<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> elementType = cfg.getDataType("elementType");
         NamedChains bodies = cfg.getSubPipelines("bodies");
         Map<String, List<Stage<?, ?>>> raw = new LinkedHashMap<>();
         for (Map.Entry<String, Chain> entry : bodies.chains().entrySet())
             raw.put(entry.getKey(), entry.getValue().stages());
-        return of((DataType) elementType, raw);
+        return of(elementType, raw);
     }
 
     /** {@inheritDoc} */

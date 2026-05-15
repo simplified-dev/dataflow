@@ -44,6 +44,16 @@ public final class SkipFilter<T> implements FilterStage<T> {
         return new SkipFilter<>(elementType, DataType.list(elementType), Math.max(0, count));
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull SkipFilter<?> fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getDataType("elementType"), cfg.getInt("count"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

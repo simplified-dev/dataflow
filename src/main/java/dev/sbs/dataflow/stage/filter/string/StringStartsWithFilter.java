@@ -39,6 +39,16 @@ public final class StringStartsWithFilter implements FilterStage<String> {
         return new StringStartsWithFilter(prefix);
     }
 
+    /**
+     * Reconstructs the filter from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull StringStartsWithFilter fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("prefix"));
+    }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull StageConfig config() {

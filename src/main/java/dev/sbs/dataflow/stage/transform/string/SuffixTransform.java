@@ -33,6 +33,16 @@ public final class SuffixTransform implements TransformStage<String, String> {
         return new SuffixTransform(suffix);
     }
 
+    /**
+     * Reconstructs the transform from a populated {@link StageConfig}.
+     *
+     * @param cfg the populated configuration
+     * @return the rebuilt stage
+     */
+    public static @NotNull SuffixTransform fromConfig(@NotNull StageConfig cfg) {
+        return of(cfg.getString("suffix"));
+    }
+
     /** {@inheritDoc} */
     @Override public @NotNull DataType<String> inputType()  { return DataTypes.STRING; }
     /** {@inheritDoc} */
