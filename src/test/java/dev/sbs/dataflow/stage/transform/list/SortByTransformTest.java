@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SortByTransformTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Sort strings ascending by length")

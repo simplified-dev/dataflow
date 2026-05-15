@@ -35,7 +35,7 @@ class GsonDeserializeTransformTest {
         input.add("stats", stats);
 
         Sample result = GsonDeserializeTransform.of(SAMPLE_TYPE)
-            .execute(PipelineContext.empty(), input);
+            .execute(PipelineContext.defaults(), input);
 
         assertThat(result, is(notNullValue()));
         assertThat(result.name(), is(equalTo("Dark Claymore")));
@@ -48,7 +48,7 @@ class GsonDeserializeTransformTest {
     @DisplayName("Null and JsonNull inputs return null")
     void nullInputReturnsNull() {
         Sample result = GsonDeserializeTransform.of(SAMPLE_TYPE)
-            .execute(PipelineContext.empty(), null);
+            .execute(PipelineContext.defaults(), null);
         assertThat(result, is(nullValue()));
     }
 

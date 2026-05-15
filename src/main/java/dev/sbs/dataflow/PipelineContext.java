@@ -40,11 +40,13 @@ public final class PipelineContext {
     private final @NotNull ConcurrentSet<String> activeIds;
 
     /**
-     * Convenience factory for tests and ad-hoc usage where no real resolver or bag is needed.
+     * Convenience factory returning a fully-defaulted context: default fetcher, default
+     * logger, {@link DataPipelineResolver#NOOP NOOP} resolver, empty bag. Suitable for
+     * tests and ad-hoc usage where no host-supplied wiring is needed.
      *
-     * @return a context with a default fetcher, default logger, NOOP resolver, and empty bag
+     * @return a context with all dependencies set to their defaults
      */
-    public static @NotNull PipelineContext empty() {
+    public static @NotNull PipelineContext defaults() {
         return builder().build();
     }
 

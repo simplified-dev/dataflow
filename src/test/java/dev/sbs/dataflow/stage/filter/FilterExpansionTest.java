@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.is;
 
 class FilterExpansionTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("String filters cover contains/matches/startsWith/endsWith/equals/nonEmpty")

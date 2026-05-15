@@ -18,7 +18,7 @@ class ParseJsonTransformTest {
     @Test
     @DisplayName("Sample JSON fixture parses and exposes nested fields")
     void parsesNestedFixture() {
-        JsonElement root = stage.execute(PipelineContext.empty(), Fixtures.load("sample.json"));
+        JsonElement root = stage.execute(PipelineContext.defaults(), Fixtures.load("sample.json"));
         assertThat(root.isJsonObject(), is(true));
         assertThat(root.getAsJsonObject().get("name").getAsString(), is(equalTo("Dark Claymore")));
         JsonElement stats = root.getAsJsonObject().get("stats");

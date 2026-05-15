@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class IntermediateOpsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Sort ascending orders INT smallest-first")

@@ -26,7 +26,7 @@ class JsonObjectBuildTransformTest {
                 .stage(PrefixTransform.of(">>>")))
             .build();
 
-        JsonObject result = stage.execute(PipelineContext.empty(), "hello");
+        JsonObject result = stage.execute(PipelineContext.defaults(), "hello");
 
         assertThat(result, is(notNullValue()));
         assertThat(result.get("upper").getAsString(), is(equalTo("HELLO")));
@@ -40,7 +40,7 @@ class JsonObjectBuildTransformTest {
             .output("x", DataTypes.STRING, chain -> chain.stage(UpperCaseTransform.of()))
             .build();
 
-        JsonObject result = stage.execute(PipelineContext.empty(), null);
+        JsonObject result = stage.execute(PipelineContext.defaults(), null);
         assertThat(result, is(org.hamcrest.Matchers.nullValue()));
     }
 

@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class EncodingTransformsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Base64 encode/decode round-trips a string")

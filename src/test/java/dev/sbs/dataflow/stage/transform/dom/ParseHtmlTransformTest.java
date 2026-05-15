@@ -21,7 +21,7 @@ class ParseHtmlTransformTest {
     @Test
     @DisplayName("Dark Claymore fixture parses into a queryable jsoup document")
     void parsesFixture() {
-        Element root = stage.execute(PipelineContext.empty(), Fixtures.load("dark_claymore.html"));
+        Element root = stage.execute(PipelineContext.defaults(), Fixtures.load("dark_claymore.html"));
         assertThat(root, is(notNullValue()));
         assertThat(root.selectFirst("h1"), is(notNullValue()));
         assertThat(root.selectFirst("h1").text(), is(equalTo("Dark Claymore")));
@@ -31,7 +31,7 @@ class ParseHtmlTransformTest {
     @Test
     @DisplayName("Null input passes through as null")
     void nullInputReturnsNull() {
-        assertThat(stage.execute(PipelineContext.empty(), null), is(nullValue()));
+        assertThat(stage.execute(PipelineContext.defaults(), null), is(nullValue()));
     }
 
 }

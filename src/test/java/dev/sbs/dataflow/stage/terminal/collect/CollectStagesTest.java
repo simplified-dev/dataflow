@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class CollectStagesTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("First returns the first element or null on empty")

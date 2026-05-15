@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class ParsePrimitivesTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("ParseLong handles valid input and returns null on garbage")

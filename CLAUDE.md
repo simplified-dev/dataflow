@@ -57,7 +57,7 @@ Sort/Min/Max key types restricted to `INT, LONG, FLOAT, DOUBLE, STRING`; others 
 ## Serde / test
 
 - Wire format: `{"kind":"X", ...config}` via `serde/PipelineGson`. Round-tripped by `PipelineSerdeTest`.
-- Tests: JUnit 5 + Hamcrest, one assertion per behavior. `PipelineContext.empty()` for default fetcher / NOOP resolver.
+- Tests: JUnit 5 + Hamcrest, one assertion per behavior. `PipelineContext.defaults()` for default fetcher / NOOP resolver.
 - `gradle test` runs; `gradle compileJava compileTestJava` builds.
 
 ## Commits

@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LiteralSourceTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("LiteralSource(STRING) emits the configured string verbatim")

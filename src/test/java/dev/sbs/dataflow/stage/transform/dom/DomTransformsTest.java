@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.is;
 
 class DomTransformsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("DomChildren returns the direct children")

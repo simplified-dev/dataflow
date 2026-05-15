@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 class FilterStagesTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("DomTextContainsFilter keeps only nodes whose text contains the needle")

@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class JsonTransformsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("JsonAsString returns string primitives")

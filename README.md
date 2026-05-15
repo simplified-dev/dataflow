@@ -42,7 +42,7 @@ DataPipeline pipeline = DataPipeline.builder()
     .stage(ParseIntTransform.of())
     .build();
 
-Integer dmg = pipeline.execute(PipelineContext.empty()); // 500 - generic <T> infers Integer
+Integer dmg = pipeline.execute(PipelineContext.defaults()); // 500 - generic <T> infers Integer
 ```
 
 ### Package layout

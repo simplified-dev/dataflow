@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FlatMapTransformTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("FlatMap concatenates each element's per-body output list")

@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.is;
 
 class StringListNumericTransformsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Lowercase / Uppercase / StringLength / Prefix / Suffix")

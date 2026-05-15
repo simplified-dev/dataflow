@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LiteralListSourceTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("LiteralListSource(STRING) emits the parsed array")

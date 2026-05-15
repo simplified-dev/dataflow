@@ -27,7 +27,7 @@ class JsonObjectFromEntriesCollectTest {
         b.add("value", new JsonPrimitive(220));
 
         JsonObject merged = JsonObjectFromEntriesCollect.of()
-            .execute(PipelineContext.empty(), List.of(a, b));
+            .execute(PipelineContext.defaults(), List.of(a, b));
 
         assertThat(merged, is(notNullValue()));
         assertThat(merged.get("damage").getAsInt(), is(equalTo(500)));
@@ -45,7 +45,7 @@ class JsonObjectFromEntriesCollectTest {
         second.add("value", new JsonPrimitive(2));
 
         JsonObject merged = JsonObjectFromEntriesCollect.of()
-            .execute(PipelineContext.empty(), List.of(first, second));
+            .execute(PipelineContext.defaults(), List.of(first, second));
 
         assertThat(merged.get("x").getAsInt(), is(equalTo(2)));
     }
@@ -54,7 +54,7 @@ class JsonObjectFromEntriesCollectTest {
     @DisplayName("Empty list produces an empty JsonObject")
     void emptyListProducesEmptyObject() {
         JsonObject merged = JsonObjectFromEntriesCollect.of()
-            .execute(PipelineContext.empty(), List.of());
+            .execute(PipelineContext.defaults(), List.of());
 
         assertThat(merged, is(notNullValue()));
         assertThat(merged.size(), is(equalTo(0)));
@@ -64,7 +64,7 @@ class JsonObjectFromEntriesCollectTest {
     @DisplayName("Null input returns null")
     void nullInputReturnsNull() {
         JsonObject merged = JsonObjectFromEntriesCollect.of()
-            .execute(PipelineContext.empty(), null);
+            .execute(PipelineContext.defaults(), null);
         assertThat(merged, is(nullValue()));
     }
 
@@ -80,7 +80,7 @@ class JsonObjectFromEntriesCollectTest {
         nonStringKey.add("value", new JsonPrimitive("x"));
 
         JsonObject merged = JsonObjectFromEntriesCollect.of()
-            .execute(PipelineContext.empty(), List.of(missingKey, missingValue, nonStringKey));
+            .execute(PipelineContext.defaults(), List.of(missingKey, missingValue, nonStringKey));
 
         assertThat(merged.size(), is(equalTo(0)));
     }

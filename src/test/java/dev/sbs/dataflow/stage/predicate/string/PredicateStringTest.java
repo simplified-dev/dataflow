@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.is;
 
 class PredicateStringTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Contains")

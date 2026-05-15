@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 class TransformStagesTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("CssSelect returns every matching descendant element")

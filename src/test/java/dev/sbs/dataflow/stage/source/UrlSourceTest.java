@@ -52,7 +52,7 @@ class UrlSourceTest {
         assertThat(source.outputType(), is(sameInstance(DataTypes.RAW_HTML)));
         assertThat(source.kind(), is(equalTo(StageKind.SOURCE_URL)));
 
-        String body = source.execute(PipelineContext.empty(), null);
+        String body = source.execute(PipelineContext.defaults(), null);
         assertThat(body, containsString("<body>ok</body>"));
     }
 

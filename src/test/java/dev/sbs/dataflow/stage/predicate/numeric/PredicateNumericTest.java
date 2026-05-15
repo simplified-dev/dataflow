@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.is;
 
 class PredicateNumericTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Int >")

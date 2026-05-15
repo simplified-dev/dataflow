@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.is;
 
 class PredicateJsonTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Has field")

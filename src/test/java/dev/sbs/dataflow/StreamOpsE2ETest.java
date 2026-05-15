@@ -44,7 +44,7 @@ class StreamOpsE2ETest {
             .stage(SumIntCollect.of())
             .build();
 
-        Integer total = pipeline.execute(PipelineContext.empty());
+        Integer total = pipeline.execute(PipelineContext.defaults());
         // Fixture has five numeric infobox rows: Dmg=500, Strength=220, Crit Damage=175,
         // Crit Chance=32, Intelligence=50. Non-numeric rows (Rarity, Type) drop out when
         // RegexExtract(\\d+) returns null. Sum is 500 + 220 + 175 + 32 + 50 = 977.
@@ -58,7 +58,7 @@ class StreamOpsE2ETest {
             .source(LiteralListSource.of(DataTypes.INT, "[1,2,3,4,5]"))
             .stage(SumIntCollect.of())
             .build();
-        assertThat(pipeline.execute(PipelineContext.empty()), is(15));
+        assertThat(pipeline.execute(PipelineContext.defaults()), is(15));
     }
 
     @Test
@@ -68,7 +68,7 @@ class StreamOpsE2ETest {
             .source(LiteralSource.of(DataTypes.STRING, "42"))
             .stage(ParseIntTransform.of())
             .build();
-        assertThat(pipeline.execute(PipelineContext.empty()), is(42));
+        assertThat(pipeline.execute(PipelineContext.defaults()), is(42));
     }
 
     @Test
@@ -78,7 +78,7 @@ class StreamOpsE2ETest {
             .source(LiteralListSource.of(DataTypes.INT, "[1,5,10,15,20]"))
             .stage(AnyMatchCollect.of(DataTypes.INT, List.of(IntGreaterThanPredicate.of(12))))
             .build();
-        assertThat(pipeline.execute(PipelineContext.empty()), is(true));
+        assertThat(pipeline.execute(PipelineContext.defaults()), is(true));
     }
 
     @Test
@@ -88,7 +88,7 @@ class StreamOpsE2ETest {
             .source(LiteralListSource.of(DataTypes.STRING, "[\"a\",\"abc\",\"ab\"]"))
             .stage(MaxByCollect.of(DataTypes.STRING, DataTypes.INT, List.of(StringLengthTransform.of())))
             .build();
-        assertThat(pipeline.execute(PipelineContext.empty()), is("abc"));
+        assertThat(pipeline.execute(PipelineContext.defaults()), is("abc"));
     }
 
 }

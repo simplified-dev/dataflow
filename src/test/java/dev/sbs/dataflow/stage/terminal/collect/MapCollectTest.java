@@ -31,7 +31,7 @@ class MapCollectTest {
     void mapCollectProducesNamedOutputs() {
         Element root = Jsoup.parse(Fixtures.load("dark_claymore.html"));
         List<Element> rows = CssSelectTransform.of("table.infobox tr")
-            .execute(PipelineContext.empty(), root);
+            .execute(PipelineContext.defaults(), root);
         assertThat(rows, is(notNullValue()));
 
         DataType<List<Element>> input = DataType.list(DataTypes.DOM_NODE);
@@ -62,7 +62,7 @@ class MapCollectTest {
             )
             .build();
 
-        Map<String, Object> result = collect.execute(PipelineContext.empty(), rows);
+        Map<String, Object> result = collect.execute(PipelineContext.defaults(), rows);
 
         assertThat(result, hasEntry(equalTo("dmg"), equalTo(500)));
         assertThat(result, hasEntry(equalTo("strength"), equalTo(220)));

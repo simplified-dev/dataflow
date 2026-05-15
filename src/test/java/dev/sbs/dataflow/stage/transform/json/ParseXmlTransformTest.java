@@ -18,7 +18,7 @@ class ParseXmlTransformTest {
     @Test
     @DisplayName("Sample XML fixture parses into a JsonElement preserving nested fields")
     void parsesNestedFixture() {
-        JsonElement root = stage.execute(PipelineContext.empty(), Fixtures.load("sample.xml"));
+        JsonElement root = stage.execute(PipelineContext.defaults(), Fixtures.load("sample.xml"));
         assertThat(root.isJsonObject(), is(true));
         // XmlMapper -> JsonElement: each child element becomes a property; values are strings.
         assertThat(root.getAsJsonObject().get("name").getAsString(), is(equalTo("Dark Claymore")));

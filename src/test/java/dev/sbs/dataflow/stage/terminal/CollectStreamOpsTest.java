@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CollectStreamOpsTest {
 
-    private final PipelineContext ctx = PipelineContext.empty();
+    private final PipelineContext ctx = PipelineContext.defaults();
 
     @Test
     @DisplayName("Count returns the list size")
