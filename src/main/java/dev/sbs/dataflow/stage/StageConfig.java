@@ -160,32 +160,44 @@ public final class StageConfig {
         return EMPTY;
     }
 
-    /** Returns the boolean stored under {@code name}. */
+    /**
+     * Returns the boolean stored under {@code name}.
+     */
     public boolean getBoolean(@NotNull String name) {
         return (Boolean) this.values.get(name);
     }
 
-    /** Returns the {@link DataType} stored under {@code name}. */
+    /**
+     * Returns the {@link DataType} stored under {@code name}.
+     */
     public @NotNull DataType<?> getDataType(@NotNull String name) {
         return (DataType<?>) this.values.get(name);
     }
 
-    /** Returns the double stored under {@code name}. */
+    /**
+     * Returns the double stored under {@code name}.
+     */
     public double getDouble(@NotNull String name) {
         return (Double) this.values.get(name);
     }
 
-    /** Returns the float stored under {@code name}. */
+    /**
+     * Returns the float stored under {@code name}.
+     */
     public float getFloat(@NotNull String name) {
         return (Float) this.values.get(name);
     }
 
-    /** Returns the int stored under {@code name}. */
+    /**
+     * Returns the int stored under {@code name}.
+     */
     public int getInt(@NotNull String name) {
         return (Integer) this.values.get(name);
     }
 
-    /** Returns the long stored under {@code name}. */
+    /**
+     * Returns the long stored under {@code name}.
+     */
     public long getLong(@NotNull String name) {
         return (Long) this.values.get(name);
     }

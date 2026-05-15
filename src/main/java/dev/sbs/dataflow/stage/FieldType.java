@@ -8,22 +8,34 @@ import dev.sbs.dataflow.DataType;
  */
 public enum FieldType {
 
-    /** UTF-8 string. */
+    /**
+     * UTF-8 string.
+     */
     STRING,
 
-    /** 32-bit signed integer. */
+    /**
+     * 32-bit signed integer.
+     */
     INT,
 
-    /** 64-bit signed integer. */
+    /**
+     * 64-bit signed integer.
+     */
     LONG,
 
-    /** 64-bit IEEE-754 floating point. */
+    /**
+     * 64-bit IEEE-754 floating point.
+     */
     DOUBLE,
 
-    /** Boolean value. */
+    /**
+     * Boolean value.
+     */
     BOOLEAN,
 
-    /** {@link DataType} reference, serialised as its label. */
+    /**
+     * {@link DataType} reference, serialised as its label.
+     */
     DATA_TYPE,
 
     /**

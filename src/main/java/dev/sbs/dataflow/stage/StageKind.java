@@ -1408,7 +1408,9 @@ public enum StageKind {
         cfg -> SumLongCollect.of()
     );
 
-    /** Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone. */
+    /**
+     * Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone.
+     */
     private static final StageKind @NotNull [] CACHED_VALUES = values();
 
     private final @NotNull String displayName;

@@ -23,49 +23,79 @@ import java.util.concurrent.ConcurrentHashMap;
 @UtilityClass
 public final class DataTypes {
 
-    /** Sentinel input type for source stages, which consume nothing. */
+    /**
+     * Sentinel input type for source stages, which consume nothing.
+     */
     public static final @NotNull DataType<Void> NONE = new DataType.Basic<>(Void.class, "NONE");
 
-    /** Raw HTML document body, not yet parsed. */
+    /**
+     * Raw HTML document body, not yet parsed.
+     */
     public static final @NotNull DataType<String> RAW_HTML = new DataType.Basic<>(String.class, "RAW_HTML");
 
-    /** Raw XML document body, not yet parsed. */
+    /**
+     * Raw XML document body, not yet parsed.
+     */
     public static final @NotNull DataType<String> RAW_XML = new DataType.Basic<>(String.class, "RAW_XML");
 
-    /** Raw JSON document body, not yet parsed. */
+    /**
+     * Raw JSON document body, not yet parsed.
+     */
     public static final @NotNull DataType<String> RAW_JSON = new DataType.Basic<>(String.class, "RAW_JSON");
 
-    /** General-purpose UTF-8 string value. */
+    /**
+     * General-purpose UTF-8 string value.
+     */
     public static final @NotNull DataType<String> STRING = new DataType.Basic<>(String.class, "STRING");
 
-    /** 32-bit signed integer value. */
+    /**
+     * 32-bit signed integer value.
+     */
     public static final @NotNull DataType<Integer> INT = new DataType.Basic<>(Integer.class, "INT");
 
-    /** 64-bit signed integer value. */
+    /**
+     * 64-bit signed integer value.
+     */
     public static final @NotNull DataType<Long> LONG = new DataType.Basic<>(Long.class, "LONG");
 
-    /** 32-bit IEEE-754 floating-point value. */
+    /**
+     * 32-bit IEEE-754 floating-point value.
+     */
     public static final @NotNull DataType<Float> FLOAT = new DataType.Basic<>(Float.class, "FLOAT");
 
-    /** 64-bit IEEE-754 floating-point value. */
+    /**
+     * 64-bit IEEE-754 floating-point value.
+     */
     public static final @NotNull DataType<Double> DOUBLE = new DataType.Basic<>(Double.class, "DOUBLE");
 
-    /** Boolean value. */
+    /**
+     * Boolean value.
+     */
     public static final @NotNull DataType<Boolean> BOOLEAN = new DataType.Basic<>(Boolean.class, "BOOLEAN");
 
-    /** Single jsoup {@link Element}, the parsed-HTML pivot value. */
+    /**
+     * Single jsoup {@link Element}, the parsed-HTML pivot value.
+     */
     public static final @NotNull DataType<Element> DOM_NODE = new DataType.Basic<>(Element.class, "DOM_NODE");
 
-    /** Generic Gson {@link JsonElement}. */
+    /**
+     * Generic Gson {@link JsonElement}.
+     */
     public static final @NotNull DataType<JsonElement> JSON_ELEMENT = new DataType.Basic<>(JsonElement.class, "JSON_ELEMENT");
 
-    /** Gson {@link JsonObject}. */
+    /**
+     * Gson {@link JsonObject}.
+     */
     public static final @NotNull DataType<JsonObject> JSON_OBJECT = new DataType.Basic<>(JsonObject.class, "JSON_OBJECT");
 
-    /** Gson {@link JsonArray}. */
+    /**
+     * Gson {@link JsonArray}.
+     */
     public static final @NotNull DataType<JsonArray> JSON_ARRAY = new DataType.Basic<>(JsonArray.class, "JSON_ARRAY");
 
-    /** Output type of {@link MapCollect}, a map of named sub-pipeline results. */
+    /**
+     * Output type of {@link MapCollect}, a map of named sub-pipeline results.
+     */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static final @NotNull DataType<Map<String, Object>> MAP_OUTPUT =
         new DataType.Basic<>((Class) Map.class, "MAP_OUTPUT");

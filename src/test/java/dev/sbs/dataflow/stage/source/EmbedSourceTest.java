@@ -22,7 +22,9 @@ import static org.hamcrest.Matchers.is;
 
 class EmbedSourceTest {
 
-    /** Map-backed resolver that captures pipeline ids for cycle detection. */
+    /**
+     * Map-backed resolver that captures pipeline ids for cycle detection.
+     */
     private static final class MapResolver implements DataPipelineResolver {
         final Map<String, DataPipeline> pipelines = new HashMap<>();
 
