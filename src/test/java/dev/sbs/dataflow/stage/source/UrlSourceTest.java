@@ -48,7 +48,7 @@ class UrlSourceTest {
     @Test
     @DisplayName("UrlSource.html fetches and returns the body, advertising RAW_HTML")
     void fetchesHtmlBody() {
-        UrlSource source = UrlSource.html(this.baseUrl + "/page");
+        UrlSource source = UrlSource.rawHtml(this.baseUrl + "/page");
         assertThat(source.outputType(), is(sameInstance(DataTypes.RAW_HTML)));
         assertThat(source.kind(), is(equalTo(StageKind.SOURCE_URL)));
 
@@ -59,9 +59,36 @@ class UrlSourceTest {
     @Test
     @DisplayName("Summary mentions the URL and the chosen RAW flavour")
     void summaryDescribesConfig() {
-        UrlSource source = UrlSource.json("https://example.com/data");
+        UrlSource source = UrlSource.rawJson("https://example.com/data");
         assertThat(source.summary(), containsString("RAW_JSON"));
         assertThat(source.summary(), containsString("https://example.com/data"));
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    @DisplayName("of() accepts the supported output types and rejects others")
+    void ofAcceptsSupportedTypes() {
+        assertThat(UrlSource.of(DataTypes.RAW_HTML, "u").outputType(), is(sameInstance(DataTypes.RAW_HTML)));
+        assertThat(UrlSource.of(DataTypes.RAW_XML, "u").outputType(),  is(sameInstance(DataTypes.RAW_XML)));
+        assertThat(UrlSource.of(DataTypes.RAW_JSON, "u").outputType(), is(sameInstance(DataTypes.RAW_JSON)));
+        assertThat(UrlSource.of(DataTypes.STRING, "u").outputType(),   is(sameInstance(DataTypes.STRING)));
+
+        // Cast through raw DataType to bypass the DataType<String> bound at the call site;
+        // the of(...) guard rejects non-String-backed types at runtime.
+        dev.sbs.dataflow.DataType<String> intAsRaw = (dev.sbs.dataflow.DataType) DataTypes.INT;
+        org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> UrlSource.of(intAsRaw, "u")
+        );
+    }
+
+    @Test
+    @DisplayName("Named convenience factories match the generic of() pairings")
+    void namedFactoriesMatchOf() {
+        assertThat(UrlSource.rawHtml("u").outputType(), is(sameInstance(DataTypes.RAW_HTML)));
+        assertThat(UrlSource.rawXml("u").outputType(),  is(sameInstance(DataTypes.RAW_XML)));
+        assertThat(UrlSource.rawJson("u").outputType(), is(sameInstance(DataTypes.RAW_JSON)));
+        assertThat(UrlSource.text("u").outputType(),    is(sameInstance(DataTypes.STRING)));
     }
 
 }

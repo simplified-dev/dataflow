@@ -23,7 +23,7 @@ class DataTypeChainTest {
     void mismatchEmitsKindAndTypes() {
         // LiteralSource.text emits STRING; ParseHtmlTransform expects RAW_HTML.
         ValidationReport report = DataPipeline.builder()
-            .source(LiteralSource.text("hi"))
+            .source(LiteralSource.stringVal("hi"))
             .stage(ParseHtmlTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));
@@ -40,7 +40,7 @@ class DataTypeChainTest {
     void deeperMismatchReportsRightIndex() {
         // Source -> ParseHtml -> CssSelect (DOM_NODE -> List<DOM_NODE>) -> ParseInt (expects STRING) - mismatch at index 3
         ValidationReport report = DataPipeline.builder()
-            .source(LiteralSource.html("<html><body>x</body></html>"))
+            .source(LiteralSource.rawHtml("<html><body>x</body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("body"))
             .stage(ParseIntTransform.of())
@@ -56,7 +56,7 @@ class DataTypeChainTest {
     @DisplayName("Wrapping the scalar tail in MapTransform fixes the previously-broken chain")
     void mapTransformBridgesScalarOverList() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(LiteralSource.html("<html><body><span>10</span><span>20</span></body></html>"))
+            .source(LiteralSource.rawHtml("<html><body><span>10</span><span>20</span></body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("span"))
             .stage(MapTransform.of(
@@ -72,7 +72,7 @@ class DataTypeChainTest {
     @DisplayName("Valid wiki chain reports no issues")
     void validChainReportsNoIssues() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(LiteralSource.html("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
+            .source(LiteralSource.rawHtml("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))

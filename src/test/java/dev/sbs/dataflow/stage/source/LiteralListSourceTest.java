@@ -50,4 +50,29 @@ class LiteralListSourceTest {
         assertThrows(IllegalArgumentException.class, () -> LiteralListSource.of(DataTypes.DOM_NODE, "[]"));
     }
 
+    @Test
+    @DisplayName("Varargs factories produce the matching DataType + value list")
+    void varargsFactoriesProduceMatchingValues() {
+        assertThat(LiteralListSource.strings("a", "b", "c").execute(this.ctx, null), contains("a", "b", "c"));
+        assertThat(LiteralListSource.integers(1, 2, 3).execute(this.ctx, null),      contains(1, 2, 3));
+        assertThat(LiteralListSource.longs(1L, 2L, 3L).execute(this.ctx, null),      contains(1L, 2L, 3L));
+        assertThat(LiteralListSource.floats(1.5f, 2.5f).execute(this.ctx, null),     contains(1.5f, 2.5f));
+        assertThat(LiteralListSource.doubles(1.5, 2.5).execute(this.ctx, null),      contains(1.5, 2.5));
+        assertThat(LiteralListSource.booleans(true, false).execute(this.ctx, null),  contains(true, false));
+    }
+
+    @Test
+    @DisplayName("strings(...) escapes embedded quotes and special chars via Gson")
+    void stringsFactoryEscapes() {
+        List<String> result = LiteralListSource.strings("a\"b", "c\\d").execute(this.ctx, null);
+        assertThat(result, contains("a\"b", "c\\d"));
+    }
+
+    @Test
+    @DisplayName("Empty varargs produce empty lists")
+    void varargsFactoriesEmpty() {
+        assertThat(LiteralListSource.strings().execute(this.ctx, null), is(List.of()));
+        assertThat(LiteralListSource.integers().execute(this.ctx, null), is(List.of()));
+    }
+
 }

@@ -29,49 +29,75 @@ public final class UrlSource implements SourceStage<String> {
 
     private final @NotNull DataType<String> outputType;
 
+    private static final @NotNull java.util.Set<DataType<?>> SUPPORTED_OUTPUT_TYPES = java.util.Set.of(
+        DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
+    );
+
     /**
-     * Constructs a URL source whose body is treated as HTML.
+     * Constructs a URL source whose fetched body is tagged as {@code outputType}. The
+     * supported types are {@code RAW_HTML}, {@code RAW_XML}, {@code RAW_JSON}, and plain
+     * {@code STRING}; structured types must come from a downstream parse transform.
+     *
+     * @param outputType how to tag the fetched body
+     * @param url the URL to fetch
+     * @return a new source
+     * @throws IllegalArgumentException when {@code outputType} is not one of the supported types
+     */
+    public static @NotNull UrlSource of(@NotNull DataType<String> outputType, @NotNull String url) {
+        if (!SUPPORTED_OUTPUT_TYPES.contains(outputType))
+            throw new IllegalArgumentException(
+                "UrlSource supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType
+            );
+        return new UrlSource(url, outputType);
+    }
+
+    /**
+     * Convenience factory for an HTML body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_HTML, url)}.
      *
      * @param url the URL to fetch
      * @return a new source
      */
-    public static @NotNull UrlSource html(@NotNull String url) {
-        return new UrlSource(url, DataTypes.RAW_HTML);
+    public static @NotNull UrlSource rawHtml(@NotNull String url) {
+        return of(DataTypes.RAW_HTML, url);
     }
 
     /**
-     * Constructs a URL source whose body is treated as JSON.
+     * Convenience factory for an XML body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_XML, url)}.
      *
      * @param url the URL to fetch
      * @return a new source
      */
-    public static @NotNull UrlSource json(@NotNull String url) {
-        return new UrlSource(url, DataTypes.RAW_JSON);
+    public static @NotNull UrlSource rawXml(@NotNull String url) {
+        return of(DataTypes.RAW_XML, url);
     }
 
     /**
-     * Constructs a URL source whose body is emitted as a plain {@link String}.
+     * Convenience factory for a JSON body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.RAW_JSON, url)}.
+     *
+     * @param url the URL to fetch
+     * @return a new source
+     */
+    public static @NotNull UrlSource rawJson(@NotNull String url) {
+        return of(DataTypes.RAW_JSON, url);
+    }
+
+    /**
+     * Convenience factory for a plain-{@link String} body. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.STRING, url)}.
      *
      * @param url the URL to fetch
      * @return a new source
      */
     public static @NotNull UrlSource text(@NotNull String url) {
-        return new UrlSource(url, DataTypes.STRING);
-    }
-
-    /**
-     * Constructs a URL source whose body is treated as XML.
-     *
-     * @param url the URL to fetch
-     * @return a new source
-     */
-    public static @NotNull UrlSource xml(@NotNull String url) {
-        return new UrlSource(url, DataTypes.RAW_XML);
+        return of(DataTypes.STRING, url);
     }
 
     @SuppressWarnings("unchecked")
     public static @NotNull UrlSource fromConfig(@NotNull StageConfig cfg) {
-        return new UrlSource(cfg.getString("url"), (DataType<String>) cfg.getDataType("outputType"));
+        return of((DataType<String>) cfg.getDataType("outputType"), cfg.getString("url"));
     }
 
     /** {@inheritDoc} */

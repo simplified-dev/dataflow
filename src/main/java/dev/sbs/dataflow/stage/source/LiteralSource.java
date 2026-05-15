@@ -64,7 +64,7 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @param body the HTML body
      * @return the stage
      */
-    public static @NotNull LiteralSource<String> html(@NotNull String body) {
+    public static @NotNull LiteralSource<String> rawHtml(@NotNull String body) {
         return of(DataTypes.RAW_HTML, body);
     }
 
@@ -75,7 +75,7 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @param body the XML body
      * @return the stage
      */
-    public static @NotNull LiteralSource<String> xml(@NotNull String body) {
+    public static @NotNull LiteralSource<String> rawXml(@NotNull String body) {
         return of(DataTypes.RAW_XML, body);
     }
 
@@ -86,19 +86,74 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @param body the JSON body
      * @return the stage
      */
-    public static @NotNull LiteralSource<String> json(@NotNull String body) {
+    public static @NotNull LiteralSource<String> rawJson(@NotNull String body) {
         return of(DataTypes.RAW_JSON, body);
     }
 
     /**
-     * Convenience factory for a plain string value. Equivalent to
-     * {@link #of(DataType, String) of(DataTypes.STRING, body)}.
+     * Convenience factory for a plain {@link String} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.STRING, value)}.
      *
-     * @param body the string value
+     * @param value the string value
      * @return the stage
      */
-    public static @NotNull LiteralSource<String> text(@NotNull String body) {
-        return of(DataTypes.STRING, body);
+    public static @NotNull LiteralSource<String> stringVal(@NotNull String value) {
+        return of(DataTypes.STRING, value);
+    }
+
+    /**
+     * Convenience factory for an {@code INT} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.INT, Integer.toString(value))}.
+     *
+     * @param value the int value
+     * @return the stage
+     */
+    public static @NotNull LiteralSource<Integer> integerVal(int value) {
+        return of(DataTypes.INT, Integer.toString(value));
+    }
+
+    /**
+     * Convenience factory for a {@code LONG} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.LONG, Long.toString(value))}.
+     *
+     * @param value the long value
+     * @return the stage
+     */
+    public static @NotNull LiteralSource<Long> longVal(long value) {
+        return of(DataTypes.LONG, Long.toString(value));
+    }
+
+    /**
+     * Convenience factory for a {@code FLOAT} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.FLOAT, Float.toString(value))}.
+     *
+     * @param value the float value
+     * @return the stage
+     */
+    public static @NotNull LiteralSource<Float> floatVal(float value) {
+        return of(DataTypes.FLOAT, Float.toString(value));
+    }
+
+    /**
+     * Convenience factory for a {@code DOUBLE} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.DOUBLE, Double.toString(value))}.
+     *
+     * @param value the double value
+     * @return the stage
+     */
+    public static @NotNull LiteralSource<Double> doubleVal(double value) {
+        return of(DataTypes.DOUBLE, Double.toString(value));
+    }
+
+    /**
+     * Convenience factory for a {@code BOOLEAN} value. Equivalent to
+     * {@link #of(DataType, String) of(DataTypes.BOOLEAN, Boolean.toString(value))}.
+     *
+     * @param value the boolean value
+     * @return the stage
+     */
+    public static @NotNull LiteralSource<Boolean> booleanVal(boolean value) {
+        return of(DataTypes.BOOLEAN, Boolean.toString(value));
     }
 
     /**
@@ -154,7 +209,7 @@ public final class LiteralSource<T> implements SourceStage<T> {
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Of " + this.outputType.label() + " '" + this.rawValue + "'";
+        return "Literal " + this.outputType.label() + " '" + this.rawValue + "'";
     }
 
 }

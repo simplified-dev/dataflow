@@ -65,4 +65,20 @@ class LiteralSourceTest {
         assertThrows(NumberFormatException.class, () -> LiteralSource.of(DataTypes.INT, "not-a-number"));
     }
 
+    @Test
+    @DisplayName("Typed convenience factories produce the matching DataType + value")
+    void typedFactoriesProduceMatchingValues() {
+        assertThat(LiteralSource.rawHtml("<html/>").outputType(), is(DataTypes.RAW_HTML));
+        assertThat(LiteralSource.rawXml("<x/>").outputType(),    is(DataTypes.RAW_XML));
+        assertThat(LiteralSource.rawJson("{}").outputType(),     is(DataTypes.RAW_JSON));
+        assertThat(LiteralSource.stringVal("hi").outputType(),   is(DataTypes.STRING));
+
+        assertThat(LiteralSource.integerVal(42).execute(this.ctx, null),       is(equalTo(42)));
+        assertThat(LiteralSource.longVal(9999999999L).execute(this.ctx, null), is(equalTo(9999999999L)));
+        assertThat(LiteralSource.floatVal(1.5f).execute(this.ctx, null),       is(equalTo(1.5f)));
+        assertThat(LiteralSource.doubleVal(3.14).execute(this.ctx, null),      is(equalTo(3.14)));
+        assertThat(LiteralSource.booleanVal(true).execute(this.ctx, null),     is(equalTo(true)));
+        assertThat(LiteralSource.booleanVal(false).execute(this.ctx, null),    is(equalTo(false)));
+    }
+
 }

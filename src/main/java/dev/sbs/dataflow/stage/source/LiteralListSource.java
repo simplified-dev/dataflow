@@ -68,6 +68,112 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
     }
 
     /**
+     * Convenience factory for a list of {@link String} values. Each value is escaped into
+     * the JSON array via {@link com.google.gson.Gson}.
+     *
+     * @param values the string values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<String> strings(@NotNull String... values) {
+        return of(DataTypes.STRING, new com.google.gson.Gson().toJson(values));
+    }
+
+    /**
+     * Convenience factory for a list of {@code INT} values.
+     *
+     * @param values the int values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<Integer> integers(int... values) {
+        return of(DataTypes.INT, toJsonArray(values));
+    }
+
+    /**
+     * Convenience factory for a list of {@code LONG} values.
+     *
+     * @param values the long values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<Long> longs(long... values) {
+        return of(DataTypes.LONG, toJsonArray(values));
+    }
+
+    /**
+     * Convenience factory for a list of {@code FLOAT} values.
+     *
+     * @param values the float values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<Float> floats(float... values) {
+        return of(DataTypes.FLOAT, toJsonArray(values));
+    }
+
+    /**
+     * Convenience factory for a list of {@code DOUBLE} values.
+     *
+     * @param values the double values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<Double> doubles(double... values) {
+        return of(DataTypes.DOUBLE, toJsonArray(values));
+    }
+
+    /**
+     * Convenience factory for a list of {@code BOOLEAN} values.
+     *
+     * @param values the boolean values to emit
+     * @return the stage
+     */
+    public static @NotNull LiteralListSource<Boolean> booleans(boolean... values) {
+        return of(DataTypes.BOOLEAN, toJsonArray(values));
+    }
+
+    private static @NotNull String toJsonArray(int[] values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(values[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    private static @NotNull String toJsonArray(long[] values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(values[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    private static @NotNull String toJsonArray(float[] values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(values[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    private static @NotNull String toJsonArray(double[] values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(values[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    private static @NotNull String toJsonArray(boolean[] values) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(values[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    /**
      * Reconstructs an {@code LiteralListSource} from a populated {@link StageConfig}.
      *
      * @param cfg the populated configuration

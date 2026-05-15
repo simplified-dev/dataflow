@@ -22,7 +22,7 @@ class WikiPipelineE2ETest {
     @DisplayName("Full chain - Paste(HTML) -> ParseHtml -> CssSelect -> Filter Dmg -> First -> Nth -> Text -> Regex -> ParseInt - yields 500")
     void darkClaymoreDmgIsFiveHundred() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(LiteralSource.html(Fixtures.load("dark_claymore.html")))
+            .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
@@ -42,7 +42,7 @@ class WikiPipelineE2ETest {
     @DisplayName("Generic execute<T> infers the result type at the call site")
     void executeInfersResultType() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(LiteralSource.html(Fixtures.load("dark_claymore.html")))
+            .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
