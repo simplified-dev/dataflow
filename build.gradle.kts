@@ -33,9 +33,9 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
-    api("com.github.simplified-dev:client:f0f0f44")
-    api("com.github.simplified-dev:collections:master-SNAPSHOT")
-    api("com.github.simplified-dev:gson-extras:master-SNAPSHOT")
+    api("com.github.simplified-dev:client") { version { strictly("6a11168") } }
+    api("com.github.simplified-dev:collections") { version { strictly("6586657") } }
+    api("com.github.simplified-dev:gson-extras") { version { strictly("35d2257") } }
 
     // Lombok Annotations
     compileOnly(libs.lombok)
