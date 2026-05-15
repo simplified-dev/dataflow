@@ -31,7 +31,7 @@ import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
 
 DataPipeline pipeline = DataPipeline.builder()
-    .source(UrlSource.html("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))
+    .source(UrlSource.rawHtml("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))
     .stage(ParseHtmlTransform.of())
     .stage(CssSelectTransform.of("table.infobox tr"))
     .stage(DomTextContainsFilter.of("Dmg"))
@@ -284,7 +284,7 @@ Use `Builder.validate()` to inspect a report on a still-under-construction build
 
 ```java
 ValidationReport report = DataPipeline.builder()
-    .source(LiteralSource.text("hi"))
+    .source(LiteralSource.stringVal("hi"))
     .stage(ParseHtmlTransform.of())  // expects RAW_HTML, got STRING
     .validate();
 if (!report.isValid()) {
