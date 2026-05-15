@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * {@link TransformStage} that base64-encodes the UTF-8 bytes of the input string.
+ * {@link TransformStage} that base64-encodes the input string's UTF-8 bytes.
  */
 @Getter
 @Accessors(fluent = true)

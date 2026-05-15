@@ -13,7 +13,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that returns {@link Math#abs(double)}. */
+/**
+ * {@link TransformStage} that returns {@link Math#abs(double)}.
+ */
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

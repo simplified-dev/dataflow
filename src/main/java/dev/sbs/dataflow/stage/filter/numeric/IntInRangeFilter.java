@@ -17,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping ints in the inclusive range {@code [min, max]}. */
+/**
+ * {@link FilterStage} keeping ints in the inclusive range {@code [min, max]}.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

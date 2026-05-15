@@ -13,7 +13,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that returns {@code true} when the input is exactly equal to the configured target. */
+/**
+ * {@link TransformStage} that returns {@code true} when the input is exactly equal to the configured target.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

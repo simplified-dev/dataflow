@@ -12,10 +12,12 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.stream.Stream;
+
 /**
  * Identity {@link TransformStage} that logs the input value through
  * {@link PipelineContext#log()} before passing it through unchanged. Mirrors
- * {@link java.util.stream.Stream#peek}.
+ * {@link Stream#peek(java.util.function.Consumer)}.
  *
  * @param <T> value type
  */

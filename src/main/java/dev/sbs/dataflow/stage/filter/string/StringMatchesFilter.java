@@ -18,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/** {@link FilterStage} keeping every string whose contents are a regex match. */
+/**
+ * {@link FilterStage} keeping every string whose contents are a regex match.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

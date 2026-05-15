@@ -20,11 +20,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * {@link FilterStage} that drops the longest prefix of the input list whose elements
  * all satisfy the predicate body, keeping every element from the first non-match onward.
- * Mirrors {@link java.util.stream.Stream#dropWhile}.
+ * Mirrors {@link Stream#dropWhile}.
  *
  * @param <T> element type
  */

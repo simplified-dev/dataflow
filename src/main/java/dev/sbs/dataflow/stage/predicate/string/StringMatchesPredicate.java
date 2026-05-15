@@ -15,7 +15,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.regex.Pattern;
 
-/** {@link TransformStage} that returns {@code true} when the input matches the configured regex. */
+/**
+ * {@link TransformStage} that returns {@code true} when the input matches the configured regex.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

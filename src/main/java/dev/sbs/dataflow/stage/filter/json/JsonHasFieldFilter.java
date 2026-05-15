@@ -18,7 +18,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping only {@link JsonObject}s that contain the named field. */
+/**
+ * {@link FilterStage} keeping only {@link JsonObject}s that contain the named field.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

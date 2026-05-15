@@ -19,11 +19,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * {@link TransformStage} that runs a sub-pipeline body once per element where each body
  * evaluation yields a {@code List<Y>}, concatenating the per-element lists into a single
- * {@code List<Y>}. Mirrors {@link java.util.stream.Stream#flatMap}.
+ * {@code List<Y>}. Mirrors {@link Stream#flatMap}.
  *
  * @param <X> input element type
  * @param <Y> output element type

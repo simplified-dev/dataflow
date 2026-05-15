@@ -17,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping every string that starts with the configured prefix. */
+/**
+ * {@link FilterStage} keeping every string that starts with the configured prefix.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

@@ -17,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping doubles in the inclusive range {@code [min, max]}. */
+/**
+ * {@link FilterStage} keeping doubles in the inclusive range {@code [min, max]}.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

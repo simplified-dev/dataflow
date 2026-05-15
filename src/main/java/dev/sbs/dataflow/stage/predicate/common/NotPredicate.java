@@ -13,7 +13,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that inverts an input {@link Boolean}. {@code null} input passes through as {@code null}. */
+/**
+ * {@link TransformStage} that inverts an input {@link Boolean}. {@code null} input passes through as {@code null}.
+ */
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

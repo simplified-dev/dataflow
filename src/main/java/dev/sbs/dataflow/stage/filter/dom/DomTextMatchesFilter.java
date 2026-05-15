@@ -19,7 +19,9 @@ import org.jsoup.nodes.Element;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/** {@link FilterStage} keeping every DOM element whose text matches the configured regex. */
+/**
+ * {@link FilterStage} keeping every DOM element whose text matches the configured regex.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

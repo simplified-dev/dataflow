@@ -17,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping doubles strictly less than the configured threshold. */
+/**
+ * {@link FilterStage} keeping doubles strictly less than the configured threshold.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

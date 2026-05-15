@@ -17,7 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping every string that contains the configured substring. */
+/**
+ * {@link FilterStage} keeping every string that contains the configured substring.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

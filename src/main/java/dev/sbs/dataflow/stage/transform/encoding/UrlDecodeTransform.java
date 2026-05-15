@@ -17,8 +17,8 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * {@link TransformStage} that percent-decodes the input string using UTF-8.
- * Returns {@code null} when the input contains malformed escape sequences.
+ * {@link TransformStage} that percent-decodes the input string with UTF-8. Returns
+ * {@code null} when the input contains malformed escape sequences.
  */
 @Getter
 @Accessors(fluent = true)

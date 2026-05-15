@@ -13,7 +13,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that returns {@code true} when the input is strictly greater than the configured threshold. */
+/**
+ * {@link TransformStage} that returns {@code true} when the input is strictly greater than the configured threshold.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

@@ -13,7 +13,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that returns {@code true} when the input is neither {@code null} nor empty. */
+/**
+ * {@link TransformStage} that returns {@code true} when the input is neither {@code null} nor empty.
+ */
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

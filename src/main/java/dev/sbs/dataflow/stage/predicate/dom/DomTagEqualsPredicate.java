@@ -14,7 +14,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
-/** {@link TransformStage} that returns {@code true} when the input element's tag name matches the configured target (case-insensitive). */
+/**
+ * {@link TransformStage} that returns {@code true} when the input element's tag name matches the configured target (case-insensitive).
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

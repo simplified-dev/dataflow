@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * {@link TransformStage} that sorts a list by a key extracted from each element via a
- * sub-pipeline body. Mirrors {@link java.util.Comparator#comparing}. Elements whose body
+ * sub-pipeline body. Mirrors {@link Comparator#comparing}. Elements whose body
  * yields {@code null} are pushed to the end regardless of direction.
  *
  * @param <T> element type

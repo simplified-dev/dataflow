@@ -17,11 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * {@link CollectStage} that returns {@code true} when every element's predicate body
  * evaluates to {@link Boolean#TRUE}. Short-circuits on the first non-match. An empty
- * input returns {@code true}, matching {@link java.util.stream.Stream#allMatch}.
+ * input returns {@code true}, matching {@link Stream#allMatch}.
  *
  * @param <T> element type
  */

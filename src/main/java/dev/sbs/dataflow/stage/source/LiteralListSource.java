@@ -1,5 +1,6 @@
 package dev.sbs.dataflow.stage.source;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -23,11 +24,12 @@ import org.jetbrains.annotations.Nullable;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.Set;
 
 /**
  * {@link SourceStage} that emits a literal list parsed from a JSON-array string at build
- * time. Equivalent to {@link java.util.stream.Stream#of(Object[])} for the supported
+ * time. Equivalent to {@link Stream#of(Object[])} for the supported
  * element types.
  * <p>
  * Same supported element types as {@link LiteralSource}: {@code STRING} / {@code RAW_*},
@@ -69,7 +71,7 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
 
     /**
      * Convenience factory for a list of {@link String} values. Each value is escaped into
-     * the JSON array via {@link com.google.gson.Gson}.
+     * the JSON array via {@link Gson}.
      *
      * @param values the string values to emit
      * @return the stage

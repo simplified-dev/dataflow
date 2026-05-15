@@ -17,11 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * {@link CollectStage} that returns {@code true} when no element's predicate body
  * evaluates to {@link Boolean#TRUE}. Short-circuits on the first match. An empty input
- * returns {@code true}, matching {@link java.util.stream.Stream#noneMatch}.
+ * returns {@code true}, matching {@link Stream#noneMatch}.
  *
  * @param <T> element type
  */

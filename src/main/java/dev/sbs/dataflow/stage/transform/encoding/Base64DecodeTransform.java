@@ -17,8 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * {@link TransformStage} that base64-decodes the input and returns the bytes as a UTF-8
- * string. Returns {@code null} when the input is not valid base64.
+ * {@link TransformStage} that base64-decodes the input string, interpreting the bytes as
+ * UTF-8. Returns {@code null} when the input is not valid base64.
  */
 @Getter
 @Accessors(fluent = true)

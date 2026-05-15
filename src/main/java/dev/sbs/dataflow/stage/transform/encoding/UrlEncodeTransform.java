@@ -17,8 +17,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * {@link TransformStage} that percent-encodes the input string using the
- * {@code application/x-www-form-urlencoded} convention with UTF-8.
+ * {@link TransformStage} that percent-encodes the input string with UTF-8 using the
+ * {@code application/x-www-form-urlencoded} convention.
  */
 @Getter
 @Accessors(fluent = true)

@@ -20,10 +20,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * {@link FilterStage} that returns the longest prefix of the input list whose elements
- * all satisfy the predicate body. Mirrors {@link java.util.stream.Stream#takeWhile}.
+ * all satisfy the predicate body. Mirrors {@link Stream#takeWhile}.
  *
  * @param <T> element type
  */

@@ -14,10 +14,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * {@link SourceStage} that emits a single literal value parsed from its configuration.
- * Equivalent to {@link java.util.stream.Stream#of(Object)}.
+ * Equivalent to {@link Stream#of(Object)}.
  * <p>
  * Supported {@code outputType}s parse from the configured string verbatim
  * ({@code STRING}, {@code RAW_HTML}, {@code RAW_XML}, {@code RAW_JSON}) or via the matching

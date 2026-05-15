@@ -18,7 +18,9 @@ import org.jsoup.nodes.Element;
 
 import java.util.List;
 
-/** {@link FilterStage} keeping only elements whose tag name equals the configured target. */
+/**
+ * {@link FilterStage} keeping only elements whose tag name equals the configured target.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

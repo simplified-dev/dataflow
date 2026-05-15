@@ -14,7 +14,9 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** {@link TransformStage} that returns {@code true} when the input {@link JsonObject} contains the named field. */
+/**
+ * {@link TransformStage} that returns {@code true} when the input {@link JsonObject} contains the named field.
+ */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
