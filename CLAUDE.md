@@ -1,112 +1,65 @@
-# dataflow - project guide
+# dataflow
 
-Typed pipeline library modeled after Java 8 Streams. Java 21, Gradle, Lombok.
+Typed pipeline lib (Java 21, Gradle, Lombok). Java-8-Streams shape.
 
-## Stage model
+## Stage hierarchy
 
-`Stage<I, O>` is sealed (`stage/Stage.java`), permits 5 non-sealed sub-interfaces:
-- `SourceStage<O>` - `() -> O` (input type defaults to `DataTypes.NONE`)
-- `FilterStage<T>` - `List<T> -> List<T>` (subset)
-- `TransformStage<I, O>` - `I -> O` (1:1 mapping; also used for `T -> BOOLEAN` predicates)
-- `CollectStage<I, O>` - terminal reduction, normally `List<T> -> X`
-- `BranchStage<I>` - terminal fan-out `I -> Map<String, Object>`
+`Stage<I,O>` sealed (`stage/Stage.java`), 5 non-sealed permits:
+- `SourceStage<O>` - `()->O` (input = `DataTypes.NONE`)
+- `FilterStage<T>` - `List<T>->List<T>` (subset)
+- `TransformStage<I,O>` - 1:1 (also `T->BOOLEAN` predicates)
+- `CollectStage<I,O>` - terminal reduction
+- `BranchStage<I>` - terminal fan-out `I->Map<String,Object>`
 
-Each concrete stage:
+## Concrete stage template
+
 - `public static @NotNull XStage of(...)` factory
-- `public static @NotNull XStage fromConfig(StageConfig cfg)` for serde
-- Implements `inputType()`, `outputType()`, `kind()`, `summary()`, `config()`, `execute(ctx, input)`
-- Lombok: `@Getter @Accessors(fluent = true) @RequiredArgsConstructor(access = PRIVATE)`
-  (or `@NoArgsConstructor(PRIVATE)` for stateless)
-- Null-input guard: `if (input == null) return null;` (rejection semantics)
-- List results wrapped via `Concurrent.newUnmodifiableList(...)`
+- `public static @NotNull XStage fromConfig(StageConfig)` for serde
+- Implements `inputType/outputType/kind/summary/config/execute`
+- `@Getter @Accessors(fluent=true) @RequiredArgsConstructor(access=PRIVATE)` (or `@NoArgsConstructor(PRIVATE)` stateless)
+- `if (input == null) return null;` (rejection semantics)
+- List outputs: `Concurrent.newUnmodifiableList(...)`
+- Regex stages: `Pattern.compile(...)` cached in `of(...)`
 
-## Naming
+## Naming (suffix = role)
 
-Suffix convention (commit `60ff9d9`):
-- `XxxSource` - source
-- `XxxFilter` - `List<T> -> List<T>`
-- `XxxTransform` - 1:1 map
-- `XxxPredicate` - `T -> BOOLEAN`
-- `XxxCollect` - terminal
+`XxxSource | XxxFilter | XxxTransform | XxxPredicate | XxxCollect`. Filter/Predicate paired by name (`StringContainsFilter` ↔ `StringContainsPredicate`).
 
-`Filter` and `Predicate` are paired by name (`StringContainsFilter` / `StringContainsPredicate`).
+Packages under `stage/`: `source`, `filter/{string,list,numeric,dom,json}`, `transform/{string,primitive,list,dom,json,encoding}`, `predicate/{string,numeric,dom,json,common}`, `terminal` (+ `collect,sum,average,minmax,match`).
 
-## Packages (`stage/`)
+## StageKind / StageCategory
 
-```
-source/                 UrlSource, LiteralSource, LiteralListSource, EmbedSource
-filter/{string,list,numeric,dom,json}/
-transform/{string,primitive,list,dom,json,encoding}/
-predicate/{string,numeric,dom,json,common}/
-terminal/               Branch
-terminal/{collect,sum,average,minmax,match}/
-```
+`StageKind` (enum) = wire-format discriminator carrying schema + factory. **Renaming a constant breaks stored JSON** - safe pre-prod; require migration once persisted. Adding a stage: new `StageKind` + correct `StageCategory`.
 
-Type-grouped subpackages (string/dom/json/numeric) for breadth; semantic groups (collect /
-sum / minmax / match) for terminals.
+`StageCategory` declaration order: `SOURCE` first, `TERMINAL_*` last, rest alphabetical. UI relies on `ordinal()`.
 
-## StageKind + StageCategory
+## Sub-pipelines
 
-`StageKind` (enum, `stage/StageKind.java`) is the wire-format discriminator. Each constant
-carries display name, type signature, `StageCategory`, `List<FieldSpec>` schema, and
-`Function<StageConfig, Stage<?, ?>>` factory. **Renaming a constant invalidates stored
-pipeline JSON** - safe pre-production, but require an explicit migration once anything is
-persisted.
+Per-element body (`Map`, `FlatMap`, `SortBy`, `Min/MaxBy`, `*Match`, `FindFirst`, `Take/DropWhile`): `FieldType.SUB_PIPELINE` + `StageConfig.subPipeline/getSubPipeline`.
 
-When adding a stage: new `StageKind` constant + matching imports + correct `StageCategory`.
+Multiple named bodies (`Branch`, `And/OrPredicate`): `FieldType.SUB_PIPELINES_MAP` + `subPipelines/getSubPipelines`.
 
-`StageCategory`: UI palette grouping. Declaration order is `SOURCE` first, `TERMINAL_*`
-last, and everything in between alphabetical (`BRANCH`, `FILTER_*`, `PREDICATE_*`,
-`TRANSFORM_*`). Downstream UI consumers can rely on `Enum#ordinal()` for natural display
-order.
+Validate at build time: `StageChainValidator.validate(seed, body, expected)`; on failure throw `IllegalArgumentException("Invalid <stage> body: " + report.issues())`.
 
-## Sub-pipeline bodies
+## DataPipeline
 
-Stages that run a sub-chain per element (`Map`, `FlatMap`, `SortBy`, `MinBy`, `MaxBy`,
-`AnyMatch`, `AllMatch`, `NoneMatch`, `FindFirst`, `TakeWhile`, `DropWhile`) carry the body
-via `FieldType.SUB_PIPELINE` + `StageConfig.subPipeline(name, chain)` /
-`getSubPipeline(name)`.
-
-Branch and `AndPredicate`/`OrPredicate` (multiple named chains) use
-`FieldType.SUB_PIPELINES_MAP` + `subPipelines()` / `getSubPipelines()`.
-
-Validate body type chains at build time:
-`StageChainValidator.validate(seedInputType, body, expectedOutputType)` returns a
-`ValidationReport`. Throw `IllegalArgumentException("Invalid <stage> body: " + report.issues())`
-on failure.
-
-## DataPipeline lifecycle
-
-- `Builder.build()` validates eagerly and throws `IllegalStateException` on invalid chain
-- `Builder.validate()` returns a `ValidationReport` without throwing (for inspection)
-- `execute(ctx)` no longer re-validates; build-time guarantees it's well-typed
-- Empty pipeline (`DataPipeline.empty()`) returns `null` on execute, doesn't throw
+- `Builder.build()` validates eagerly, throws `IllegalStateException` on bad chain
+- `Builder.validate()` returns `ValidationReport`, no throw
+- `execute(ctx)` does NOT re-validate (build-time guarantee)
+- `DataPipeline.empty().execute(ctx)` returns `null`
 
 ## DataType
 
-`DataType<T>` is sealed (`stage/../DataType.java`): `Basic<T>`, `ListType<E>`, `SetType<E>`.
-Identity is by `label()` (so `RAW_HTML` and `STRING` are distinct despite both being
-`String`-backed). `DataTypes.byLabel("List<INT>")` constructs parameterised types.
+Sealed: `Basic<T>`, `ListType<E>`, `SetType<E>`. **Identity by `label()`** - `RAW_HTML` ≠ `STRING` despite both being `String`-backed. Parameterised via `DataTypes.byLabel("List<INT>")`.
 
-Supported `Comparable` keys for `Sort*` / `Min*` / `Max*`: `INT`, `LONG`, `FLOAT`, `DOUBLE`,
-`STRING`. Stages reject other key types at build time.
+Sort/Min/Max key types restricted to `INT, LONG, FLOAT, DOUBLE, STRING`; others rejected at build time.
 
-## Build / test
+## Serde / test
 
-- Gradle Java 21 toolchain (see `build.gradle.kts`)
-- Deps: `simplified-dev:client` (UrlFetcher), `simplified-dev:collections` (Concurrent*),
-  `simplified-dev:gson-extras`, jsoup, gson, jackson-xml, slf4j
-- Test: JUnit 5 + Hamcrest. One assertion-per-behavior style.
-- `gradle compileJava compileTestJava` builds main + tests; `gradle test` runs.
+- Wire format: `{"kind":"X", ...config}` via `serde/PipelineGson`. Round-tripped by `PipelineSerdeTest`.
+- Tests: JUnit 5 + Hamcrest, one assertion per behavior. `PipelineContext.empty()` for default fetcher / NOOP resolver.
+- `gradle test` runs; `gradle compileJava compileTestJava` builds.
 
-## Conventions
+## Commits
 
-- Javadoc: imports, no FQN refs. Single hyphens never em dashes. `{@link X}` not `{@code X}`
-  for cross-references. `{@inheritDoc}` on every interface override.
-- `@NotNull` / `@Nullable` from `org.jetbrains.annotations` on params and returns.
-- Regex stages cache their `Pattern` at construction (`Pattern.compile(regex)` in `of(...)`).
-- Wire format unchanged: stages serialise to `{"kind": "X", ...config fields}` arrays via
-  `PipelineGson` (`serde/PipelineGson.java`). Round-tripped by `PipelineSerdeTest`.
-- `PipelineContext.empty()` creates a default-fetcher / NOOP-resolver context for tests.
-- Commits: imperative title under ~70 chars. Per-feature where possible. No
-  `Co-Authored-By:` lines.
+Imperative title <70 chars, per-feature where possible.
