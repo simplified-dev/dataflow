@@ -49,7 +49,7 @@ Integer dmg = pipeline.execute(PipelineContext.empty()); // 500 - generic <T> in
 
 ```
 dev.sbs.dataflow.stage
-  .source                 UrlSource, OfSource, OfListSource, EmbedSource
+  .source                 UrlSource, LiteralSource, LiteralListSource, EmbedSource
   .filter.string          Contains, Matches, StartsWith, EndsWith, Equals, NonEmpty
   .filter.list            Distinct, NotNull, Take, Skip, IndexInRange, TakeWhile, DropWhile
   .filter.numeric         Int/Long/Double x {GreaterThan, LessThan, InRange}
@@ -88,8 +88,8 @@ DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `STRING`, `INT`, `LONG`,
 | Kind                       | Input | Output                  | Notes                              |
 |----------------------------|-------|-------------------------|------------------------------------|
 | `SOURCE_URL`               | NONE  | `RAW_*`                 | shared `UrlFetcher`, body cap 5 MiB |
-| `SOURCE_OF`                | NONE  | `T`                     | literal value parsed from config   |
-| `SOURCE_OF_LIST`           | NONE  | `List<T>`               | literal list from JSON array       |
+| `SOURCE_LITERAL`                | NONE  | `T`                     | literal value parsed from config   |
+| `SOURCE_LITERAL_LIST`           | NONE  | `List<T>`               | literal list from JSON array       |
 | `SOURCE_EMBED`             | NONE  | declared at construction| resolves saved pipeline by id      |
 
 ### Parse / DOM / JSON / encoding transforms
@@ -284,7 +284,7 @@ Use `Builder.validate()` to inspect a report on a still-under-construction build
 
 ```java
 ValidationReport report = DataPipeline.builder()
-    .source(OfSource.text("hi"))
+    .source(LiteralSource.text("hi"))
     .stage(ParseHtmlTransform.of())  // expects RAW_HTML, got STRING
     .validate();
 if (!report.isValid()) {

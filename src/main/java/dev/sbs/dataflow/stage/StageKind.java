@@ -75,8 +75,8 @@ import dev.sbs.dataflow.stage.predicate.string.StringEqualsPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringMatchesPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringNonEmptyPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringStartsWithPredicate;
-import dev.sbs.dataflow.stage.source.OfListSource;
-import dev.sbs.dataflow.stage.source.OfSource;
+import dev.sbs.dataflow.stage.source.LiteralListSource;
+import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.DomChildrenTransform;
@@ -148,26 +148,26 @@ public enum StageKind {
         cfg -> EmbedSource.of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"))
     ),
 
-    SOURCE_OF(
-        "Of (literal)",
+    SOURCE_LITERAL(
+        "Literal",
         "() -> T",
         StageCategory.SOURCE,
         List.of(
             new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "STRING"),
             new FieldSpec("value", FieldType.STRING, "Value", "literal")
         ),
-        OfSource::fromConfig
+        LiteralSource::fromConfig
     ),
 
-    SOURCE_OF_LIST(
-        "OfList (JSON array)",
+    SOURCE_LITERAL_LIST(
+        "Literal list (JSON array)",
         "() -> List<T>",
         StageCategory.SOURCE,
         List.of(
             new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
             new FieldSpec("value", FieldType.STRING, "JSON array", "[\"a\",\"b\"]")
         ),
-        OfListSource::fromConfig
+        LiteralListSource::fromConfig
     ),
 
     SOURCE_URL(

@@ -23,14 +23,14 @@ import java.util.Set;
  * ({@code STRING}, {@code RAW_HTML}, {@code RAW_XML}, {@code RAW_JSON}) or via the matching
  * {@code parseXxx} ({@code INT}, {@code LONG}, {@code FLOAT}, {@code DOUBLE},
  * {@code BOOLEAN}). Structured types ({@code DOM_NODE}, {@code JSON_*}) are rejected at
- * build time and should be wired via {@code OfSource(RAW_*) -> ParseXxxTransform}.
+ * build time and should be wired via {@code LiteralSource(RAW_*) -> ParseXxxTransform}.
  *
  * @param <T> the value type
  */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class OfSource<T> implements SourceStage<T> {
+public final class LiteralSource<T> implements SourceStage<T> {
 
     private static final @NotNull Set<DataType<?>> STRING_LIKE = Set.of(
         DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
@@ -43,7 +43,7 @@ public final class OfSource<T> implements SourceStage<T> {
     private final @NotNull T value;
 
     /**
-     * Constructs an {@code OfSource} that emits {@code value} parsed under {@code outputType}.
+     * Constructs an {@code LiteralSource} that emits {@code value} parsed under {@code outputType}.
      *
      * @param outputType the type to emit
      * @param value the value's serialized form
@@ -52,9 +52,9 @@ public final class OfSource<T> implements SourceStage<T> {
      * @throws IllegalArgumentException when {@code outputType} is unsupported or {@code value} cannot be parsed
      */
     @SuppressWarnings("unchecked")
-    public static <T> @NotNull OfSource<T> of(@NotNull DataType<T> outputType, @NotNull String value) {
+    public static <T> @NotNull LiteralSource<T> of(@NotNull DataType<T> outputType, @NotNull String value) {
         T parsed = (T) parse(outputType, value);
-        return new OfSource<>(outputType, value, parsed);
+        return new LiteralSource<>(outputType, value, parsed);
     }
 
     /**
@@ -64,7 +64,7 @@ public final class OfSource<T> implements SourceStage<T> {
      * @param body the HTML body
      * @return the stage
      */
-    public static @NotNull OfSource<String> html(@NotNull String body) {
+    public static @NotNull LiteralSource<String> html(@NotNull String body) {
         return of(DataTypes.RAW_HTML, body);
     }
 
@@ -75,7 +75,7 @@ public final class OfSource<T> implements SourceStage<T> {
      * @param body the XML body
      * @return the stage
      */
-    public static @NotNull OfSource<String> xml(@NotNull String body) {
+    public static @NotNull LiteralSource<String> xml(@NotNull String body) {
         return of(DataTypes.RAW_XML, body);
     }
 
@@ -86,7 +86,7 @@ public final class OfSource<T> implements SourceStage<T> {
      * @param body the JSON body
      * @return the stage
      */
-    public static @NotNull OfSource<String> json(@NotNull String body) {
+    public static @NotNull LiteralSource<String> json(@NotNull String body) {
         return of(DataTypes.RAW_JSON, body);
     }
 
@@ -97,18 +97,18 @@ public final class OfSource<T> implements SourceStage<T> {
      * @param body the string value
      * @return the stage
      */
-    public static @NotNull OfSource<String> text(@NotNull String body) {
+    public static @NotNull LiteralSource<String> text(@NotNull String body) {
         return of(DataTypes.STRING, body);
     }
 
     /**
-     * Reconstructs an {@code OfSource} from a populated {@link StageConfig}.
+     * Reconstructs an {@code LiteralSource} from a populated {@link StageConfig}.
      *
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull OfSource<?> fromConfig(@NotNull StageConfig cfg) {
+    public static @NotNull LiteralSource<?> fromConfig(@NotNull StageConfig cfg) {
         return of((DataType) cfg.getDataType("outputType"), cfg.getString("value"));
     }
 
@@ -120,7 +120,7 @@ public final class OfSource<T> implements SourceStage<T> {
         if (type.equals(DataTypes.DOUBLE)) return Double.parseDouble(raw.trim());
         if (type.equals(DataTypes.BOOLEAN)) return Boolean.parseBoolean(raw.trim());
         throw new IllegalArgumentException(
-            "OfSource does not support outputType " + type + "; wire OfSource(RAW_*) -> ParseXxxTransform instead"
+            "LiteralSource does not support outputType " + type + "; wire LiteralSource(RAW_*) -> ParseXxxTransform instead"
         );
     }
 
@@ -142,7 +142,7 @@ public final class OfSource<T> implements SourceStage<T> {
     /** {@inheritDoc} */
     @Override
     public @NotNull StageKind kind() {
-        return StageKind.SOURCE_OF;
+        return StageKind.SOURCE_LITERAL;
     }
 
     /** {@inheritDoc} */

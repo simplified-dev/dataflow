@@ -1,7 +1,7 @@
 package dev.sbs.dataflow;
 
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
-import dev.sbs.dataflow.stage.source.OfSource;
+import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
@@ -21,9 +21,9 @@ class DataTypeChainTest {
     @Test
     @DisplayName("Type mismatch reports stage index, kind, expected and produced types")
     void mismatchEmitsKindAndTypes() {
-        // OfSource.text emits STRING; ParseHtmlTransform expects RAW_HTML.
+        // LiteralSource.text emits STRING; ParseHtmlTransform expects RAW_HTML.
         ValidationReport report = DataPipeline.builder()
-            .source(OfSource.text("hi"))
+            .source(LiteralSource.text("hi"))
             .stage(ParseHtmlTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));
@@ -40,7 +40,7 @@ class DataTypeChainTest {
     void deeperMismatchReportsRightIndex() {
         // Source -> ParseHtml -> CssSelect (DOM_NODE -> List<DOM_NODE>) -> ParseInt (expects STRING) - mismatch at index 3
         ValidationReport report = DataPipeline.builder()
-            .source(OfSource.html("<html><body>x</body></html>"))
+            .source(LiteralSource.html("<html><body>x</body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("body"))
             .stage(ParseIntTransform.of())
@@ -56,7 +56,7 @@ class DataTypeChainTest {
     @DisplayName("Wrapping the scalar tail in MapTransform fixes the previously-broken chain")
     void mapTransformBridgesScalarOverList() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(OfSource.html("<html><body><span>10</span><span>20</span></body></html>"))
+            .source(LiteralSource.html("<html><body><span>10</span><span>20</span></body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("span"))
             .stage(MapTransform.of(
@@ -72,7 +72,7 @@ class DataTypeChainTest {
     @DisplayName("Valid wiki chain reports no issues")
     void validChainReportsNoIssues() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(OfSource.html("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
+            .source(LiteralSource.html("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))

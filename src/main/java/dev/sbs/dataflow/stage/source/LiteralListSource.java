@@ -30,7 +30,7 @@ import java.util.Set;
  * time. Equivalent to {@link java.util.stream.Stream#of(Object[])} for the supported
  * element types.
  * <p>
- * Same supported element types as {@link OfSource}: {@code STRING} / {@code RAW_*},
+ * Same supported element types as {@link LiteralSource}: {@code STRING} / {@code RAW_*},
  * {@code INT}, {@code LONG}, {@code FLOAT}, {@code DOUBLE}, {@code BOOLEAN}. Structured
  * types are rejected at build time.
  *
@@ -39,7 +39,7 @@ import java.util.Set;
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class OfListSource<T> implements SourceStage<List<T>> {
+public final class LiteralListSource<T> implements SourceStage<List<T>> {
 
     private static final @NotNull Set<DataType<?>> STRING_LIKE = Set.of(
         DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
@@ -54,7 +54,7 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
     private final @NotNull ConcurrentList<T> values;
 
     /**
-     * Constructs an {@code OfListSource} that emits the parsed JSON array.
+     * Constructs an {@code LiteralListSource} that emits the parsed JSON array.
      *
      * @param elementType element type of the emitted list
      * @param rawValue JSON array, e.g. {@code "[\"a\",\"b\"]"} or {@code "[1,2,3]"}
@@ -62,19 +62,19 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
      * @param <T> the element type
      * @throws IllegalArgumentException when {@code elementType} is unsupported, the value is not a JSON array, or an element cannot be parsed
      */
-    public static <T> @NotNull OfListSource<T> of(@NotNull DataType<T> elementType, @NotNull String rawValue) {
+    public static <T> @NotNull LiteralListSource<T> of(@NotNull DataType<T> elementType, @NotNull String rawValue) {
         ConcurrentList<T> parsed = Concurrent.newUnmodifiableList(parseArray(elementType, rawValue));
-        return new OfListSource<>(elementType, DataType.list(elementType), rawValue, parsed);
+        return new LiteralListSource<>(elementType, DataType.list(elementType), rawValue, parsed);
     }
 
     /**
-     * Reconstructs an {@code OfListSource} from a populated {@link StageConfig}.
+     * Reconstructs an {@code LiteralListSource} from a populated {@link StageConfig}.
      *
      * @param cfg the populated configuration
      * @return the rebuilt stage
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull OfListSource<?> fromConfig(@NotNull StageConfig cfg) {
+    public static @NotNull LiteralListSource<?> fromConfig(@NotNull StageConfig cfg) {
         return of((DataType) cfg.getDataType("elementType"), cfg.getString("value"));
     }
 
@@ -87,8 +87,8 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
     private static <T> @NotNull List<T> parseArray(@NotNull DataType<T> elementType, @NotNull String raw) {
         if (!SUPPORTED_ELEMENT_TYPES.contains(elementType))
             throw new IllegalArgumentException(
-                "OfListSource does not support elementType " + elementType
-                    + "; wire OfListSource(RAW_*) -> MapTransform(... ParseXxx) instead"
+                "LiteralListSource does not support elementType " + elementType
+                    + "; wire LiteralListSource(RAW_*) -> MapTransform(... ParseXxx) instead"
             );
 
         JsonElement root;
@@ -97,11 +97,11 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
             reader.setStrictness(Strictness.STRICT);
             root = JsonParser.parseReader(reader);
         } catch (RuntimeException e) {
-            throw new IllegalArgumentException("OfListSource value is not valid JSON: " + raw, e);
+            throw new IllegalArgumentException("LiteralListSource value is not valid JSON: " + raw, e);
         }
 
         if (!root.isJsonArray())
-            throw new IllegalArgumentException("OfListSource value must be a JSON array but was: " + raw);
+            throw new IllegalArgumentException("LiteralListSource value must be a JSON array but was: " + raw);
 
         JsonArray array = root.getAsJsonArray();
         List<T> result = new ArrayList<>(array.size());
@@ -120,7 +120,7 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
         if (elementType.equals(DataTypes.DOUBLE)) return el.getAsDouble();
         if (elementType.equals(DataTypes.BOOLEAN)) return el.getAsBoolean();
         throw new IllegalArgumentException(
-            "OfListSource does not support elementType " + elementType
+            "LiteralListSource does not support elementType " + elementType
         );
     }
 
@@ -142,7 +142,7 @@ public final class OfListSource<T> implements SourceStage<List<T>> {
     /** {@inheritDoc} */
     @Override
     public @NotNull StageKind kind() {
-        return StageKind.SOURCE_OF_LIST;
+        return StageKind.SOURCE_LITERAL_LIST;
     }
 
     /** {@inheritDoc} */

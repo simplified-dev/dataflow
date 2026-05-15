@@ -4,7 +4,7 @@ import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataPipelineResolver;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.source.OfSource;
+import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +46,7 @@ class EmbedSourceTest {
         MapResolver resolver = new MapResolver();
         // B: produces integer 42
         DataPipeline b = DataPipeline.builder()
-            .source(OfSource.text("42"))
+            .source(LiteralSource.text("42"))
             .build();
         resolver.pipelines.put("B", b);
 
@@ -140,7 +140,7 @@ class EmbedSourceTest {
     void threeDeepNonCycle() {
         MapResolver resolver = new MapResolver();
         DataPipeline c = DataPipeline.builder()
-            .source(OfSource.text("deep"))
+            .source(LiteralSource.text("deep"))
             .build();
         DataPipeline b = DataPipeline.builder()
             .source(EmbedSource.of("C", DataTypes.STRING))

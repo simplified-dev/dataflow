@@ -1,7 +1,7 @@
 package dev.sbs.dataflow;
 
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
-import dev.sbs.dataflow.stage.source.OfSource;
+import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
@@ -19,7 +19,7 @@ class DataPipelineBuilderTest {
     @DisplayName("Builder.build() throws when stages have type-chain mismatches")
     void buildRejectsInvalidPipeline() {
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> DataPipeline.builder()
-            .source(OfSource.html("<html></html>"))
+            .source(LiteralSource.html("<html></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("body"))
             .stage(ParseIntTransform.of())  // expects STRING; previous stage produces List<DOM_NODE>
@@ -32,7 +32,7 @@ class DataPipelineBuilderTest {
     @DisplayName("Builder.validate() returns the report without throwing")
     void builderValidateInspects() {
         ValidationReport report = DataPipeline.builder()
-            .source(OfSource.html("<html></html>"))
+            .source(LiteralSource.html("<html></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(ParseIntTransform.of())
             .validate();
@@ -43,7 +43,7 @@ class DataPipelineBuilderTest {
     @DisplayName("Builder.build() succeeds for a well-typed chain")
     void buildAcceptsValidPipeline() {
         DataPipeline pipeline = DataPipeline.builder()
-            .source(OfSource.html("<html><body><p>x</p></body></html>"))
+            .source(LiteralSource.html("<html><body><p>x</p></body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("p"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
