@@ -35,11 +35,12 @@ Packages under `stage/`: `source`, `filter/{string,list,numeric,dom,json}`, `tra
 
 ## Sub-pipelines
 
-Per-element body (`Map`, `FlatMap`, `SortBy`, `Min/MaxBy`, `*Match`, `FindFirst`, `Take/DropWhile`): `FieldType.SUB_PIPELINE` + `StageConfig.subPipeline/getSubPipeline`.
+A sourceless body chain is a `chain.Chain`. Variants:
+- Single body (`Map`, `FlatMap`, `SortBy`, `Min/MaxBy`, `*Match`, `FindFirst`, `Take/DropWhile`): `FieldType.SUB_PIPELINE` + `StageConfig.subPipeline/getSubPipeline` returning `Chain`.
+- Named bodies (`MapCollect`, `And/OrPredicate`): `FieldType.SUB_PIPELINES_MAP` + `subPipelines/getSubPipelines` returning `chain.NamedChains`.
+- Typed named bodies (`JsonObjectBuildTransform`): `FieldType.TYPED_SUB_PIPELINES_MAP` + `typedSubPipelines/getTypedSubPipelines` returning `Map<String, chain.TypedChain>`.
 
-Multiple named bodies (`Branch`, `And/OrPredicate`): `FieldType.SUB_PIPELINES_MAP` + `subPipelines/getSubPipelines`.
-
-Validate at build time: `StageChainValidator.validate(seed, body, expected)`; on failure throw `IllegalArgumentException("Invalid <stage> body: " + report.issues())`.
+`Chain` owns: `validate(seed, body, expected)`, `execute(ctx, input)`, `of(stages)`, `builder()`. Per-stage walks call `T result = this.body.execute(ctx, element)` directly. Validate at build time; on failure throw `IllegalArgumentException("Invalid <stage> body: " + report.issues())`.
 
 ## DataPipeline
 

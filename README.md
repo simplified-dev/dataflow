@@ -297,9 +297,9 @@ Diagnostic example: `Stage #1 (PARSE_HTML) expects input RAW_HTML but previous
 stage produced STRING`.
 
 Sub-pipeline bodies (used by `Map`, `FlatMap`, match collectors, `TakeWhile` / `DropWhile`,
-`SortBy` / `MinBy` / `MaxBy`, `And` / `Or`) are validated the same way via
-`StageChainValidator` at build time, against the declared element-type-in and
-output-type-out.
+`SortBy` / `MinBy` / `MaxBy`, `And` / `Or`) are wrapped as a `chain.Chain` and validated the
+same way via `Chain.validate(seed, body, expected)` at build time, against the declared
+element-type-in and output-type-out.
 
 ## Status
 

@@ -2,8 +2,8 @@ package dev.sbs.dataflow.stage.transform.list;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
@@ -41,7 +41,7 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
 
     private final @NotNull DataType<List<Y>> outputListType;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> body;
+    private final @NotNull Chain body;
 
     /**
      * Constructs a flatMap stage with the given element types and body chain. The body's
@@ -60,7 +60,7 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
         @NotNull DataType<Y> outputElementType,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        ValidationReport report = StageChainValidator.validate(
+        ValidationReport report = Chain.validate(
             inputElementType,
             body,
             DataType.list(outputElementType)
@@ -72,7 +72,7 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
             outputElementType,
             DataType.list(inputElementType),
             DataType.list(outputElementType),
-            Concurrent.newUnmodifiableList((List<Stage<?, ?>>) body)
+            Chain.of(body)
         );
     }
 
@@ -86,8 +86,8 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
     public static @NotNull FlatMapTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> inputElementType = cfg.getDataType("elementInputType");
         DataType<?> outputElementType = cfg.getDataType("elementOutputType");
-        ConcurrentList<Stage<?, ?>> body = cfg.getSubPipeline("body");
-        return of((DataType) inputElementType, (DataType) outputElementType, body);
+        Chain body = cfg.getSubPipeline("body");
+        return of((DataType) inputElementType, (DataType) outputElementType, body.stages());
     }
 
     /** {@inheritDoc} */
@@ -101,18 +101,13 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public @Nullable ConcurrentList<Y> execute(@NotNull PipelineContext ctx, @Nullable List<X> input) {
         if (input == null) return null;
         List<Y> result = new ArrayList<>();
         for (X element : input) {
-            Object current = element;
-            for (Stage stage : this.body) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            if (current != null) result.addAll((List<Y>) current);
+            List<Y> sub = this.body.execute(ctx, element);
+            if (sub != null) result.addAll(sub);
         }
         return Concurrent.newUnmodifiableList(result);
     }

@@ -55,7 +55,7 @@ class JsonObjectBuildTransformTest {
     }
 
     @Test
-    @DisplayName("Empty branch body is rejected (StageChainValidator requires at least one stage)")
+    @DisplayName("Empty branch body is rejected (Chain.validate requires at least one stage)")
     void emptyBranchInvalidWhenTypesDiffer() {
         // Body must produce INT but is empty; empty body produces input type STRING.
         assertThat(

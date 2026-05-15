@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.transform.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
@@ -48,7 +48,7 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
 
     private final boolean ascending;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> body;
+    private final @NotNull Chain body;
 
     /**
      * Constructs a sort-by stage.
@@ -73,7 +73,7 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
             throw new IllegalArgumentException(
                 "SortByTransform supports key types " + SUPPORTED_KEYS + " but got " + keyType
             );
-        ValidationReport report = StageChainValidator.validate(elementType, body, keyType);
+        ValidationReport report = Chain.validate(elementType, body, keyType);
         if (!report.isValid())
             throw new IllegalArgumentException("Invalid sortBy body: " + report.issues());
         return new SortByTransform<>(
@@ -81,7 +81,7 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
             keyType,
             DataType.list(elementType),
             ascending,
-            Concurrent.newUnmodifiableList((List<Stage<?, ?>>) body)
+            Chain.of(body)
         );
     }
 
@@ -96,8 +96,8 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
         DataType<?> elementType = cfg.getDataType("elementType");
         DataType<?> keyType = cfg.getDataType("keyType");
         boolean ascending = cfg.getBoolean("ascending");
-        ConcurrentList<Stage<?, ?>> body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, (DataType) keyType, ascending, body);
+        Chain body = cfg.getSubPipeline("body");
+        return of((DataType) elementType, (DataType) keyType, ascending, body.stages());
     }
 
     /** {@inheritDoc} */
@@ -112,7 +112,6 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
@@ -120,12 +119,8 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
         record Keyed<T, K extends Comparable<K>>(T element, @Nullable K key) {}
         List<Keyed<T, K>> keyed = new ArrayList<>(input.size());
         for (T element : input) {
-            Object current = element;
-            for (Stage stage : this.body) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            keyed.add(new Keyed<>(element, (K) current));
+            K key = this.body.execute(ctx, element);
+            keyed.add(new Keyed<>(element, key));
         }
 
         Comparator<K> order = this.ascending ? Comparator.naturalOrder() : Comparator.reverseOrder();

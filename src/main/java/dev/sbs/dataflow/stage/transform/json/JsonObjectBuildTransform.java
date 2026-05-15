@@ -5,19 +5,16 @@ import com.google.gson.JsonObject;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.chain.ChainBuilder;
+import dev.sbs.dataflow.chain.TypedChain;
 import dev.sbs.dataflow.serde.PipelineGson;
-import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
-import dev.sbs.dataflow.stage.StageConfig.TypedSubPipeline;
 import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.TransformStage;
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +43,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
 
     private final @NotNull DataType<I> inputType;
 
-    private final @NotNull Map<String, TypedSubPipeline> outputs;
+    private final @NotNull Map<String, TypedChain> outputs;
 
     /**
      * Mutable builder for {@link JsonObjectBuildTransform}.
@@ -56,7 +53,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     public static final class Builder<I> {
 
         private final @NotNull DataType<I> inputType;
-        private final @NotNull Map<String, TypedSubPipeline> outputs = new LinkedHashMap<>();
+        private final @NotNull Map<String, TypedChain> outputs = new LinkedHashMap<>();
 
         private Builder(@NotNull DataType<I> inputType) {
             this.inputType = inputType;
@@ -75,14 +72,15 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
             @NotNull DataType<?> outputType,
             @NotNull Consumer<ChainBuilder> block
         ) {
-            ChainBuilder chain = new ChainBuilder();
-            block.accept(chain);
-            ValidationReport report = StageChainValidator.validate(this.inputType, chain.stages, outputType);
+            ChainBuilder builder = Chain.builder();
+            block.accept(builder);
+            Chain chain = builder.build();
+            ValidationReport report = Chain.validate(this.inputType, chain.stages(), outputType);
 
             if (!report.isValid())
                 throw new IllegalArgumentException("Invalid JsonObjectBuildTransform output '" + name + "': " + report.issues());
 
-            this.outputs.put(name, new TypedSubPipeline(outputType, Concurrent.newUnmodifiableList(chain.stages)));
+            this.outputs.put(name, new TypedChain(outputType, chain));
             return this;
         }
 
@@ -98,26 +96,6 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     }
 
     /**
-     * Mutable builder for one named sub-chain inside a {@link JsonObjectBuildTransform}.
-     */
-    @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class ChainBuilder {
-
-        private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
-
-        /**
-         * Appends a stage to this sub-chain.
-         *
-         * @param stage the stage to append
-         * @return this builder
-         */
-        public @NotNull ChainBuilder stage(@NotNull Stage<?, ?> stage) {
-            this.stages.add(stage);
-            return this;
-        }
-    }
-
-    /**
      * Reconstructs a {@link JsonObjectBuildTransform} from a populated {@link StageConfig}.
      *
      * @param cfg the populated configuration
@@ -126,7 +104,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull JsonObjectBuildTransform<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> inputType = cfg.getDataType("inputType");
-        Map<String, TypedSubPipeline> outputs = cfg.getTypedSubPipelines("outputs");
+        Map<String, TypedChain> outputs = cfg.getTypedSubPipelines("outputs");
         return new JsonObjectBuildTransform(inputType, outputs);
     }
 
@@ -151,19 +129,14 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public @Nullable JsonObject execute(@NotNull PipelineContext ctx, @Nullable I input) {
         if (input == null) return null;
         JsonObject result = new JsonObject();
-        for (Map.Entry<String, TypedSubPipeline> entry : this.outputs.entrySet()) {
-            Object current = input;
-            for (Stage stage : entry.getValue().chain()) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            if (current == null) continue;
-            result.add(entry.getKey(), PipelineGson.gson().toJsonTree(current));
+        for (Map.Entry<String, TypedChain> entry : this.outputs.entrySet()) {
+            Object value = entry.getValue().chain().execute(ctx, input);
+            if (value == null) continue;
+            result.add(entry.getKey(), PipelineGson.gson().toJsonTree(value));
         }
         return result;
     }

@@ -3,12 +3,13 @@ package dev.sbs.dataflow.stage.terminal.collect;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.chain.ChainBuilder;
+import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
 
     private final @NotNull DataType<I> inputType;
 
-    private final @NotNull Map<String, ConcurrentList<Stage<?, ?>>> outputs;
+    private final @NotNull NamedChains outputs;
 
     /**
      * Mutable builder for {@link MapCollect}.
@@ -45,8 +46,9 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
      * @param <I> input type, shared by every output's sub-chain
      */
     public static final class Builder<I> {
+
         private final @NotNull DataType<I> inputType;
-        private final @NotNull Map<String, ConcurrentList<Stage<?, ?>>> outputs = new LinkedHashMap<>();
+        private final @NotNull Map<String, Chain> outputs = new LinkedHashMap<>();
 
         private Builder(@NotNull DataType<I> inputType) {
             this.inputType = inputType;
@@ -60,9 +62,9 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @return this builder
          */
         public @NotNull Builder<I> output(@NotNull String name, @NotNull Consumer<ChainBuilder> block) {
-            ChainBuilder chain = new ChainBuilder();
+            ChainBuilder chain = Chain.builder();
             block.accept(chain);
-            this.outputs.put(name, Concurrent.newUnmodifiableList(chain.stages));
+            this.outputs.put(name, chain.build());
             return this;
         }
 
@@ -72,27 +74,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @return the built collect
          */
         public @NotNull MapCollect<I> build() {
-            return new MapCollect<>(this.inputType, Map.copyOf(this.outputs));
-        }
-    }
-
-    /**
-     * Mutable builder for one named sub-chain inside a {@link MapCollect}.
-     */
-    public static final class ChainBuilder {
-        private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
-
-        private ChainBuilder() {}
-
-        /**
-         * Appends a stage to this sub-chain.
-         *
-         * @param stage the stage to append
-         * @return this builder
-         */
-        public @NotNull ChainBuilder stage(@NotNull Stage<?, ?> stage) {
-            this.stages.add(stage);
-            return this;
+            return new MapCollect<>(this.inputType, new NamedChains(Map.copyOf(this.outputs)));
         }
     }
 
@@ -105,7 +87,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull MapCollect<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> inputType = cfg.getDataType("inputType");
-        Map<String, ConcurrentList<Stage<?, ?>>> outputs = cfg.getSubPipelines("outputs");
+        NamedChains outputs = cfg.getSubPipelines("outputs");
         return new MapCollect(inputType, outputs);
     }
 
@@ -130,18 +112,11 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public @NotNull Map<String, Object> execute(@NotNull PipelineContext ctx, @Nullable I input) {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<String, ConcurrentList<Stage<?, ?>>> entry : this.outputs.entrySet()) {
-            Object current = input;
-            for (Stage stage : entry.getValue()) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            result.put(entry.getKey(), current);
-        }
+        for (Map.Entry<String, Chain> entry : this.outputs.chains().entrySet())
+            result.put(entry.getKey(), entry.getValue().execute(ctx, input));
         return Map.copyOf(result);
     }
 

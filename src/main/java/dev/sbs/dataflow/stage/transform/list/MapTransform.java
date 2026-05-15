@@ -2,8 +2,8 @@ package dev.sbs.dataflow.stage.transform.list;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
@@ -41,7 +41,7 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
 
     private final @NotNull DataType<List<Y>> outputListType;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> body;
+    private final @NotNull Chain body;
 
     /**
      * Constructs a map stage with the given element types and body chain.
@@ -59,7 +59,7 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
         @NotNull DataType<Y> outputElementType,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        ValidationReport report = StageChainValidator.validate(inputElementType, body, outputElementType);
+        ValidationReport report = Chain.validate(inputElementType, body, outputElementType);
         if (!report.isValid())
             throw new IllegalArgumentException("Invalid map body: " + report.issues());
         return new MapTransform<>(
@@ -67,7 +67,7 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
             outputElementType,
             DataType.list(inputElementType),
             DataType.list(outputElementType),
-            Concurrent.newUnmodifiableList((List<Stage<?, ?>>) body)
+            Chain.of(body)
         );
     }
 
@@ -81,8 +81,8 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
     public static @NotNull MapTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> inputElementType = cfg.getDataType("elementInputType");
         DataType<?> outputElementType = cfg.getDataType("elementOutputType");
-        ConcurrentList<Stage<?, ?>> body = cfg.getSubPipeline("body");
-        return of((DataType) inputElementType, (DataType) outputElementType, body);
+        Chain body = cfg.getSubPipeline("body");
+        return of((DataType) inputElementType, (DataType) outputElementType, body.stages());
     }
 
     /** {@inheritDoc} */
@@ -96,18 +96,13 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public @Nullable ConcurrentList<Y> execute(@NotNull PipelineContext ctx, @Nullable List<X> input) {
         if (input == null) return null;
         List<Y> result = new ArrayList<>(input.size());
         for (X element : input) {
-            Object current = element;
-            for (Stage stage : this.body) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            if (current != null) result.add((Y) current);
+            Y mapped = this.body.execute(ctx, element);
+            if (mapped != null) result.add(mapped);
         }
         return Concurrent.newUnmodifiableList(result);
     }

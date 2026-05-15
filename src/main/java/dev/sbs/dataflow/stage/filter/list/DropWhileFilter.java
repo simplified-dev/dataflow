@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.filter.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.FilterStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
@@ -37,7 +37,7 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> body;
+    private final @NotNull Chain body;
 
     /**
      * Constructs a drop-while filter.
@@ -52,13 +52,13 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
         @NotNull DataType<T> elementType,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        ValidationReport report = StageChainValidator.validate(elementType, body, DataTypes.BOOLEAN);
+        ValidationReport report = Chain.validate(elementType, body, DataTypes.BOOLEAN);
         if (!report.isValid())
             throw new IllegalArgumentException("Invalid dropWhile body: " + report.issues());
         return new DropWhileFilter<>(
             elementType,
             DataType.list(elementType),
-            Concurrent.newUnmodifiableList((List<Stage<?, ?>>) body)
+            Chain.of(body)
         );
     }
 
@@ -71,8 +71,8 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull DropWhileFilter<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> elementType = cfg.getDataType("elementType");
-        ConcurrentList<Stage<?, ?>> body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, body);
+        Chain body = cfg.getSubPipeline("body");
+        return of((DataType) elementType, body.stages());
     }
 
     /** {@inheritDoc} */
@@ -85,7 +85,6 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public @Nullable ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
@@ -93,12 +92,8 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
         boolean dropping = true;
         for (T element : input) {
             if (dropping) {
-                Object current = element;
-                for (Stage stage : this.body) {
-                    if (current == null) break;
-                    current = stage.execute(ctx, current);
-                }
-                if (Boolean.TRUE.equals(current)) continue;
+                Boolean drop = this.body.execute(ctx, element);
+                if (Boolean.TRUE.equals(drop)) continue;
                 dropping = false;
             }
             result.add(element);

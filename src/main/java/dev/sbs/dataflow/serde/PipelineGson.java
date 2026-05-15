@@ -9,21 +9,20 @@ import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
+import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.chain.ChainSerde;
+import dev.sbs.dataflow.chain.NamedChains;
+import dev.sbs.dataflow.chain.TypedChain;
 import dev.sbs.dataflow.stage.FieldSpec;
 import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
-import dev.sbs.dataflow.stage.StageConfig.TypedSubPipeline;
 import dev.sbs.dataflow.stage.StageKind;
-import dev.simplified.collection.Concurrent;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -132,45 +131,9 @@ public final class PipelineGson {
                 case DOUBLE    -> o.addProperty(spec.name(), (Double) v);
                 case BOOLEAN   -> o.addProperty(spec.name(), (Boolean) v);
                 case DATA_TYPE -> o.addProperty(spec.name(), ((DataType<?>) v).label());
-                case SUB_PIPELINES_MAP -> {
-                    JsonObject outputs = new JsonObject();
-
-                    for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : ((Map<String, ? extends List<? extends Stage<?, ?>>>) v).entrySet()) {
-                        JsonArray sub = new JsonArray();
-
-                        for (Stage<?, ?> child : entry.getValue())
-                            sub.add(stageToJson(child));
-
-                        outputs.add(entry.getKey(), sub);
-                    }
-
-                    o.add(spec.name(), outputs);
-                }
-                case SUB_PIPELINE -> {
-                    JsonArray sub = new JsonArray();
-
-                    for (Stage<?, ?> child : (List<? extends Stage<?, ?>>) v)
-                        sub.add(stageToJson(child));
-
-                    o.add(spec.name(), sub);
-                }
-                case TYPED_SUB_PIPELINES_MAP -> {
-                    JsonObject outputs = new JsonObject();
-
-                    for (Map.Entry<String, TypedSubPipeline> entry : ((Map<String, TypedSubPipeline>) v).entrySet()) {
-                        JsonObject typed = new JsonObject();
-                        typed.addProperty("outputType", entry.getValue().outputType().label());
-                        JsonArray sub = new JsonArray();
-
-                        for (Stage<?, ?> child : entry.getValue().chain())
-                            sub.add(stageToJson(child));
-
-                        typed.add("chain", sub);
-                        outputs.add(entry.getKey(), typed);
-                    }
-
-                    o.add(spec.name(), outputs);
-                }
+                case SUB_PIPELINE          -> o.add(spec.name(), ChainSerde.writeChain((Chain) v, PipelineGson::stageToJson));
+                case SUB_PIPELINES_MAP     -> o.add(spec.name(), ChainSerde.writeNamedChains((NamedChains) v, PipelineGson::stageToJson));
+                case TYPED_SUB_PIPELINES_MAP -> o.add(spec.name(), ChainSerde.writeTypedNamedChains((Map<String, TypedChain>) v, PipelineGson::stageToJson));
             }
         }
         return o;
@@ -193,49 +156,9 @@ public final class PipelineGson {
                 case DOUBLE    -> b.doubleVal(spec.name(), raw.getAsDouble());
                 case BOOLEAN   -> b.bool(spec.name(), raw.getAsBoolean());
                 case DATA_TYPE -> b.dataType(spec.name(), requireType(raw.getAsString()));
-                case SUB_PIPELINES_MAP -> {
-                    JsonObject outputs = raw.getAsJsonObject();
-                    LinkedHashMap<String, List<Stage<?, ?>>> map = new LinkedHashMap<>();
-
-                    for (Map.Entry<String, JsonElement> entry : outputs.entrySet()) {
-                        JsonArray sub = entry.getValue().getAsJsonArray();
-                        List<Stage<?, ?>> stages = new ArrayList<>();
-
-                        for (JsonElement el : sub)
-                            stages.add(stageFromJson(el.getAsJsonObject()));
-
-                        map.put(entry.getKey(), stages);
-                    }
-
-                    b.subPipelines(spec.name(), map);
-                }
-                case SUB_PIPELINE -> {
-                    JsonArray sub = raw.getAsJsonArray();
-                    List<Stage<?, ?>> stages = new ArrayList<>();
-
-                    for (JsonElement el : sub)
-                        stages.add(stageFromJson(el.getAsJsonObject()));
-
-                    b.subPipeline(spec.name(), stages);
-                }
-                case TYPED_SUB_PIPELINES_MAP -> {
-                    JsonObject outputs = raw.getAsJsonObject();
-                    LinkedHashMap<String, TypedSubPipeline> map = new LinkedHashMap<>();
-
-                    for (Map.Entry<String, JsonElement> entry : outputs.entrySet()) {
-                        JsonObject typed = entry.getValue().getAsJsonObject();
-                        DataType<?> outputType = requireType(typed.get("outputType").getAsString());
-                        JsonArray sub = typed.get("chain").getAsJsonArray();
-                        List<Stage<?, ?>> stages = new ArrayList<>();
-
-                        for (JsonElement el : sub)
-                            stages.add(stageFromJson(el.getAsJsonObject()));
-
-                        map.put(entry.getKey(), new TypedSubPipeline(outputType, Concurrent.newUnmodifiableList(stages)));
-                    }
-
-                    b.typedSubPipelines(spec.name(), map);
-                }
+                case SUB_PIPELINE          -> b.subPipeline(spec.name(), ChainSerde.readChain(raw.getAsJsonArray(), PipelineGson::stageFromJson));
+                case SUB_PIPELINES_MAP     -> b.subPipelines(spec.name(), ChainSerde.readNamedChains(raw.getAsJsonObject(), PipelineGson::stageFromJson));
+                case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(spec.name(), ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), PipelineGson::stageFromJson));
             }
         }
         return kind.factory().apply(b.build());

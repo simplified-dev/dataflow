@@ -1,15 +1,16 @@
 package dev.sbs.dataflow.stage;
 
 import dev.sbs.dataflow.DataType;
+import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.chain.NamedChains;
+import dev.sbs.dataflow.chain.TypedChain;
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,18 +23,6 @@ import java.util.Map;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StageConfig {
 
-    /**
-     * Pairs a named sub-pipeline with the {@link DataType} its body must produce. Carried
-     * inside {@link FieldType#TYPED_SUB_PIPELINES_MAP} values.
-     *
-     * @param outputType expected output type of the body's last stage
-     * @param chain the body stages, in execution order
-     */
-    public record TypedSubPipeline(
-        @NotNull DataType<?> outputType,
-        @NotNull ConcurrentList<Stage<?, ?>> chain
-    ) {}
-
     private static final @NotNull StageConfig EMPTY = new StageConfig(Concurrent.newUnmodifiableMap());
 
     private final @NotNull Map<String, Object> values;
@@ -42,6 +31,7 @@ public final class StageConfig {
      * Mutable builder. Order is preserved (insertion order).
      */
     public static final class Builder {
+
         private final @NotNull LinkedHashMap<String, Object> values = new LinkedHashMap<>();
 
         private Builder() {}
@@ -81,34 +71,42 @@ public final class StageConfig {
             return this;
         }
 
-        public @NotNull Builder subPipelines(@NotNull String name, @NotNull Map<String, ? extends List<? extends Stage<?, ?>>> value) {
-            this.values.put(name, value);
-            return this;
-        }
-
         /**
-         * Stores a named sub-pipelines map whose values pair each chain with its declared
-         * output {@link DataType}.
+         * Stores a {@link NamedChains} under {@code name}. Used by stages whose
+         * configuration carries several named sub-pipeline bodies (e.g. MapCollect,
+         * And/OrPredicate).
          *
          * @param name the field name
-         * @param value the typed sub-pipelines map
+         * @param value the named-bodies map
          * @return this builder
          */
-        public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedSubPipeline> value) {
+        public @NotNull Builder subPipelines(@NotNull String name, @NotNull NamedChains value) {
             this.values.put(name, value);
             return this;
         }
 
         /**
-         * Stores a singular sub-pipeline under {@code name}. Used by stages such as map /
-         * flatMap / takeWhile that carry exactly one inner chain.
+         * Stores a {@link Chain} under {@code name}. Used by stages such as Map / FlatMap /
+         * TakeWhile that carry exactly one inner chain.
          *
          * @param name the field name
          * @param chain the inner chain
          * @return this builder
          */
-        public @NotNull Builder subPipeline(@NotNull String name, @NotNull List<? extends Stage<?, ?>> chain) {
+        public @NotNull Builder subPipeline(@NotNull String name, @NotNull Chain chain) {
             this.values.put(name, chain);
+            return this;
+        }
+
+        /**
+         * Stores a typed named-chains map under {@code name}.
+         *
+         * @param name the field name
+         * @param value the typed sub-pipelines map
+         * @return this builder
+         */
+        public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedChain> value) {
+            this.values.put(name, value);
             return this;
         }
 
@@ -191,42 +189,31 @@ public final class StageConfig {
     }
 
     /**
-     * Returns the named sub-pipelines map stored under {@code name}, with each value frozen
-     * to a {@link ConcurrentList}.
+     * Returns the {@link NamedChains} stored under {@code name}.
      *
      * @param name the field name
-     * @return the sub-pipelines map
-     * @throws ClassCastException when the field is present but not a sub-pipelines map
+     * @return the named-bodies map
+     * @throws ClassCastException when the field is present but not a {@link NamedChains}
      * @throws NullPointerException when the field is absent
      */
-    @SuppressWarnings("unchecked")
-    public @NotNull Map<String, ConcurrentList<Stage<?, ?>>> getSubPipelines(@NotNull String name) {
-        Map<String, ? extends List<? extends Stage<?, ?>>> raw =
-            (Map<String, ? extends List<? extends Stage<?, ?>>>) this.values.get(name);
-        LinkedHashMap<String, ConcurrentList<Stage<?, ?>>> frozen = new LinkedHashMap<>();
-        for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : raw.entrySet())
-            frozen.put(entry.getKey(), Concurrent.newUnmodifiableList((List<Stage<?, ?>>) entry.getValue()));
-        return Map.copyOf(frozen);
+    public @NotNull NamedChains getSubPipelines(@NotNull String name) {
+        return (NamedChains) this.values.get(name);
     }
 
     /**
-     * Returns the singular sub-pipeline stored under {@code name}, frozen to a
-     * {@link ConcurrentList}.
+     * Returns the {@link Chain} stored under {@code name}.
      *
      * @param name the field name
-     * @return the sub-pipeline
-     * @throws ClassCastException when the field is present but not a list of stages
+     * @return the chain
+     * @throws ClassCastException when the field is present but not a {@link Chain}
      * @throws NullPointerException when the field is absent
      */
-    @SuppressWarnings("unchecked")
-    public @NotNull ConcurrentList<Stage<?, ?>> getSubPipeline(@NotNull String name) {
-        List<? extends Stage<?, ?>> raw = (List<? extends Stage<?, ?>>) this.values.get(name);
-        return Concurrent.newUnmodifiableList((List<Stage<?, ?>>) raw);
+    public @NotNull Chain getSubPipeline(@NotNull String name) {
+        return (Chain) this.values.get(name);
     }
 
     /**
-     * Returns the typed sub-pipelines map stored under {@code name}, with each chain frozen
-     * to a {@link ConcurrentList}.
+     * Returns the typed named-chains map stored under {@code name}.
      *
      * @param name the field name
      * @return the typed sub-pipelines map
@@ -234,17 +221,8 @@ public final class StageConfig {
      * @throws NullPointerException when the field is absent
      */
     @SuppressWarnings("unchecked")
-    public @NotNull Map<String, TypedSubPipeline> getTypedSubPipelines(@NotNull String name) {
-        Map<String, TypedSubPipeline> raw = (Map<String, TypedSubPipeline>) this.values.get(name);
-        LinkedHashMap<String, TypedSubPipeline> frozen = new LinkedHashMap<>();
-        for (Map.Entry<String, TypedSubPipeline> entry : raw.entrySet()) {
-            TypedSubPipeline v = entry.getValue();
-            frozen.put(entry.getKey(), new TypedSubPipeline(
-                v.outputType(),
-                Concurrent.newUnmodifiableList((List<Stage<?, ?>>) v.chain())
-            ));
-        }
-        return Map.copyOf(frozen);
+    public @NotNull Map<String, TypedChain> getTypedSubPipelines(@NotNull String name) {
+        return (Map<String, TypedChain>) this.values.get(name);
     }
 
     /**

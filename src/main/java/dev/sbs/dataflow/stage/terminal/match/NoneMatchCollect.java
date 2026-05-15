@@ -3,14 +3,12 @@ package dev.sbs.dataflow.stage.terminal.match;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.StageChainValidator;
 import dev.sbs.dataflow.ValidationReport;
+import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
-import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +34,7 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> body;
+    private final @NotNull Chain body;
 
     /**
      * Constructs a none-match stage.
@@ -51,13 +49,13 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
         @NotNull DataType<T> elementType,
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        ValidationReport report = StageChainValidator.validate(elementType, body, DataTypes.BOOLEAN);
+        ValidationReport report = Chain.validate(elementType, body, DataTypes.BOOLEAN);
         if (!report.isValid())
             throw new IllegalArgumentException("Invalid noneMatch body: " + report.issues());
         return new NoneMatchCollect<>(
             elementType,
             DataType.list(elementType),
-            Concurrent.newUnmodifiableList((List<Stage<?, ?>>) body)
+            Chain.of(body)
         );
     }
 
@@ -70,8 +68,8 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static @NotNull NoneMatchCollect<?> fromConfig(@NotNull StageConfig cfg) {
         DataType<?> elementType = cfg.getDataType("elementType");
-        ConcurrentList<Stage<?, ?>> body = cfg.getSubPipeline("body");
-        return of((DataType) elementType, body);
+        Chain body = cfg.getSubPipeline("body");
+        return of((DataType) elementType, body.stages());
     }
 
     /** {@inheritDoc} */
@@ -84,17 +82,12 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public @Nullable Boolean execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null) return null;
         for (T element : input) {
-            Object current = element;
-            for (Stage stage : this.body) {
-                if (current == null) break;
-                current = stage.execute(ctx, current);
-            }
-            if (Boolean.TRUE.equals(current)) return false;
+            Boolean ok = this.body.execute(ctx, element);
+            if (Boolean.TRUE.equals(ok)) return false;
         }
         return true;
     }
