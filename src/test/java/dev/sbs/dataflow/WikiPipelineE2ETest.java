@@ -1,16 +1,16 @@
 package dev.sbs.dataflow;
 
 import dev.sbs.dataflow.serde.PipelineGson;
-import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.sbs.dataflow.stage.predicate.string.StringContainsPredicate;
 import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
-import dev.sbs.dataflow.stage.predicate.string.StringContainsPredicate;
+import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
-import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
 import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.json.GsonDeserializeTransform;
 import dev.sbs.dataflow.stage.transform.json.JsonObjectBuildTransform;
 import dev.sbs.dataflow.stage.transform.list.MapTransform;
@@ -27,10 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 class WikiPipelineE2ETest {
 
