@@ -13,10 +13,14 @@ import dev.simplified.dataflow.stage.transform.primitive.NegateFloatTransform;
 import dev.simplified.dataflow.stage.transform.primitive.NegateIntTransform;
 import dev.simplified.dataflow.stage.transform.primitive.NegateLongTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ToStringTransform;
-import dev.simplified.dataflow.stage.transform.string.LowerCaseTransform;
-import dev.simplified.dataflow.stage.transform.string.PrependTransform;
-import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import dev.simplified.dataflow.stage.transform.string.AppendTransform;
+import dev.simplified.dataflow.stage.transform.string.CamelCaseTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
+import dev.simplified.dataflow.stage.transform.string.LowerCaseTransform;
+import dev.simplified.dataflow.stage.transform.string.PascalCaseTransform;
+import dev.simplified.dataflow.stage.transform.string.PrependTransform;
+import dev.simplified.dataflow.stage.transform.string.SnakeCaseTransform;
+import dev.simplified.dataflow.stage.transform.string.TitleCaseTransform;
 import dev.simplified.dataflow.stage.transform.string.UpperCaseTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +42,59 @@ class StringListNumericTransformsTest {
         assertThat(LengthTransform.of().execute(this.ctx, "hello"), is(equalTo(5)));
         assertThat(PrependTransform.of(">>>").execute(this.ctx, "x"), is(equalTo(">>>x")));
         assertThat(AppendTransform.of("<<<").execute(this.ctx, "x"), is(equalTo("x<<<")));
+    }
+
+    @Test
+    @DisplayName("CamelCase splits on whitespace, _, -, lower-upper and acronym boundaries")
+    void camelCase() {
+        CamelCaseTransform stage = CamelCaseTransform.of();
+        assertThat(stage.execute(this.ctx, "hello world"), is(equalTo("helloWorld")));
+        assertThat(stage.execute(this.ctx, "hello_world"), is(equalTo("helloWorld")));
+        assertThat(stage.execute(this.ctx, "hello-world"), is(equalTo("helloWorld")));
+        assertThat(stage.execute(this.ctx, "HelloWorld"), is(equalTo("helloWorld")));
+        assertThat(stage.execute(this.ctx, "XMLParser"), is(equalTo("xmlParser")));
+        assertThat(stage.execute(this.ctx, "single"), is(equalTo("single")));
+        assertThat(stage.execute(this.ctx, ""), is(equalTo("")));
+        assertThat(stage.execute(this.ctx, null), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("PascalCase capitalises every word")
+    void pascalCase() {
+        PascalCaseTransform stage = PascalCaseTransform.of();
+        assertThat(stage.execute(this.ctx, "hello world"), is(equalTo("HelloWorld")));
+        assertThat(stage.execute(this.ctx, "hello_world"), is(equalTo("HelloWorld")));
+        assertThat(stage.execute(this.ctx, "helloWorld"), is(equalTo("HelloWorld")));
+        assertThat(stage.execute(this.ctx, "XMLParser"), is(equalTo("XmlParser")));
+        assertThat(stage.execute(this.ctx, "single"), is(equalTo("Single")));
+        assertThat(stage.execute(this.ctx, ""), is(equalTo("")));
+        assertThat(stage.execute(this.ctx, null), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("TitleCase uppercases word starts, lowercases everything else, preserves whitespace")
+    void titleCase() {
+        TitleCaseTransform stage = TitleCaseTransform.of();
+        assertThat(stage.execute(this.ctx, "hello world"), is(equalTo("Hello World")));
+        assertThat(stage.execute(this.ctx, "HELLO WORLD"), is(equalTo("Hello World")));
+        assertThat(stage.execute(this.ctx, "  hello  world  "), is(equalTo("  Hello  World  ")));
+        assertThat(stage.execute(this.ctx, "self-reliance"), is(equalTo("Self-reliance")));
+        assertThat(stage.execute(this.ctx, ""), is(equalTo("")));
+        assertThat(stage.execute(this.ctx, null), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("SnakeCase joins lowercased words with underscores")
+    void snakeCase() {
+        SnakeCaseTransform stage = SnakeCaseTransform.of();
+        assertThat(stage.execute(this.ctx, "hello world"), is(equalTo("hello_world")));
+        assertThat(stage.execute(this.ctx, "HelloWorld"), is(equalTo("hello_world")));
+        assertThat(stage.execute(this.ctx, "hello-world"), is(equalTo("hello_world")));
+        assertThat(stage.execute(this.ctx, "hello_world"), is(equalTo("hello_world")));
+        assertThat(stage.execute(this.ctx, "XMLParser"), is(equalTo("xml_parser")));
+        assertThat(stage.execute(this.ctx, "single"), is(equalTo("single")));
+        assertThat(stage.execute(this.ctx, ""), is(equalTo("")));
+        assertThat(stage.execute(this.ctx, null), is(nullValue()));
     }
 
     @Test
