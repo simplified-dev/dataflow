@@ -9,7 +9,6 @@ import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -33,6 +32,7 @@ import java.util.function.Consumer;
  * @param <I> input type, shared by every sub-chain
  */
 @StageSpec(
+    id = "COLLECT_MAP",
     displayName = "Map (named outputs)",
     description = "I -> Map<String, Object>",
     category = StageSpec.Category.TERMINAL_COLLECT
@@ -121,13 +121,6 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
             result.put(entry.getKey(), entry.getValue().execute(ctx, input));
         return Map.copyOf(result);
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_MAP;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Map<String, Object>> outputType() {

@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -23,6 +22,7 @@ import java.util.regex.Pattern;
  * {@link FilterStage} keeping every string whose contents are a regex match.
  */
 @StageSpec(
+    id = "FILTER_STRING_MATCHES",
     displayName = "Matches regex",
     description = "List<STRING> -> List<STRING>",
     category = StageSpec.Category.FILTER_STRING
@@ -65,13 +65,6 @@ public final class StringMatchesFilter implements FilterStage<String> {
     public @NotNull DataType<List<String>> inputType() {
         return LIST_STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_STRING_MATCHES;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<String>> outputType() {

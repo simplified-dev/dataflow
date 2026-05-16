@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -30,6 +29,7 @@ import java.util.Set;
  * @param <T> element type, must be {@link Comparable}
  */
 @StageSpec(
+    id = "TRANSFORM_SORT",
     displayName = "Sort list",
     description = "List<T> -> List<T>",
     category = StageSpec.Category.TRANSFORM_LIST
@@ -89,13 +89,6 @@ public final class SortTransform<T extends Comparable<T>> implements TransformSt
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_SORT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<T>> outputType() {

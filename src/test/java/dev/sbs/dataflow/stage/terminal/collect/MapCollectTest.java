@@ -74,7 +74,7 @@ class MapCollectTest {
     void mapCollectAdvertisesContract() {
         MapCollect<String> collect = MapCollect.over(DataTypes.STRING).build();
         assertThat(collect.outputType(), is(DataTypes.MAP_OUTPUT));
-        assertThat(collect.kind().name(), is(equalTo("COLLECT_MAP")));
+        assertThat(collect.kindId(), is(equalTo("COLLECT_MAP")));
     }
 
 }

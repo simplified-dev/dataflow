@@ -8,7 +8,6 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -30,6 +29,7 @@ import java.util.stream.Stream;
  * @param <T> element type
  */
 @StageSpec(
+    id = "FILTER_TAKE_WHILE",
     displayName = "TakeWhile",
     description = "List<T> -> List<T> (body: T -> BOOLEAN)",
     category = StageSpec.Category.FILTER_LIST
@@ -88,13 +88,6 @@ public final class TakeWhileFilter<T> implements FilterStage<T> {
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_TAKE_WHILE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<T>> outputType() {

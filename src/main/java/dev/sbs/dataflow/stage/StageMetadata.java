@@ -33,7 +33,7 @@ public record StageMetadata(
 
     /**
      * Returns just the wire-side {@link FieldSpec}s in factory parameter order. Convenience
-     * for {@code StageKind#schema()} and JSON writers.
+     * for JSON writers and UI schema renderers.
      *
      * @return the wire-side schema, in factory parameter order
      */

@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,6 +21,7 @@ import java.util.List;
  * @param <T> element type
  */
 @StageSpec(
+    id = "COLLECT_COUNT",
     displayName = "Count",
     description = "List<T> -> INT",
     category = StageSpec.Category.TERMINAL_SUM
@@ -60,13 +60,6 @@ public final class CountCollect<T> implements CollectStage<List<T>, Integer> {
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_COUNT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Integer> outputType() {

@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -26,6 +25,7 @@ import java.util.List;
  * @param <T> element type
  */
 @StageSpec(
+    id = "TRANSFORM_REVERSE",
     displayName = "Reverse list",
     description = "List<T> -> List<T>",
     category = StageSpec.Category.TRANSFORM_LIST
@@ -67,13 +67,6 @@ public final class ReverseTransform<T> implements TransformStage<List<T>, List<T
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_REVERSE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<T>> outputType() {

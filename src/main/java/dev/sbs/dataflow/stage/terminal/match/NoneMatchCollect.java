@@ -8,7 +8,6 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,6 +27,7 @@ import java.util.stream.Stream;
  * @param <T> element type
  */
 @StageSpec(
+    id = "COLLECT_NONE_MATCH",
     displayName = "NoneMatch",
     description = "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
     category = StageSpec.Category.TERMINAL_MATCH
@@ -84,13 +84,6 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_NONE_MATCH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

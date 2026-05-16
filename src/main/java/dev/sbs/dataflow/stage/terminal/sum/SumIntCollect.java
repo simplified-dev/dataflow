@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +19,7 @@ import java.util.List;
  * {@code 0} for an empty list and skips {@code null} elements.
  */
 @StageSpec(
+    id = "COLLECT_SUM_INT",
     displayName = "Sum INT",
     description = "List<INT> -> INT",
     category = StageSpec.Category.TERMINAL_SUM
@@ -56,13 +56,6 @@ public final class SumIntCollect implements CollectStage<List<Integer>, Integer>
     public @NotNull DataType<List<Integer>> inputType() {
         return INPUT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_SUM_INT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Integer> outputType() {

@@ -9,31 +9,30 @@ import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
-import dev.sbs.dataflow.chain.Chain;
-import dev.sbs.dataflow.chain.ChainSerde;
-import dev.sbs.dataflow.chain.NamedChains;
-import dev.sbs.dataflow.chain.TypedChain;
 import dev.sbs.dataflow.stage.FieldSpec;
 import dev.sbs.dataflow.stage.SourceStage;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
-import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageMetadata;
+import dev.sbs.dataflow.stage.StageReflection;
+import dev.sbs.dataflow.stage.StageRegistry;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
-
 /**
  * Gson-based serialiser for {@link DataPipeline} definitions.
  * <p>
  * Wire format is a JSON array of stage descriptors. Each descriptor carries a {@code "kind"}
- * field whose value is the {@link StageKind} name; the remaining fields are the stage's
- * configuration. {@link DataType} references serialise as their {@link DataType#label()},
- * round-tripped through {@link DataTypes#byLabel(String)}.
+ * field whose value is the {@link StageSpec#id()} of the stage's class; the remaining fields
+ * are the stage's configuration. {@link DataType} references serialise as their
+ * {@link DataType#label()}, round-tripped through {@link DataTypes#byLabel(String)}.
  * <p>
- * The schema and factory used by serde live directly on each {@link StageKind} constant.
+ * Per-slot JSON read/write dispatch lives on {@link FieldSpec#writeJson} / {@link FieldSpec#readJson};
+ * this class just iterates the {@link StageMetadata#schema()} of the resolved class and threads
+ * the recursive stage callbacks for nested sub-pipelines.
  * <p>
  * The internal {@link Gson} instance is configured with the {@code gson-extras}
  * {@link CaseInsensitiveEnumTypeAdapterFactory} and {@link PostInitTypeAdapterFactory} so
@@ -74,7 +73,7 @@ public final class PipelineGson {
      *
      * @param json the JSON definition
      * @return the rebuilt pipeline
-     * @throws IllegalArgumentException if the JSON references an unknown {@link StageKind} or
+     * @throws IllegalArgumentException if the JSON references an unknown stage id or
      *         a {@link DataType} label that this build does not recognise
      */
     public static @NotNull DataPipeline fromJson(@NotNull String json) {
@@ -97,7 +96,6 @@ public final class PipelineGson {
         return arr;
     }
 
-    @SuppressWarnings("unchecked")
     private static @NotNull DataPipeline fromJsonArray(@NotNull JsonArray arr) {
         if (arr.isEmpty()) return DataPipeline.empty();
         DataPipeline.Builder b = DataPipeline.builder();
@@ -118,59 +116,28 @@ public final class PipelineGson {
     @SuppressWarnings("unchecked")
     private static @NotNull JsonObject stageToJson(@NotNull Stage<?, ?> stage) {
         JsonObject o = new JsonObject();
-        StageKind kind = stage.kind();
-        o.addProperty("kind", kind.name());
+        o.addProperty("kind", stage.kindId());
+        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) stage.getClass());
         StageConfig cfg = stage.config();
 
-        for (FieldSpec<?> spec : kind.schema()) {
+        for (FieldSpec<?> spec : metadata.schema()) {
             Object v = cfg.raw(spec.name());
-            switch (spec.type()) {
-                case STRING    -> o.addProperty(spec.name(), (String) v);
-                case INT       -> o.addProperty(spec.name(), (Integer) v);
-                case LONG      -> o.addProperty(spec.name(), (Long) v);
-                case DOUBLE    -> o.addProperty(spec.name(), (Double) v);
-                case BOOLEAN   -> o.addProperty(spec.name(), (Boolean) v);
-                case DATA_TYPE -> o.addProperty(spec.name(), ((DataType<?>) v).label());
-                case SUB_PIPELINE          -> o.add(spec.name(), ChainSerde.writeChain((Chain) v, PipelineGson::stageToJson));
-                case SUB_PIPELINES_MAP     -> o.add(spec.name(), ChainSerde.writeNamedChains((NamedChains) v, PipelineGson::stageToJson));
-                case TYPED_SUB_PIPELINES_MAP -> o.add(spec.name(), ChainSerde.writeTypedNamedChains((Map<String, TypedChain>) v, PipelineGson::stageToJson));
-            }
+            if (v != null) o.add(spec.name(), spec.writeJson(v, PipelineGson::stageToJson));
         }
         return o;
     }
 
     private static @NotNull Stage<?, ?> stageFromJson(@NotNull JsonObject o) {
-        StageKind kind = StageKind.valueOf(o.get("kind").getAsString());
-        if (kind.factory() == null)
-            throw new IllegalArgumentException("No factory registered for kind: " + kind);
+        String id = o.get("kind").getAsString();
+        Class<? extends Stage<?, ?>> cls = StageRegistry.byId(id);
+        StageMetadata metadata = StageReflection.of(cls);
         StageConfig.Builder b = StageConfig.builder();
 
-        for (FieldSpec<?> spec : kind.schema()) {
+        for (FieldSpec<?> spec : metadata.schema()) {
             JsonElement raw = o.get(spec.name());
-            if (raw == null) continue;
-
-            switch (spec.type()) {
-                case STRING    -> b.string(spec.name(), raw.getAsString());
-                case INT       -> b.integer(spec.name(), raw.getAsInt());
-                case LONG      -> b.longVal(spec.name(), raw.getAsLong());
-                case DOUBLE    -> b.doubleVal(spec.name(), raw.getAsDouble());
-                case BOOLEAN   -> b.bool(spec.name(), raw.getAsBoolean());
-                case DATA_TYPE -> b.dataType(spec.name(), requireType(raw.getAsString()));
-                case SUB_PIPELINE          -> b.subPipeline(spec.name(), ChainSerde.readChain(raw.getAsJsonArray(), PipelineGson::stageFromJson));
-                case SUB_PIPELINES_MAP     -> b.subPipelines(spec.name(), ChainSerde.readNamedChains(raw.getAsJsonObject(), PipelineGson::stageFromJson));
-                case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(spec.name(), ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), PipelineGson::stageFromJson));
-            }
+            if (raw != null) spec.readJson(raw, b, PipelineGson::stageFromJson);
         }
-        return kind.factory().apply(b.build());
-    }
-
-    private static @NotNull DataType<?> requireType(@NotNull String label) {
-        DataType<?> t = DataTypes.byLabel(label);
-
-        if (t == null)
-            throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
-
-        return t;
+        return metadata.fromConfig(b.build());
     }
 
 }

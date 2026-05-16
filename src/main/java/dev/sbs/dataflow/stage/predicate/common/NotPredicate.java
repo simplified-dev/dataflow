@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.predicate.common;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that inverts an input {@link Boolean}. {@code null} input passes through as {@code null}.
  */
 @StageSpec(
+    id = "PREDICATE_NOT",
     displayName = "Not",
     description = "BOOLEAN -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_COMMON
@@ -46,13 +46,6 @@ public final class NotPredicate implements TransformStage<Boolean, Boolean> {
     public @NotNull DataType<Boolean> inputType() {
         return DataTypes.BOOLEAN;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_NOT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

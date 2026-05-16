@@ -11,7 +11,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -40,6 +39,7 @@ import java.util.Set;
  * @param <T> the element type
  */
 @StageSpec(
+    id = "SOURCE_LITERAL_LIST",
     displayName = "Literal list (JSON array)",
     description = "() -> List<T>",
     category = StageSpec.Category.SOURCE
@@ -57,7 +57,7 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
 
     private final @NotNull DataType<List<T>> outputType;
 
-    private final @NotNull String rawValue;
+    private final @NotNull String value;
 
     private final @NotNull ConcurrentList<T> values;
 
@@ -65,7 +65,7 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
      * Constructs an {@code LiteralListSource} that emits the parsed JSON array.
      *
      * @param elementType element type of the emitted list
-     * @param rawValue JSON array, e.g. {@code "[\"a\",\"b\"]"} or {@code "[1,2,3]"}
+     * @param value JSON array, e.g. {@code "[\"a\",\"b\"]"} or {@code "[1,2,3]"}
      * @return the stage
      * @param <T> the element type
      * @throws IllegalArgumentException when {@code elementType} is unsupported, the value is not a JSON array, or an element cannot be parsed
@@ -73,11 +73,11 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
     public static <T> @NotNull LiteralListSource<T> of(
         @Configurable(label = "Element type", placeholder = "STRING")
         @NotNull DataType<T> elementType,
-        @Configurable(label = "JSON array", placeholder = "[\"a\",\"b\"]", name = "value")
-        @NotNull String rawValue
+        @Configurable(label = "JSON array", placeholder = "[\"a\",\"b\"]")
+        @NotNull String value
     ) {
-        ConcurrentList<T> parsed = Concurrent.newUnmodifiableList(parseArray(elementType, rawValue));
-        return new LiteralListSource<>(elementType, DataType.list(elementType), rawValue, parsed);
+        ConcurrentList<T> parsed = Concurrent.newUnmodifiableList(parseArray(elementType, value));
+        return new LiteralListSource<>(elementType, DataType.list(elementType), value, parsed);
     }
 
     /**
@@ -237,13 +237,6 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
     public @NotNull ConcurrentList<T> execute(@NotNull PipelineContext ctx, @Nullable Void input) {
         return this.values;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.SOURCE_LITERAL_LIST;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<T>> outputType() {

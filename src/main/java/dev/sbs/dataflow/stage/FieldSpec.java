@@ -1,15 +1,21 @@
 package dev.sbs.dataflow.stage;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import dev.sbs.dataflow.DataType;
+import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.chain.ChainSerde;
 import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.chain.TypedChain;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * Declares one slot in a {@link StageKind}'s configuration schema.
+ * Declares one slot in a stage's configuration schema.
  * <p>
  * Carries the wire name + {@link FieldType} discriminator + UI hints, plus typed
  * {@link #get(StageConfig)} / {@link #put(StageConfig.Builder, Object)} accessors that
@@ -100,6 +106,67 @@ public record FieldSpec<T>(
      */
     public boolean isPresent(@NotNull StageConfig cfg) {
         return cfg.has(this.name);
+    }
+
+    /**
+     * Serialises a value for this slot to its JSON form. Routes to the matching JSON
+     * primitive constructor or {@link ChainSerde} helper based on {@link #type}.
+     *
+     * @param value the slot value as an opaque {@link Object} (typically from {@link StageConfig#raw})
+     * @param stageWriter recursive callback used by sub-pipeline types to serialise nested stages
+     * @return the JSON form
+     */
+    @SuppressWarnings("unchecked")
+    public @NotNull JsonElement writeJson(
+        @NotNull Object value,
+        @NotNull Function<Stage<?, ?>, JsonObject> stageWriter
+    ) {
+        return switch (this.type) {
+            case STRING                  -> new JsonPrimitive((String) value);
+            case INT                     -> new JsonPrimitive((Integer) value);
+            case LONG                    -> new JsonPrimitive((Long) value);
+            case DOUBLE                  -> new JsonPrimitive((Double) value);
+            case BOOLEAN                 -> new JsonPrimitive((Boolean) value);
+            case DATA_TYPE               -> new JsonPrimitive(((DataType<?>) value).label());
+            case SUB_PIPELINE            -> ChainSerde.writeChain((Chain) value, stageWriter);
+            case SUB_PIPELINES_MAP       -> ChainSerde.writeNamedChains((NamedChains) value, stageWriter);
+            case TYPED_SUB_PIPELINES_MAP -> ChainSerde.writeTypedNamedChains((Map<String, TypedChain>) value, stageWriter);
+        };
+    }
+
+    /**
+     * Deserialises a value for this slot from its JSON form into the given builder. Routes
+     * to the matching {@link StageConfig.Builder} method based on {@link #type}.
+     *
+     * @param raw the JSON form
+     * @param b the builder to populate
+     * @param stageReader recursive callback used by sub-pipeline types to deserialise nested stages
+     * @return {@code b} for chaining
+     * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
+     */
+    public @NotNull StageConfig.Builder readJson(
+        @NotNull JsonElement raw,
+        @NotNull StageConfig.Builder b,
+        @NotNull Function<JsonObject, Stage<?, ?>> stageReader
+    ) {
+        switch (this.type) {
+            case STRING    -> b.string(this.name, raw.getAsString());
+            case INT       -> b.integer(this.name, raw.getAsInt());
+            case LONG      -> b.longVal(this.name, raw.getAsLong());
+            case DOUBLE    -> b.doubleVal(this.name, raw.getAsDouble());
+            case BOOLEAN   -> b.bool(this.name, raw.getAsBoolean());
+            case DATA_TYPE -> {
+                String label = raw.getAsString();
+                DataType<?> resolved = DataTypes.byLabel(label);
+                if (resolved == null)
+                    throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
+                b.dataType(this.name, resolved);
+            }
+            case SUB_PIPELINE            -> b.subPipeline(this.name, ChainSerde.readChain(raw.getAsJsonArray(), stageReader));
+            case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, ChainSerde.readNamedChains(raw.getAsJsonObject(), stageReader));
+            case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), stageReader));
+        }
+        return b;
     }
 
 }

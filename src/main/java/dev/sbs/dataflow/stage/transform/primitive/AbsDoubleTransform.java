@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@link Math#abs(double)}.
  */
 @StageSpec(
+    id = "TRANSFORM_ABS_DOUBLE",
     displayName = "Abs double",
     description = "DOUBLE -> DOUBLE",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -46,13 +46,6 @@ public final class AbsDoubleTransform implements TransformStage<Double, Double> 
     public @NotNull DataType<Double> inputType() {
         return DataTypes.DOUBLE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_ABS_DOUBLE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Double> outputType() {

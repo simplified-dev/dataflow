@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -19,6 +18,7 @@ import org.jsoup.nodes.Element;
  * its children rendered as HTML markup.
  */
 @StageSpec(
+    id = "TRANSFORM_DOM_OUTER_HTML",
     displayName = "DOM outerHtml",
     description = "DOM_NODE -> STRING",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -48,13 +48,6 @@ public final class DomOuterHtmlTransform implements TransformStage<Element, Stri
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_DOM_OUTER_HTML;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

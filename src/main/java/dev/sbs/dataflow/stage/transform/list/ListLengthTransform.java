@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -22,6 +21,7 @@ import java.util.List;
  * @param <T> element type of the list
  */
 @StageSpec(
+    id = "TRANSFORM_LIST_LENGTH",
     displayName = "List length",
     description = "List<T> -> INT",
     category = StageSpec.Category.TRANSFORM_LIST
@@ -60,13 +60,6 @@ public final class ListLengthTransform<T> implements TransformStage<List<T>, Int
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_LIST_LENGTH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Integer> outputType() {

@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -30,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <O> output type of the inner pipeline
  */
 @StageSpec(
+    id = "SOURCE_EMBED",
     displayName = "Embed pipeline",
     description = "() -> O",
     category = StageSpec.Category.SOURCE
@@ -75,13 +75,6 @@ public final class EmbedSource<O> implements SourceStage<O> {
             ctx.exitPipeline(this.embeddedPipelineId);
         }
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.SOURCE_EMBED;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {

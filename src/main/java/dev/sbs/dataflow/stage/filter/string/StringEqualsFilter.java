@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +21,7 @@ import java.util.List;
  * {@link FilterStage} keeping only strings exactly equal to the configured target.
  */
 @StageSpec(
+    id = "FILTER_STRING_EQUALS",
     displayName = "Equals",
     description = "List<STRING> -> List<STRING>",
     category = StageSpec.Category.FILTER_STRING
@@ -61,13 +61,6 @@ public final class StringEqualsFilter implements FilterStage<String> {
     public @NotNull DataType<List<String>> inputType() {
         return LIST_STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_STRING_EQUALS;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<String>> outputType() {

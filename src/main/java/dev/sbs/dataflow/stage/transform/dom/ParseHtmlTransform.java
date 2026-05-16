@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import org.jsoup.nodes.Element;
  * {@link Element} suitable for CSS-selector traversal.
  */
 @StageSpec(
+    id = "PARSE_HTML",
     displayName = "Parse HTML",
     description = "RAW_HTML -> DOM_NODE",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -50,13 +50,6 @@ public final class ParseHtmlTransform implements TransformStage<String, Element>
     public @NotNull DataType<String> inputType() {
         return DataTypes.RAW_HTML;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PARSE_HTML;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Element> outputType() {

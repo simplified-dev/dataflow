@@ -12,8 +12,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Each stage advertises its {@link #inputType()} and {@link #outputType()} as runtime
  * {@link DataType} descriptors. The pipeline's type-chain validator uses these to detect
- * mismatches before execution. The serde discriminator is {@link #kind()}, which never
- * changes once a stored definition is written.
+ * mismatches before execution. The serde discriminator is {@link #kindId()}, derived from
+ * the concrete class's {@link StageSpec#id()}; it never changes once a stored definition
+ * is written.
  *
  * @param <I> the runtime input type
  * @param <O> the runtime output type
@@ -36,15 +37,22 @@ public sealed interface Stage<I, O> permits
     @NotNull DataType<O> outputType();
 
     /**
-     * Stable discriminator used in the serialised definition.
+     * Stable wire-format discriminator for this stage, derived from the class-level
+     * {@link StageSpec#id()}.
      *
-     * @return the kind
+     * @return the wire-format id
+     * @throws IllegalStateException when the concrete class is missing {@link StageSpec}
      */
-    @NotNull StageKind kind();
+    default @NotNull String kindId() {
+        StageSpec spec = this.getClass().getAnnotation(StageSpec.class);
+        if (spec == null)
+            throw new IllegalStateException("Missing @StageSpec on " + this.getClass().getName());
+        return spec.id();
+    }
 
     /**
      * Configuration of this stage exposed as a typed name-to-value map. Mirrors the schema
-     * declared on {@link #kind()}.
+     * declared by {@link StageReflection#of(Class)}.
      * <p>
      * Default implementation: when the concrete class carries {@link StageSpec}, the
      * configuration is derived reflectively from the {@link Configurable @Configurable}

@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,6 +21,7 @@ import java.util.List;
  * @param <T> element type
  */
 @StageSpec(
+    id = "COLLECT_FIRST",
     displayName = "First",
     description = "List<T> -> T",
     category = StageSpec.Category.TERMINAL_COLLECT
@@ -61,13 +61,6 @@ public final class FirstCollect<T> implements CollectStage<List<T>, T> {
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_FIRST;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<T> outputType() {

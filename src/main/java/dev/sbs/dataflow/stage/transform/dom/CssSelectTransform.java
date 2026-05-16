@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -24,6 +23,7 @@ import java.util.List;
  * every matching element as a {@code List<Element>}.
  */
 @StageSpec(
+    id = "TRANSFORM_CSS_SELECT",
     displayName = "CSS select",
     description = "DOM_NODE -> List<DOM_NODE>",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -62,13 +62,6 @@ public final class CssSelectTransform implements TransformStage<Element, List<El
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_CSS_SELECT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Element>> outputType() {

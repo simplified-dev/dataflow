@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import java.util.regex.Pattern;
  * {@link TransformStage} that returns {@code true} when the input matches the configured regex.
  */
 @StageSpec(
+    id = "PREDICATE_STRING_MATCHES",
     displayName = "Matches regex",
     description = "STRING -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_STRING
@@ -57,13 +57,6 @@ public final class StringMatchesPredicate implements TransformStage<String, Bool
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_STRING_MATCHES;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

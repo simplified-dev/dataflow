@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.source.XmlBridge;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link JsonElement} via {@link XmlBridge}.
  */
 @StageSpec(
+    id = "PARSE_XML",
     displayName = "Parse XML",
     description = "RAW_XML -> JSON_ELEMENT",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -50,13 +50,6 @@ public final class ParseXmlTransform implements TransformStage<String, JsonEleme
     public @NotNull DataType<String> inputType() {
         return DataTypes.RAW_XML;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PARSE_XML;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonElement> outputType() {

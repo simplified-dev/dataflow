@@ -8,7 +8,6 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,6 +27,7 @@ import java.util.List;
  * @param <K> key type, must be {@link Comparable}
  */
 @StageSpec(
+    id = "COLLECT_MIN_BY",
     displayName = "MinBy (key)",
     description = "List<T> -> T (body: T -> K)",
     category = StageSpec.Category.TERMINAL_MINMAX
@@ -101,13 +101,6 @@ public final class MinByCollect<T, K extends Comparable<K>> implements CollectSt
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_MIN_BY;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<T> outputType() {

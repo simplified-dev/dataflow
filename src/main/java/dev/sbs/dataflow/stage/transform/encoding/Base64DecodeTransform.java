@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.encoding;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -21,6 +20,7 @@ import java.util.Base64;
  * UTF-8. Returns {@code null} when the input is not valid base64.
  */
 @StageSpec(
+    id = "TRANSFORM_BASE64_DECODE",
     displayName = "Base64 decode",
     description = "STRING -> STRING",
     category = StageSpec.Category.TRANSFORM_ENCODING
@@ -55,13 +55,6 @@ public final class Base64DecodeTransform implements TransformStage<String, Strin
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_BASE64_DECODE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

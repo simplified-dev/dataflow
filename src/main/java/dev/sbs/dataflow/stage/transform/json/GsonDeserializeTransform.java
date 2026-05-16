@@ -6,7 +6,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.serde.PipelineGson;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -34,6 +33,7 @@ import java.util.Set;
  * @param <T> deserialisation target type
  */
 @StageSpec(
+    id = "TRANSFORM_GSON_DESERIALIZE",
     displayName = "Gson deserialize",
     description = "JSON_* -> T",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -99,13 +99,6 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
         if (input == null || input.isJsonNull()) return null;
         return PipelineGson.gson().fromJson(input, this.outputType.javaType());
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_GSON_DESERIALIZE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {

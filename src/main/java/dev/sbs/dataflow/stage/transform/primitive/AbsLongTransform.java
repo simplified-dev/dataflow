@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@link Math#abs(long)}.
  */
 @StageSpec(
+    id = "TRANSFORM_ABS_LONG",
     displayName = "Abs long",
     description = "LONG -> LONG",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -46,13 +46,6 @@ public final class AbsLongTransform implements TransformStage<Long, Long> {
     public @NotNull DataType<Long> inputType() {
         return DataTypes.LONG;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_ABS_LONG;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Long> outputType() {

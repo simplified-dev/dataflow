@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +21,7 @@ import java.util.List;
  * {@link FilterStage} keeping longs strictly greater than the configured threshold.
  */
 @StageSpec(
+    id = "FILTER_LONG_GREATER_THAN",
     displayName = "Long >",
     description = "List<LONG> -> List<LONG>",
     category = StageSpec.Category.FILTER_NUMERIC
@@ -61,13 +61,6 @@ public final class LongGreaterThanFilter implements FilterStage<Long> {
     public @NotNull DataType<List<Long>> inputType() {
         return LIST_LONG;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_LONG_GREATER_THAN;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Long>> outputType() {

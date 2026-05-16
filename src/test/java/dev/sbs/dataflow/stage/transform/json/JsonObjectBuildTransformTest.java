@@ -73,7 +73,7 @@ class JsonObjectBuildTransformTest {
     void advertisesContract() {
         JsonObjectBuildTransform<String> stage = JsonObjectBuildTransform.over(DataTypes.STRING).build();
         assertThat(stage.outputType(), is(DataTypes.JSON_OBJECT));
-        assertThat(stage.kind().name(), is(equalTo("TRANSFORM_JSON_OBJECT_BUILD")));
+        assertThat(stage.kindId(), is(equalTo("TRANSFORM_JSON_OBJECT_BUILD")));
     }
 
 }

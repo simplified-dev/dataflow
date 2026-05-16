@@ -8,7 +8,6 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,6 +25,7 @@ import java.util.List;
  * @param <T> element type
  */
 @StageSpec(
+    id = "COLLECT_ANY_MATCH",
     displayName = "AnyMatch",
     description = "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
     category = StageSpec.Category.TERMINAL_MATCH
@@ -82,13 +82,6 @@ public final class AnyMatchCollect<T> implements CollectStage<List<T>, Boolean> 
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_ANY_MATCH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

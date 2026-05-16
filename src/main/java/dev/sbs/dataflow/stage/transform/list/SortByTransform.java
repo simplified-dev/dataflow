@@ -7,7 +7,6 @@ import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -32,6 +31,7 @@ import java.util.List;
  * @param <K> key type, must be {@link Comparable}
  */
 @StageSpec(
+    id = "TRANSFORM_SORT_BY",
     displayName = "Sort by key",
     description = "List<T> -> List<T> (body: T -> K)",
     category = StageSpec.Category.TRANSFORM_LIST
@@ -115,13 +115,6 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_SORT_BY;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<T>> outputType() {

@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * {@code null} when the input is unparseable.
  */
 @StageSpec(
+    id = "TRANSFORM_PARSE_LONG",
     displayName = "Parse long",
     description = "STRING -> LONG",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -52,13 +52,6 @@ public final class ParseLongTransform implements TransformStage<String, Long> {
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_PARSE_LONG;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Long> outputType() {

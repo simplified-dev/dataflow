@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.source;
 import com.sun.net.httpserver.HttpServer;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,7 +49,7 @@ class UrlSourceTest {
     void fetchesHtmlBody() {
         UrlSource source = UrlSource.rawHtml(this.baseUrl + "/page");
         assertThat(source.outputType(), is(sameInstance(DataTypes.RAW_HTML)));
-        assertThat(source.kind(), is(equalTo(StageKind.SOURCE_URL)));
+        assertThat(source.kindId(), is(equalTo("SOURCE_URL")));
 
         String body = source.execute(PipelineContext.defaults(), null);
         assertThat(body, containsString("<body>ok</body>"));

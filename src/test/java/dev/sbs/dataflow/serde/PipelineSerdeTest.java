@@ -9,7 +9,10 @@ import dev.sbs.dataflow.stage.FieldSpec;
 import dev.sbs.dataflow.stage.FieldType;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
-import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageMetadata;
+import dev.sbs.dataflow.stage.StageReflection;
+import dev.sbs.dataflow.stage.StageRegistry;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
@@ -42,7 +45,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -91,8 +93,8 @@ class PipelineSerdeTest {
     }
 
     @Test
-    @DisplayName("Each stage kind round-trips through JSON and re-executes equivalently")
-    void everyStageKindRoundTrips() {
+    @DisplayName("Each registered stage round-trips through JSON and re-executes equivalently")
+    void everyRegisteredStageRoundTrips() {
         // Build a synthetic JSON fixture pipeline that exercises Json* stages.
         DataPipeline jsonPipeline = DataPipeline.builder()
             .source(LiteralSource.rawJson(Fixtures.load("sample.json")))
@@ -222,7 +224,7 @@ class PipelineSerdeTest {
 
         DataPipeline rebuilt = PipelineGson.fromJson(json);
         Stage<?, ?> first = rebuilt.stages().getFirst();
-        assertThat(first.kind().name(), is(equalTo("SOURCE_EMBED")));
+        assertThat(first.kindId(), is(equalTo("SOURCE_EMBED")));
     }
 
     @Test
@@ -235,7 +237,7 @@ class PipelineSerdeTest {
     }
 
     @Test
-    @DisplayName("Unknown StageKind is rejected with a clear error")
+    @DisplayName("Unknown stage id is rejected with a clear error")
     void unknownKindRejected() {
         try {
             PipelineGson.fromJson("[{\"kind\":\"NOT_A_REAL_KIND\"}]");
@@ -247,10 +249,10 @@ class PipelineSerdeTest {
     }
 
     /**
-     * Per-kind smoke test: every {@link StageKind} with a non-chain schema must instantiate
-     * cleanly from its {@link FieldSpec#placeholder()} defaults, and the resulting stage's
-     * {@code config()} must round-trip through the factory back to an equivalent stage.
-     * Chain-bearing kinds are excluded because their bodies have no schema-level default.
+     * Per-stage smoke test: every {@link StageRegistry registered stage} with a non-chain schema
+     * must instantiate cleanly from its {@link FieldSpec#placeholder()} defaults, and the resulting
+     * stage's {@code config()} must round-trip through the factory back to an equivalent stage.
+     * Chain-bearing stages are excluded because their bodies have no schema-level default.
      */
     @TestFactory
     Stream<DynamicTest> everyNonChainKindFactoryRoundTrips() {
@@ -260,25 +262,29 @@ class PipelineSerdeTest {
             FieldType.TYPED_SUB_PIPELINES_MAP
         );
 
-        return Arrays.stream(StageKind.values())
-            .filter(k -> k.factory() != null)
-            .filter(k -> k.schema().stream().noneMatch(s -> chainFieldTypes.contains(s.type())))
-            .map(k -> DynamicTest.dynamicTest(k.name(), () -> {
-                StageConfig cfg = buildDefaultConfig(k);
-                Stage<?, ?> stage = k.factory().apply(cfg);
-                assertThat(stage, is(notNullValue()));
-                assertThat(stage.kind(), is(equalTo(k)));
-                // Round-trip the stage's own config back through the factory.
-                Stage<?, ?> rebuilt = k.factory().apply(stage.config());
-                assertThat(rebuilt.kind(), is(equalTo(k)));
-                assertThat(rebuilt.inputType(), is(equalTo(stage.inputType())));
-                assertThat(rebuilt.outputType(), is(equalTo(stage.outputType())));
-            }));
+        return StageRegistry.allOrdered().stream()
+            .filter(cls -> StageReflection.of(cls).schema().stream().noneMatch(s -> chainFieldTypes.contains(s.type())))
+            .map(cls -> {
+                StageMetadata metadata = StageReflection.of(cls);
+                String id = metadata.annotation().id();
+                return DynamicTest.dynamicTest(id, () -> {
+                    StageConfig cfg = buildDefaultConfig(cls, metadata);
+                    Stage<?, ?> stage = metadata.fromConfig(cfg);
+                    assertThat(stage, is(notNullValue()));
+                    assertThat(stage.kindId(), is(equalTo(id)));
+                    // Round-trip the stage's own config back through the factory.
+                    Stage<?, ?> rebuilt = metadata.fromConfig(stage.config());
+                    assertThat(rebuilt.kindId(), is(equalTo(id)));
+                    assertThat(rebuilt.inputType(), is(equalTo(stage.inputType())));
+                    assertThat(rebuilt.outputType(), is(equalTo(stage.outputType())));
+                });
+            });
     }
 
-    private static StageConfig buildDefaultConfig(StageKind kind) {
+    private static StageConfig buildDefaultConfig(Class<? extends Stage<?, ?>> cls, StageMetadata metadata) {
+        StageSpec spec0 = metadata.annotation();
         StageConfig.Builder b = StageConfig.builder();
-        for (FieldSpec<?> spec : kind.schema()) {
+        for (FieldSpec<?> spec : metadata.schema()) {
             String placeholder = spec.placeholder();
             switch (spec.type()) {
                 case STRING -> b.string(spec.name(), placeholder);
@@ -290,7 +296,7 @@ class PipelineSerdeTest {
                     DataType<?> resolved = DataTypes.byLabel(placeholder);
                     if (resolved == null)
                         throw new AssertionError(
-                            "StageKind " + kind + " field '" + spec.name() + "' has unknown DataType placeholder '" + placeholder + "'"
+                            "Stage " + spec0.id() + " field '" + spec.name() + "' has unknown DataType placeholder '" + placeholder + "'"
                         );
                     b.dataType(spec.name(), resolved);
                 }

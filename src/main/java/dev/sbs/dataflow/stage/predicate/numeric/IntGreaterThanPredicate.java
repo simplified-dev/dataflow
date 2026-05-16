@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@code true} when the input is strictly greater than the configured threshold.
  */
 @StageSpec(
+    id = "PREDICATE_INT_GREATER_THAN",
     displayName = "Int >",
     description = "INT -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_NUMERIC
@@ -53,13 +53,6 @@ public final class IntGreaterThanPredicate implements TransformStage<Integer, Bo
     public @NotNull DataType<Integer> inputType() {
         return DataTypes.INT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_INT_GREATER_THAN;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.client.fetch.UrlFetcher;
 import lombok.AccessLevel;
@@ -22,6 +21,7 @@ import java.net.URI;
  * tagged as one of the {@code RAW_*} types.
  */
 @StageSpec(
+    id = "SOURCE_URL",
     displayName = "URL Source",
     description = "() -> RAW_*",
     category = StageSpec.Category.SOURCE
@@ -111,13 +111,6 @@ public final class UrlSource implements SourceStage<String> {
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Void input) {
         return ctx.fetcher().get(URI.create(this.url)).getBody();
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.SOURCE_URL;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {

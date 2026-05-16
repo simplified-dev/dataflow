@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,6 +23,7 @@ import java.util.Set;
  * @param <T> element type
  */
 @StageSpec(
+    id = "COLLECT_SET",
     displayName = "Set",
     description = "List<T> -> Set<T>",
     category = StageSpec.Category.TERMINAL_COLLECT
@@ -65,13 +65,6 @@ public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_SET;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Set<T>> outputType() {

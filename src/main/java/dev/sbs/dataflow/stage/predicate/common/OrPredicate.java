@@ -8,7 +8,6 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -30,6 +29,7 @@ import java.util.Map;
  * @param <T> input element type
  */
 @StageSpec(
+    id = "PREDICATE_OR",
     displayName = "Or",
     description = "T -> BOOLEAN (OR over N predicate bodies)",
     category = StageSpec.Category.PREDICATE_COMMON
@@ -84,13 +84,6 @@ public final class OrPredicate<T> implements TransformStage<T, Boolean> {
     public @NotNull DataType<T> inputType() {
         return this.elementType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_OR;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

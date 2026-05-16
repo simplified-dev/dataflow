@@ -82,7 +82,7 @@ public final class DataPipeline {
             if (!expected.equals(previousOutput)) {
                 issues.add(new ValidationReport.Issue(
                     i,
-                    "Stage #" + i + " (" + stage.kind() + ") expects input " + expected
+                    "Stage #" + i + " (" + stage.kindId() + ") expects input " + expected
                         + " but previous stage produced " + previousOutput
                 ));
             }

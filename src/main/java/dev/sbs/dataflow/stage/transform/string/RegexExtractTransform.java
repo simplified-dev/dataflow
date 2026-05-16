@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -25,6 +24,7 @@ import java.util.regex.Pattern;
  * parenthesised capture groups.
  */
 @StageSpec(
+    id = "TRANSFORM_REGEX_EXTRACT",
     displayName = "Regex extract",
     description = "STRING -> STRING",
     category = StageSpec.Category.TRANSFORM_STRING
@@ -81,13 +81,6 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_REGEX_EXTRACT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

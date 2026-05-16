@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * and {@code "yes"} / {@code "no"}. Anything else returns {@code null}.
  */
 @StageSpec(
+    id = "TRANSFORM_PARSE_BOOLEAN",
     displayName = "Parse boolean",
     description = "STRING -> BOOLEAN",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -54,13 +54,6 @@ public final class ParseBooleanTransform implements TransformStage<String, Boole
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_PARSE_BOOLEAN;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

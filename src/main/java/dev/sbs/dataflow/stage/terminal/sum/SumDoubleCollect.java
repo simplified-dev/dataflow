@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +19,7 @@ import java.util.List;
  * {@code 0.0} for an empty list and skips {@code null} elements.
  */
 @StageSpec(
+    id = "COLLECT_SUM_DOUBLE",
     displayName = "Sum DOUBLE",
     description = "List<DOUBLE> -> DOUBLE",
     category = StageSpec.Category.TERMINAL_SUM
@@ -56,13 +56,6 @@ public final class SumDoubleCollect implements CollectStage<List<Double>, Double
     public @NotNull DataType<List<Double>> inputType() {
         return INPUT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_SUM_DOUBLE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Double> outputType() {

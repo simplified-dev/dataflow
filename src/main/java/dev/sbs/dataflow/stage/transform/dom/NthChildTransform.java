@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -22,6 +21,7 @@ import org.jsoup.select.Elements;
  * index is out of range.
  */
 @StageSpec(
+    id = "TRANSFORM_NTH_CHILD",
     displayName = "Nth child",
     description = "DOM_NODE -> DOM_NODE",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -65,13 +65,6 @@ public final class NthChildTransform implements TransformStage<Element, Element>
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_NTH_CHILD;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Element> outputType() {

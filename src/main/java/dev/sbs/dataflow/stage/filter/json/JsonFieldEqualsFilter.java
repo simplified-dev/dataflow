@@ -7,7 +7,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -25,6 +24,7 @@ import java.util.List;
  * equal to the configured string value.
  */
 @StageSpec(
+    id = "FILTER_JSON_FIELD_EQUALS",
     displayName = "Field equals",
     description = "List<JSON_OBJECT> -> List<JSON_OBJECT>",
     category = StageSpec.Category.FILTER_JSON
@@ -71,13 +71,6 @@ public final class JsonFieldEqualsFilter implements FilterStage<JsonObject> {
     public @NotNull DataType<List<JsonObject>> inputType() {
         return LIST_OBJ;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_JSON_FIELD_EQUALS;
-    }
-
     private boolean matches(@NotNull JsonObject o) {
         if (!o.has(this.fieldName)) return false;
         JsonElement v = o.get(this.fieldName);

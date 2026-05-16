@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns the unary negation of a {@link Double}.
  */
 @StageSpec(
+    id = "TRANSFORM_NEGATE_DOUBLE",
     displayName = "Negate double",
     description = "DOUBLE -> DOUBLE",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -46,13 +46,6 @@ public final class NegateDoubleTransform implements TransformStage<Double, Doubl
     public @NotNull DataType<Double> inputType() {
         return DataTypes.DOUBLE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_NEGATE_DOUBLE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Double> outputType() {

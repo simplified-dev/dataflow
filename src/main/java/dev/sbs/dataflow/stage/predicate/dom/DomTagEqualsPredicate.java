@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -19,6 +18,7 @@ import org.jsoup.nodes.Element;
  * {@link TransformStage} that returns {@code true} when the input element's tag name matches the configured target (case-insensitive).
  */
 @StageSpec(
+    id = "PREDICATE_DOM_TAG_EQUALS",
     displayName = "Tag equals",
     description = "DOM_NODE -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_DOM
@@ -54,13 +54,6 @@ public final class DomTagEqualsPredicate implements TransformStage<Element, Bool
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_DOM_TAG_EQUALS;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

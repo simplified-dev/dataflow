@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that strips leading and trailing whitespace from a {@link String}.
  */
 @StageSpec(
+    id = "TRANSFORM_TRIM",
     displayName = "Trim",
     description = "STRING -> STRING",
     category = StageSpec.Category.TRANSFORM_STRING
@@ -47,13 +47,6 @@ public final class TrimTransform implements TransformStage<String, String> {
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_TRIM;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

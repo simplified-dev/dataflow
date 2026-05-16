@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -24,6 +23,7 @@ import java.util.regex.Pattern;
  * {@link FilterStage} keeping every DOM element whose text matches the configured regex.
  */
 @StageSpec(
+    id = "FILTER_DOM_TEXT_MATCHES",
     displayName = "Text matches regex",
     description = "List<DOM_NODE> -> List<DOM_NODE>",
     category = StageSpec.Category.FILTER_DOM
@@ -66,13 +66,6 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
     public @NotNull DataType<List<Element>> inputType() {
         return LIST_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_DOM_TEXT_MATCHES;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Element>> outputType() {

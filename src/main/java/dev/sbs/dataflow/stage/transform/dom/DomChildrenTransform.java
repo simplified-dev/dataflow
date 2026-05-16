@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -22,6 +21,7 @@ import java.util.List;
  * {@link TransformStage} that returns the direct children of the input {@link Element}.
  */
 @StageSpec(
+    id = "TRANSFORM_DOM_CHILDREN",
     displayName = "DOM children",
     description = "DOM_NODE -> List<DOM_NODE>",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -53,13 +53,6 @@ public final class DomChildrenTransform implements TransformStage<Element, List<
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_DOM_CHILDREN;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Element>> outputType() {

@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -25,6 +24,7 @@ import java.util.Set;
  * @param <T> element type, must be {@link Comparable}
  */
 @StageSpec(
+    id = "COLLECT_MAX",
     displayName = "Max",
     description = "List<T> -> T",
     category = StageSpec.Category.TERMINAL_MINMAX
@@ -79,13 +79,6 @@ public final class MaxCollect<T extends Comparable<T>> implements CollectStage<L
     public @NotNull DataType<List<T>> inputType() {
         return this.listType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_MAX;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<T> outputType() {

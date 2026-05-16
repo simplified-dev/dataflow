@@ -78,7 +78,7 @@ public record Chain(@NotNull ConcurrentList<Stage<?, ?>> stages) {
             DataType<?> expected = stage.inputType();
             if (!expected.equals(previousOutput))
                 issues.add(new ValidationReport.Issue(i,
-                    "Sub-pipeline stage #" + i + " (" + stage.kind() + ") expects input " + expected
+                    "Sub-pipeline stage #" + i + " (" + stage.kindId() + ") expects input " + expected
                         + " but previous stage produced " + previousOutput
                 ));
             previousOutput = stage.outputType();

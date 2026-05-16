@@ -4,7 +4,6 @@ import com.google.gson.JsonElement;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -19,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * when the element is not a primitive.
  */
 @StageSpec(
+    id = "TRANSFORM_JSON_AS_STRING",
     displayName = "JSON as string",
     description = "JSON_ELEMENT -> STRING",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -50,13 +50,6 @@ public final class JsonAsStringTransform implements TransformStage<JsonElement, 
     public @NotNull DataType<JsonElement> inputType() {
         return DataTypes.JSON_ELEMENT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_JSON_AS_STRING;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

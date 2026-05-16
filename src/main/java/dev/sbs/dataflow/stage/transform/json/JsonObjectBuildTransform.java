@@ -11,7 +11,6 @@ import dev.sbs.dataflow.chain.ChainBuilder;
 import dev.sbs.dataflow.chain.TypedChain;
 import dev.sbs.dataflow.serde.PipelineGson;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -38,6 +37,7 @@ import java.util.function.Consumer;
  * @param <I> input type, shared by every named sub-pipeline
  */
 @StageSpec(
+    id = "TRANSFORM_JSON_OBJECT_BUILD",
     displayName = "JsonObject build",
     description = "I -> JSON_OBJECT",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -142,13 +142,6 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
         }
         return result;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_JSON_OBJECT_BUILD;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonObject> outputType() {

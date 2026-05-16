@@ -5,7 +5,6 @@ import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link JsonElement}.
  */
 @StageSpec(
+    id = "PARSE_JSON",
     displayName = "Parse JSON",
     description = "RAW_JSON -> JSON_ELEMENT",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -50,13 +50,6 @@ public final class ParseJsonTransform implements TransformStage<String, JsonElem
     public @NotNull DataType<String> inputType() {
         return DataTypes.RAW_JSON;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PARSE_JSON;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonElement> outputType() {

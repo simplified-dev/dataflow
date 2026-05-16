@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -21,6 +20,7 @@ import java.util.List;
  * configurable separator.
  */
 @StageSpec(
+    id = "COLLECT_JOIN",
     displayName = "Join",
     description = "List<STRING> -> STRING",
     category = StageSpec.Category.TERMINAL_COLLECT
@@ -59,13 +59,6 @@ public final class JoinCollect implements CollectStage<List<String>, String> {
     public @NotNull DataType<List<String>> inputType() {
         return INPUT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_JOIN;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

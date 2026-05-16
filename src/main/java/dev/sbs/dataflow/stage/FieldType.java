@@ -4,7 +4,7 @@ import dev.sbs.dataflow.DataType;
 
 /**
  * Discriminator for one configuration slot in a {@link FieldSpec}. Used by serde and UI
- * code to handle each slot uniformly without switching on {@link StageKind}.
+ * code to handle each slot uniformly without switching on the concrete {@link Stage} class.
  */
 public enum FieldType {
 

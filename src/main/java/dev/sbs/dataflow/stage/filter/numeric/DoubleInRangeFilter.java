@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +21,7 @@ import java.util.List;
  * {@link FilterStage} keeping doubles in the inclusive range {@code [min, max]}.
  */
 @StageSpec(
+    id = "FILTER_DOUBLE_IN_RANGE",
     displayName = "Double in [min, max]",
     description = "List<DOUBLE> -> List<DOUBLE>",
     category = StageSpec.Category.FILTER_NUMERIC
@@ -66,13 +66,6 @@ public final class DoubleInRangeFilter implements FilterStage<Double> {
     public @NotNull DataType<List<Double>> inputType() {
         return LIST_DOUBLE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_DOUBLE_IN_RANGE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Double>> outputType() {

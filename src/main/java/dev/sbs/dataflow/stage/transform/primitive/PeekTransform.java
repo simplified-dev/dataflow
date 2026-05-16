@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -23,6 +22,7 @@ import java.util.stream.Stream;
  * @param <T> value type
  */
 @StageSpec(
+    id = "TRANSFORM_PEEK",
     displayName = "Peek (log)",
     description = "T -> T",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -65,13 +65,6 @@ public final class PeekTransform<T> implements TransformStage<T, T> {
     public @NotNull DataType<T> inputType() {
         return this.valueType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_PEEK;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<T> outputType() {

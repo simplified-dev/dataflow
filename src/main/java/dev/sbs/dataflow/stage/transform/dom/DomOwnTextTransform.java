@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -19,6 +18,7 @@ import org.jsoup.nodes.Element;
  * text content, excluding text from descendant elements.
  */
 @StageSpec(
+    id = "TRANSFORM_DOM_OWN_TEXT",
     displayName = "DOM ownText",
     description = "DOM_NODE -> STRING",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -48,13 +48,6 @@ public final class DomOwnTextTransform implements TransformStage<Element, String
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_DOM_OWN_TEXT;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

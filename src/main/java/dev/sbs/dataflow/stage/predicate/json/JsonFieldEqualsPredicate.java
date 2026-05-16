@@ -6,7 +6,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -21,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * field is a primitive equal to the configured string value.
  */
 @StageSpec(
+    id = "PREDICATE_JSON_FIELD_EQUALS",
     displayName = "Field equals",
     description = "JSON_OBJECT -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_JSON
@@ -63,13 +63,6 @@ public final class JsonFieldEqualsPredicate implements TransformStage<JsonObject
     public @NotNull DataType<JsonObject> inputType() {
         return DataTypes.JSON_OBJECT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_JSON_FIELD_EQUALS;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

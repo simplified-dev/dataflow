@@ -3,7 +3,6 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * input string.
  */
 @StageSpec(
+    id = "TRANSFORM_STRING_LENGTH",
     displayName = "String length",
     description = "STRING -> INT",
     category = StageSpec.Category.TRANSFORM_STRING
@@ -47,13 +47,6 @@ public final class StringLengthTransform implements TransformStage<String, Integ
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_STRING_LENGTH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Integer> outputType() {

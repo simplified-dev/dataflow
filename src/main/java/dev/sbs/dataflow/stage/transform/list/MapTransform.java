@@ -6,7 +6,6 @@ import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
@@ -30,6 +29,7 @@ import java.util.List;
  * @param <Y> output element type
  */
 @StageSpec(
+    id = "TRANSFORM_MAP",
     displayName = "Map sub-pipeline",
     description = "List<X> -> List<Y>",
     category = StageSpec.Category.TRANSFORM_LIST
@@ -39,9 +39,9 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>> {
 
-    private final @NotNull DataType<X> inputElementType;
+    private final @NotNull DataType<X> elementInputType;
 
-    private final @NotNull DataType<Y> outputElementType;
+    private final @NotNull DataType<Y> elementOutputType;
 
     private final @NotNull DataType<List<X>> inputListType;
 
@@ -52,8 +52,8 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
     /**
      * Constructs a map stage with the given element types and body chain.
      *
-     * @param inputElementType element type of the input list
-     * @param outputElementType element type of the output list
+     * @param elementInputType element type of the input list
+     * @param elementOutputType element type of the output list
      * @param body the per-element sub-pipeline, consuming {@code X} and producing {@code Y}
      * @return the stage
      * @param <X> input element type
@@ -61,21 +61,21 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
      * @throws IllegalArgumentException when {@code body} fails type-chain validation
      */
     public static <X, Y> @NotNull MapTransform<X, Y> of(
-        @Configurable(label = "Input element type", placeholder = "STRING", name = "elementInputType")
-        @NotNull DataType<X> inputElementType,
-        @Configurable(label = "Output element type", placeholder = "INT", name = "elementOutputType")
-        @NotNull DataType<Y> outputElementType,
+        @Configurable(label = "Input element type", placeholder = "STRING")
+        @NotNull DataType<X> elementInputType,
+        @Configurable(label = "Output element type", placeholder = "INT")
+        @NotNull DataType<Y> elementOutputType,
         @Configurable(label = "Per-element body")
         @NotNull List<? extends Stage<?, ?>> body
     ) {
-        ValidationReport report = Chain.validate(inputElementType, body, outputElementType);
+        ValidationReport report = Chain.validate(elementInputType, body, elementOutputType);
         if (!report.isValid())
             throw new IllegalArgumentException("Invalid map body: " + report.issues());
         return new MapTransform<>(
-            inputElementType,
-            outputElementType,
-            DataType.list(inputElementType),
-            DataType.list(outputElementType),
+            elementInputType,
+            elementOutputType,
+            DataType.list(elementInputType),
+            DataType.list(elementOutputType),
             Chain.of(body)
         );
     }
@@ -97,13 +97,6 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
     public @NotNull DataType<List<X>> inputType() {
         return this.inputListType;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_MAP;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<Y>> outputType() {
@@ -113,7 +106,7 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Map " + this.inputElementType.label() + " -> " + this.outputElementType.label()
+        return "Map " + this.elementInputType.label() + " -> " + this.elementOutputType.label()
             + " (" + this.body.size() + " stage" + (this.body.size() == 1 ? "" : "s") + ")";
     }
 

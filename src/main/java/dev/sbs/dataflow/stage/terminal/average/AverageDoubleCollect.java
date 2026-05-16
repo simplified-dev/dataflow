@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +19,7 @@ import java.util.List;
  * {@code null} for empty input. Skips {@code null} elements.
  */
 @StageSpec(
+    id = "COLLECT_AVERAGE_DOUBLE",
     displayName = "Average DOUBLE",
     description = "List<DOUBLE> -> DOUBLE",
     category = StageSpec.Category.TERMINAL_AVERAGE
@@ -59,13 +59,6 @@ public final class AverageDoubleCollect implements CollectStage<List<Double>, Do
     public @NotNull DataType<List<Double>> inputType() {
         return INPUT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_AVERAGE_DOUBLE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Double> outputType() {

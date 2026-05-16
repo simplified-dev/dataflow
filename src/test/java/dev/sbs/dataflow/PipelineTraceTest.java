@@ -30,7 +30,7 @@ class PipelineTraceTest {
 
         List<String> trace = new ArrayList<>();
         BiConsumer<Stage<?, ?>, Object> recorder = (stage, output) ->
-            trace.add(stage.kind().name() + "=" + output);
+            trace.add(stage.kindId() + "=" + output);
 
         PipelineContext ctx = PipelineContext.builder().withTrace(recorder).build();
         List<String> result = pipeline.execute(ctx);

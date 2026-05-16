@@ -11,10 +11,10 @@ import java.lang.annotation.Target;
  * Class-level metadata for a {@link Stage} implementation.
  * <p>
  * Carries everything the framework needs about a stage that is not derivable from its
- * factory signature: a display name, a type-signature description, and a coarse
- * {@link Category} grouping. The framework reads this annotation reflectively (cached
- * per-class on first touch) so authors never hand-author {@code FieldSpec} lists or
- * {@code StageKind} schema entries.
+ * factory signature: a stable wire-format {@link #id() id}, a display name, a
+ * type-signature description, and a coarse {@link Category} grouping. The framework reads
+ * this annotation reflectively (cached per-class on first touch) so authors never
+ * hand-author {@link FieldSpec} lists or registry entries.
  * <p>
  * The factory is discovered separately: a stage author declares a single
  * {@code public static of(...)} method whose parameters carry {@link Configurable}, and
@@ -24,6 +24,15 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface StageSpec {
+
+    /**
+     * Stable wire-format discriminator for this stage. Persisted in JSON as the
+     * {@code "kind"} field and looked up by {@link StageRegistry#byId(String)}. Renaming
+     * this value breaks any already-stored pipeline JSON.
+     *
+     * @return the wire-format id
+     */
+    @NotNull String id();
 
     /**
      * Human-friendly display name shown in UI palettes.

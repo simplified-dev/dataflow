@@ -6,7 +6,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,6 +26,7 @@ import java.util.List;
  * key, or whose value is {@link JsonElement#isJsonNull()} are skipped.
  */
 @StageSpec(
+    id = "COLLECT_JSON_OBJECT_FROM_ENTRIES",
     displayName = "JsonObject from entries",
     description = "List<JSON_OBJECT> -> JSON_OBJECT",
     category = StageSpec.Category.TERMINAL_COLLECT
@@ -71,13 +71,6 @@ public final class JsonObjectFromEntriesCollect implements CollectStage<List<Jso
     public @NotNull DataType<List<JsonObject>> inputType() {
         return INPUT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.COLLECT_JSON_OBJECT_FROM_ENTRIES;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonObject> outputType() {

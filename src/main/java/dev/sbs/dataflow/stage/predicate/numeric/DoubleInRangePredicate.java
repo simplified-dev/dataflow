@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@code true} when the input is in the inclusive range {@code [min, max]}.
  */
 @StageSpec(
+    id = "PREDICATE_DOUBLE_IN_RANGE",
     displayName = "Double in [min, max]",
     description = "DOUBLE -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_NUMERIC
@@ -58,13 +58,6 @@ public final class DoubleInRangePredicate implements TransformStage<Double, Bool
     public @NotNull DataType<Double> inputType() {
         return DataTypes.DOUBLE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_DOUBLE_IN_RANGE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

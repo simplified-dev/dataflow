@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@code true} when the input contains the configured substring.
  */
 @StageSpec(
+    id = "PREDICATE_STRING_CONTAINS",
     displayName = "Contains",
     description = "STRING -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_STRING
@@ -53,13 +53,6 @@ public final class StringContainsPredicate implements TransformStage<String, Boo
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_STRING_CONTAINS;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

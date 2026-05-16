@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -21,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * @param <T> input type
  */
 @StageSpec(
+    id = "TRANSFORM_TO_STRING",
     displayName = "To string",
     description = "T -> STRING",
     category = StageSpec.Category.TRANSFORM_PRIMITIVE
@@ -51,13 +51,6 @@ public final class ToStringTransform<T> implements TransformStage<T, String> {
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable T input) {
         return input == null ? null : String.valueOf(input);
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_TO_STRING;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

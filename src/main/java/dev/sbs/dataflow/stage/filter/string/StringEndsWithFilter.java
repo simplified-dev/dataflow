@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +21,7 @@ import java.util.List;
  * {@link FilterStage} keeping every string that ends with the configured suffix.
  */
 @StageSpec(
+    id = "FILTER_STRING_ENDS_WITH",
     displayName = "Ends with",
     description = "List<STRING> -> List<STRING>",
     category = StageSpec.Category.FILTER_STRING
@@ -61,13 +61,6 @@ public final class StringEndsWithFilter implements FilterStage<String> {
     public @NotNull DataType<List<String>> inputType() {
         return LIST_STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.FILTER_STRING_ENDS_WITH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<String>> outputType() {

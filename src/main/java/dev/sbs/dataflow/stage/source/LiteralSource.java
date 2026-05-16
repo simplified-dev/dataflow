@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -30,6 +29,7 @@ import java.util.stream.Stream;
  * @param <T> the value type
  */
 @StageSpec(
+    id = "SOURCE_LITERAL",
     displayName = "Literal",
     description = "() -> T",
     category = StageSpec.Category.SOURCE
@@ -185,13 +185,6 @@ public final class LiteralSource<T> implements SourceStage<T> {
     public @NotNull T execute(@NotNull PipelineContext ctx, @Nullable Void input) {
         return this.value;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.SOURCE_LITERAL;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<T> outputType() {

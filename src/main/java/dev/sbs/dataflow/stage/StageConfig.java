@@ -17,8 +17,8 @@ import java.util.Map;
 /**
  * Typed name-to-value bag holding one stage's configuration.
  * <p>
- * {@link Stage#config()} returns this; {@link StageKind#factory()} consumes it.
- * Field types match the stage's {@link StageKind#schema()} - getter calls assume the caller
+ * {@link Stage#config()} returns this; {@link StageMetadata#fromConfig(StageConfig)} consumes it.
+ * Field types match the stage's {@link StageMetadata#schema()} - getter calls assume the caller
  * knows the schema (or handles {@code null} when a field is absent).
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

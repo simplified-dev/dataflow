@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -19,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@code true} when the input {@link JsonObject} contains the named field.
  */
 @StageSpec(
+    id = "PREDICATE_JSON_HAS_FIELD",
     displayName = "Has field",
     description = "JSON_OBJECT -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_JSON
@@ -54,13 +54,6 @@ public final class JsonHasFieldPredicate implements TransformStage<JsonObject, B
     public @NotNull DataType<JsonObject> inputType() {
         return DataTypes.JSON_OBJECT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.PREDICATE_JSON_HAS_FIELD;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<Boolean> outputType() {

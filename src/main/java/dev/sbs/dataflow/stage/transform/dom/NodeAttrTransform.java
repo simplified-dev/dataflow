@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -20,6 +19,7 @@ import org.jsoup.nodes.Element;
  * Returns the empty string when the attribute is absent, matching jsoup's convention.
  */
 @StageSpec(
+    id = "TRANSFORM_NODE_ATTR",
     displayName = "Node attribute",
     description = "DOM_NODE -> STRING",
     category = StageSpec.Category.TRANSFORM_DOM
@@ -56,13 +56,6 @@ public final class NodeAttrTransform implements TransformStage<Element, String> 
     public @NotNull DataType<Element> inputType() {
         return DataTypes.DOM_NODE;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_NODE_ATTR;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

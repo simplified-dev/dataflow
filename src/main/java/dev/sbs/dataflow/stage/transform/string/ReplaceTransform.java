@@ -4,7 +4,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -21,6 +20,7 @@ import java.util.regex.Pattern;
  * string, equivalent to {@link String#replaceAll(String, String)}.
  */
 @StageSpec(
+    id = "TRANSFORM_REPLACE",
     displayName = "Replace regex",
     description = "STRING -> STRING",
     category = StageSpec.Category.TRANSFORM_STRING
@@ -64,13 +64,6 @@ public final class ReplaceTransform implements TransformStage<String, String> {
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_REPLACE;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

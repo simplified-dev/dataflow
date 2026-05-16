@@ -5,7 +5,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -24,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * dot-separated keys, no array indexing.
  */
 @StageSpec(
+    id = "TRANSFORM_JSON_PATH",
     displayName = "JSON path",
     description = "JSON_ELEMENT -> JSON_ELEMENT",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -67,13 +67,6 @@ public final class JsonPathTransform implements TransformStage<JsonElement, Json
     public @NotNull DataType<JsonElement> inputType() {
         return DataTypes.JSON_ELEMENT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_JSON_PATH;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonElement> outputType() {

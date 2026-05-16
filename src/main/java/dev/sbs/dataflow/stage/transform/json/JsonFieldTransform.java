@@ -6,7 +6,6 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.Configurable;
-import dev.sbs.dataflow.stage.StageKind;
 import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
@@ -21,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * Returns {@code null} when the field is absent.
  */
 @StageSpec(
+    id = "TRANSFORM_JSON_FIELD",
     displayName = "JSON field",
     description = "JSON_OBJECT -> JSON_ELEMENT",
     category = StageSpec.Category.TRANSFORM_JSON
@@ -57,13 +57,6 @@ public final class JsonFieldTransform implements TransformStage<JsonObject, Json
     public @NotNull DataType<JsonObject> inputType() {
         return DataTypes.JSON_OBJECT;
     }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageKind kind() {
-        return StageKind.TRANSFORM_JSON_FIELD;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<JsonElement> outputType() {
