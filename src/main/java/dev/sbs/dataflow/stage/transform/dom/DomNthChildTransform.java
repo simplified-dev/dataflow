@@ -21,34 +21,34 @@ import org.jsoup.select.Elements;
  * index is out of range.
  */
 @StageSpec(
-    id = "TRANSFORM_NTH_CHILD",
-    displayName = "Nth child",
+    id = "TRANSFORM_DOM_NTH_CHILD",
+    displayName = "DOM nth child",
     description = "DOM_NODE -> DOM_NODE",
     category = StageSpec.Category.TRANSFORM_DOM
 )
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class NthChildTransform implements TransformStage<Element, Element> {
+public final class DomNthChildTransform implements TransformStage<Element, Element> {
 
     private final @NotNull String childSelector;
 
     private final int index;
 
     /**
-     * Constructs an n-th-child stage.
+     * Constructs a DOM nth-child stage.
      *
      * @param childSelector jsoup CSS selector applied to children of the input
      * @param index zero-based index into the matches
      * @return the stage
      */
-    public static @NotNull NthChildTransform of(
+    public static @NotNull DomNthChildTransform of(
         @Configurable(label = "Child selector", placeholder = "td")
         @NotNull String childSelector,
         @Configurable(label = "Index (0-based)", placeholder = "0")
         int index
     ) {
-        return new NthChildTransform(childSelector, index);
+        return new DomNthChildTransform(childSelector, index);
     }
 
     /** {@inheritDoc} */

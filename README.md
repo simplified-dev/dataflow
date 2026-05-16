@@ -36,8 +36,8 @@ DataPipeline pipeline = DataPipeline.builder()
     .stage(CssSelectTransform.of("table.infobox tr"))
     .stage(DomTextContainsFilter.of("Dmg"))
     .stage(FirstCollect.of(DataTypes.DOM_NODE))
-    .stage(NthChildTransform.of("td", 1))
-    .stage(NodeTextTransform.of())
+    .stage(DomNthChildTransform.of("td", 1))
+    .stage(DomTextTransform.of())
     .stage(RegexExtractTransform.of("\\d+"))
     .stage(ParseIntTransform.of())
     .build();
@@ -100,9 +100,9 @@ DataTypes: `NONE`, `RAW_HTML`, `RAW_XML`, `RAW_JSON`, `STRING`, `INT`, `LONG`,
 | `PARSE_XML`                | `RAW_XML`        | `JSON_ELEMENT`     |
 | `PARSE_JSON`               | `RAW_JSON`       | `JSON_ELEMENT`     |
 | `TRANSFORM_CSS_SELECT`     | `DOM_NODE`       | `List<DOM_NODE>`   |
-| `TRANSFORM_NODE_TEXT`      | `DOM_NODE`       | `STRING`           |
-| `TRANSFORM_NODE_ATTR`      | `DOM_NODE`       | `STRING`           |
-| `TRANSFORM_NTH_CHILD`      | `DOM_NODE`       | `DOM_NODE`         |
+| `TRANSFORM_DOM_TEXT`       | `DOM_NODE`       | `STRING`           |
+| `TRANSFORM_DOM_ATTR`       | `DOM_NODE`       | `STRING`           |
+| `TRANSFORM_DOM_NTH_CHILD`  | `DOM_NODE`       | `DOM_NODE`         |
 | `TRANSFORM_DOM_CHILDREN`   | `DOM_NODE`       | `List<DOM_NODE>`   |
 | `TRANSFORM_DOM_PARENT`     | `DOM_NODE`       | `DOM_NODE`         |
 | `TRANSFORM_DOM_OUTER_HTML` | `DOM_NODE`       | `STRING`           |

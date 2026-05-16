@@ -32,7 +32,7 @@ public final class DomTextContainsPredicate implements TransformStage<Element, B
     private final @NotNull String needle;
 
     /**
-     * Constructs a node-text-contains predicate.
+     * Constructs a DOM-text-contains predicate.
      *
      * @param needle the substring to look for in the element's text
      * @return the stage

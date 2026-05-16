@@ -37,7 +37,7 @@ public final class DomTextMatchesPredicate implements TransformStage<Element, Bo
     private final @NotNull Pattern pattern;
 
     /**
-     * Constructs a node-text-matches predicate.
+     * Constructs a DOM-text-matches predicate.
      *
      * @param regex the regex pattern that must {@link Pattern#matcher(CharSequence) find} a match in the element's text
      * @return the stage

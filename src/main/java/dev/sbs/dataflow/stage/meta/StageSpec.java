@@ -127,7 +127,7 @@ public @interface StageSpec {
         PREDICATE_STRING,
 
         /**
-         * Jsoup-backed DOM transforms (parse-html, css-select, node-text, nth-child...).
+         * Jsoup-backed DOM transforms (parse-html, css-select, dom-text, dom-nth-child...).
          */
         TRANSFORM_DOM,
 

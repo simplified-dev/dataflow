@@ -44,21 +44,21 @@ class TransformStagesTest {
     @DisplayName("NodeText returns the visible text")
     void nodeText() {
         Element root = Jsoup.parse("<p>hello <b>world</b></p>").selectFirst("p");
-        assertThat(NodeTextTransform.of().execute(this.ctx, root), is(equalTo("hello world")));
+        assertThat(DomTextTransform.of().execute(this.ctx, root), is(equalTo("hello world")));
     }
 
     @Test
     @DisplayName("NodeAttr returns the attribute value")
     void nodeAttr() {
         Element link = Jsoup.parse("<a href='https://example.com'>x</a>").selectFirst("a");
-        assertThat(NodeAttrTransform.of("href").execute(this.ctx, link), is(equalTo("https://example.com")));
+        assertThat(DomAttrTransform.of("href").execute(this.ctx, link), is(equalTo("https://example.com")));
     }
 
     @Test
     @DisplayName("NthChild picks the requested child by selector + index")
     void nthChild() {
         Element row = Jsoup.parse("<table><tr><td>a</td><td>b</td><td>c</td></tr></table>").selectFirst("tr");
-        Element second = NthChildTransform.of("td", 1).execute(this.ctx, row);
+        Element second = DomNthChildTransform.of("td", 1).execute(this.ctx, row);
         assertThat(second, is(notNullValue()));
         assertThat(second.text(), is(equalTo("b")));
     }
@@ -67,7 +67,7 @@ class TransformStagesTest {
     @DisplayName("NthChild returns null when index is out of range")
     void nthChildOutOfRange() {
         Element row = Jsoup.parse("<table><tr><td>a</td></tr></table>").selectFirst("tr");
-        assertThat(NthChildTransform.of("td", 5).execute(this.ctx, row), is(nullValue()));
+        assertThat(DomNthChildTransform.of("td", 5).execute(this.ctx, row), is(nullValue()));
     }
 
     @Test

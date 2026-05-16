@@ -8,10 +8,10 @@ import dev.sbs.dataflow.stage.source.UrlSource;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomNthChildTransform;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
-import dev.sbs.dataflow.stage.transform.json.GsonDeserializeTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonDeserializeTransform;
 import dev.sbs.dataflow.stage.transform.json.JsonObjectBuildTransform;
 import dev.sbs.dataflow.stage.transform.list.MapTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
@@ -55,8 +55,8 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.of())
+            .stage(DomNthChildTransform.of("td", 1))
+            .stage(DomTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -75,8 +75,8 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.of())
+            .stage(DomNthChildTransform.of("td", 1))
+            .stage(DomTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -95,7 +95,7 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("div.infobox"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(buildClaymoreObject())
-            .stage(GsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
+            .stage(JsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
         DarkClaymore result = pipeline.execute();
@@ -123,7 +123,7 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("div.infobox"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(buildClaymoreObject())
-            .stage(GsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
+            .stage(JsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
         DarkClaymore firstResult = original.execute();
@@ -146,12 +146,12 @@ class WikiPipelineE2ETest {
             .output("type", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label:matchesOwn(^Type$) + div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(TrimTransform.of()))
             .output("rarity", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label:matchesOwn(^Rarity$) + div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(TrimTransform.of()))
             .output("stats", DataTypes.JSON_OBJECT, chain -> chain
                 .stage(CssSelectTransform.of(
@@ -173,14 +173,14 @@ class WikiPipelineE2ETest {
             .output("key", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(ReplaceTransform.of("[^A-Za-z ]", ""))
                 .stage(TrimTransform.of())
                 .stage(ReplaceTransform.of("\\s+", " ")))
             .output("value", DataTypes.INT, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("-?\\d+"))
                 .stage(ParseIntTransform.of()))
             .build();
@@ -191,12 +191,12 @@ class WikiPipelineE2ETest {
             .output("key", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(TrimTransform.of()))
             .output("value", DataTypes.BOOLEAN, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NodeTextTransform.of())
+                .stage(DomTextTransform.of())
                 .stage(StringContainsPredicate.of("Yes")))
             .build();
     }

@@ -3,52 +3,44 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.meta.Configurable;
 import dev.sbs.dataflow.stage.meta.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Element;
 
 /**
- * {@link TransformStage} that returns a named attribute value of a jsoup {@link Element}.
- * Returns the empty string when the attribute is absent, matching jsoup's convention.
+ * {@link TransformStage} that returns the visible text content of a jsoup {@link Element}.
  */
 @StageSpec(
-    id = "TRANSFORM_NODE_ATTR",
-    displayName = "Node attribute",
+    id = "TRANSFORM_DOM_TEXT",
+    displayName = "DOM text",
     description = "DOM_NODE -> STRING",
     category = StageSpec.Category.TRANSFORM_DOM
 )
 @Getter
 @Accessors(fluent = true)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class NodeAttrTransform implements TransformStage<Element, String> {
-
-    private final @NotNull String attributeName;
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class DomTextTransform implements TransformStage<Element, String> {
 
     /**
-     * Constructs a node-attribute stage.
+     * Constructs a DOM text stage.
      *
-     * @param attributeName the attribute to extract
      * @return the stage
      */
-    public static @NotNull NodeAttrTransform of(
-        @Configurable(label = "Attribute name", placeholder = "href")
-        @NotNull String attributeName
-    ) {
-        return new NodeAttrTransform(attributeName);
+    public static @NotNull DomTextTransform of() {
+        return new DomTextTransform();
     }
 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Element input) {
         if (input == null) return null;
-        return input.attr(this.attributeName);
+        return input.text();
     }
 
     /** {@inheritDoc} */
@@ -65,7 +57,7 @@ public final class NodeAttrTransform implements TransformStage<Element, String> 
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Attr '" + this.attributeName + "'";
+        return "DOM text";
     }
 
 }

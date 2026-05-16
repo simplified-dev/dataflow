@@ -33,15 +33,15 @@ import java.util.Set;
  * @param <T> deserialisation target type
  */
 @StageSpec(
-    id = "TRANSFORM_GSON_DESERIALIZE",
-    displayName = "Gson deserialize",
+    id = "TRANSFORM_JSON_DESERIALIZE",
+    displayName = "Json deserialize",
     description = "JSON_* -> T",
     category = StageSpec.Category.TRANSFORM_JSON
 )
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class GsonDeserializeTransform<I extends JsonElement, T> implements TransformStage<I, T> {
+public final class JsonDeserializeTransform<I extends JsonElement, T> implements TransformStage<I, T> {
 
     private static final @NotNull Set<DataType<?>> SUPPORTED_INPUT_TYPES = Set.of(
         DataTypes.JSON_ELEMENT, DataTypes.JSON_OBJECT, DataTypes.JSON_ARRAY
@@ -52,7 +52,7 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
     private final @NotNull DataType<T> outputType;
 
     /**
-     * Constructs a Gson deserialisation stage with input tag {@link DataTypes#JSON_ELEMENT}.
+     * Constructs a JSON deserialisation stage with input tag {@link DataTypes#JSON_ELEMENT}.
      *
      * @param outputType the target {@link DataType}; must wrap a concrete {@link Class}
      * @return the stage
@@ -60,12 +60,12 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
      * @throws IllegalArgumentException when {@code outputType} is not a {@link DataType.Basic}
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static <T> @NotNull GsonDeserializeTransform<JsonElement, T> of(@NotNull DataType<T> outputType) {
-        return (GsonDeserializeTransform) of(DataTypes.JSON_ELEMENT, outputType);
+    public static <T> @NotNull JsonDeserializeTransform<JsonElement, T> of(@NotNull DataType<T> outputType) {
+        return (JsonDeserializeTransform) of(DataTypes.JSON_ELEMENT, outputType);
     }
 
     /**
-     * Constructs a Gson deserialisation stage with an explicit input tag.
+     * Constructs a JSON deserialisation stage with an explicit input tag.
      *
      * @param inputType the Gson-typed input tag (one of {@code JSON_ELEMENT}, {@code JSON_OBJECT},
      *                  {@code JSON_ARRAY})
@@ -76,7 +76,7 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
      * @throws IllegalArgumentException when {@code outputType} is not a {@link DataType.Basic}
      *         or {@code inputType} is not a recognised Gson type
      */
-    public static <I extends JsonElement, T> @NotNull GsonDeserializeTransform<I, T> of(
+    public static <I extends JsonElement, T> @NotNull JsonDeserializeTransform<I, T> of(
         @Configurable(label = "Input type", placeholder = "JSON_ELEMENT")
         @NotNull DataType<I> inputType,
         @Configurable(label = "Output type", placeholder = "STRING")
@@ -84,13 +84,13 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
     ) {
         if (!SUPPORTED_INPUT_TYPES.contains(inputType))
             throw new IllegalArgumentException(
-                "GsonDeserializeTransform input must be one of " + SUPPORTED_INPUT_TYPES + " but got " + inputType.label()
+                "JsonDeserializeTransform input must be one of " + SUPPORTED_INPUT_TYPES + " but got " + inputType.label()
             );
         if (!(outputType instanceof DataType.Basic<T>))
             throw new IllegalArgumentException(
-                "GsonDeserializeTransform requires a Basic output DataType but got " + outputType.label()
+                "JsonDeserializeTransform requires a Basic output DataType but got " + outputType.label()
             );
-        return new GsonDeserializeTransform<>(inputType, outputType);
+        return new JsonDeserializeTransform<>(inputType, outputType);
     }
 
     /** {@inheritDoc} */
@@ -102,7 +102,7 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {
-        return "Gson deserialise " + this.inputType.label() + " -> " + this.outputType.label();
+        return "Json deserialise " + this.inputType.label() + " -> " + this.outputType.label();
     }
 
 }

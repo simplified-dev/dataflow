@@ -50,7 +50,7 @@ public final class PipelineGson {
     /**
      * Returns the shared {@link Gson} instance used for pipeline serde. Reuse it from
      * stages that need Gson-backed coercion (e.g. {@code JsonObjectBuildTransform},
-     * {@code GsonDeserializeTransform}) so the configuration stays consistent.
+     * {@code JsonDeserializeTransform}) so the configuration stays consistent.
      *
      * @return the shared Gson instance
      */

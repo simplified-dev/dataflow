@@ -38,7 +38,7 @@ public final class DomTextContainsFilter implements FilterStage<Element> {
     private final @NotNull String needle;
 
     /**
-     * Constructs a node-text-contains filter.
+     * Constructs a DOM-text-contains filter.
      *
      * @param needle the substring to look for in each node's text
      * @return the stage

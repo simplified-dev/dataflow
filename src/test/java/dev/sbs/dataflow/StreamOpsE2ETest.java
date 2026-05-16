@@ -7,8 +7,8 @@ import dev.sbs.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
 import dev.sbs.dataflow.stage.source.LiteralListSource;
 import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomNthChildTransform;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.list.MapTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
@@ -35,8 +35,8 @@ class StreamOpsE2ETest {
                 DataTypes.DOM_NODE,
                 DataTypes.INT,
                 List.of(
-                    NthChildTransform.of("td", 1),
-                    NodeTextTransform.of(),
+                    DomNthChildTransform.of("td", 1),
+                    DomTextTransform.of(),
                     RegexExtractTransform.of("\\d+"),
                     ParseIntTransform.of()
                 )

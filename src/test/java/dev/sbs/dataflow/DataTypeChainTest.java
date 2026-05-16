@@ -3,7 +3,7 @@ package dev.sbs.dataflow;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomTextTransform;
 import dev.sbs.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.sbs.dataflow.stage.transform.list.MapTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
@@ -62,7 +62,7 @@ class DataTypeChainTest {
             .stage(MapTransform.of(
                 DataTypes.DOM_NODE,
                 DataTypes.INT,
-                List.of(NodeTextTransform.of(), ParseIntTransform.of())
+                List.of(DomTextTransform.of(), ParseIntTransform.of())
             ))
             .build();
         assertThat(pipeline.validate().isValid(), is(true));

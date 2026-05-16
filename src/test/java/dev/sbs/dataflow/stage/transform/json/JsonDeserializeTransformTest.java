@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class GsonDeserializeTransformTest {
+class JsonDeserializeTransformTest {
 
     record Sample(String name, int score, Map<String, Integer> stats) {}
 
@@ -34,7 +34,7 @@ class GsonDeserializeTransformTest {
         stats.add("crit", new JsonPrimitive(175));
         input.add("stats", stats);
 
-        Sample result = GsonDeserializeTransform.of(SAMPLE_TYPE)
+        Sample result = JsonDeserializeTransform.of(SAMPLE_TYPE)
             .execute(PipelineContext.defaults(), input);
 
         assertThat(result, is(notNullValue()));
@@ -47,7 +47,7 @@ class GsonDeserializeTransformTest {
     @Test
     @DisplayName("Null and JsonNull inputs return null")
     void nullInputReturnsNull() {
-        Sample result = GsonDeserializeTransform.of(SAMPLE_TYPE)
+        Sample result = JsonDeserializeTransform.of(SAMPLE_TYPE)
             .execute(PipelineContext.defaults(), null);
         assertThat(result, is(nullValue()));
     }
@@ -57,13 +57,13 @@ class GsonDeserializeTransformTest {
     void rejectsListType() {
         DataType<?> listType = DataType.list(DataTypes.STRING);
         assertThrows(IllegalArgumentException.class,
-            () -> GsonDeserializeTransform.of(listType));
+            () -> JsonDeserializeTransform.of(listType));
     }
 
     @Test
     @DisplayName("Output type is the declared target; default input is JSON_ELEMENT")
     void outputTypeMatches() {
-        GsonDeserializeTransform<?, Sample> stage = GsonDeserializeTransform.of(SAMPLE_TYPE);
+        JsonDeserializeTransform<?, Sample> stage = JsonDeserializeTransform.of(SAMPLE_TYPE);
         assertThat(stage.outputType(), is(SAMPLE_TYPE));
         assertThat(stage.inputType(), is(DataTypes.JSON_ELEMENT));
     }
@@ -71,8 +71,8 @@ class GsonDeserializeTransformTest {
     @Test
     @DisplayName("Explicit JSON_OBJECT input is accepted")
     void acceptsJsonObjectInput() {
-        GsonDeserializeTransform<?, Sample> stage =
-            GsonDeserializeTransform.of(DataTypes.JSON_OBJECT, SAMPLE_TYPE);
+        JsonDeserializeTransform<?, Sample> stage =
+            JsonDeserializeTransform.of(DataTypes.JSON_OBJECT, SAMPLE_TYPE);
         assertThat(stage.inputType(), is(DataTypes.JSON_OBJECT));
     }
 

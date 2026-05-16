@@ -6,8 +6,8 @@ import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomNthChildTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
 import org.jsoup.Jsoup;
@@ -39,24 +39,24 @@ class MapCollectTest {
             .output("dmg", chain -> chain
                 .stage(DomTextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.of())
+                .stage(DomNthChildTransform.of("td", 1))
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )
             .output("strength", chain -> chain
                 .stage(DomTextContainsFilter.of("Strength"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.of())
+                .stage(DomNthChildTransform.of("td", 1))
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )
             .output("crit_damage", chain -> chain
                 .stage(DomTextContainsFilter.of("Crit Damage"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.of())
+                .stage(DomNthChildTransform.of("td", 1))
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )

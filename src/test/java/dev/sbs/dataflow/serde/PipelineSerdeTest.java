@@ -17,7 +17,9 @@ import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
 import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
 import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
+import dev.sbs.dataflow.stage.terminal.collect.NthCollect;
 import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
+import dev.sbs.dataflow.stage.terminal.collect.SubListCollect;
 import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.filter.list.DistinctFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
@@ -29,9 +31,9 @@ import dev.sbs.dataflow.stage.transform.json.ParseXmlTransform;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.json.JsonFieldTransform;
 import dev.sbs.dataflow.stage.transform.json.JsonPathTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeAttrTransform;
-import dev.sbs.dataflow.stage.transform.dom.NodeTextTransform;
-import dev.sbs.dataflow.stage.transform.dom.NthChildTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomAttrTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomTextTransform;
+import dev.sbs.dataflow.stage.transform.dom.DomNthChildTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseDoubleTransform;
 import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
@@ -66,8 +68,8 @@ class PipelineSerdeTest {
             .stage(CssSelectTransform.of("table.infobox tr"))
             .stage(DomTextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(NthChildTransform.of("td", 1))
-            .stage(NodeTextTransform.of())
+            .stage(DomNthChildTransform.of("td", 1))
+            .stage(DomTextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -138,13 +140,34 @@ class PipelineSerdeTest {
             .build();
         roundTrip(collectFlavours);
 
+        DataPipeline nthVariant = DataPipeline.builder()
+            .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d"))
+            .stage(SplitTransform.of(","))
+            .stage(NthCollect.of(DataTypes.STRING, 2))
+            .build();
+        roundTrip(nthVariant);
+
+        DataPipeline subListOpenEnded = DataPipeline.builder()
+            .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d"))
+            .stage(SplitTransform.of(","))
+            .stage(SubListCollect.of(DataTypes.STRING, 1, null))
+            .build();
+        roundTrip(subListOpenEnded);
+
+        DataPipeline subListBounded = DataPipeline.builder()
+            .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d,e,f"))
+            .stage(SplitTransform.of(","))
+            .stage(SubListCollect.of(DataTypes.STRING, 1, 5))
+            .build();
+        roundTrip(subListBounded);
+
         // attribute, json field, parseDouble, set
         DataPipeline misc1 = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<a href='https://x'>z</a>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("a"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(NodeAttrTransform.of("href"))
+            .stage(DomAttrTransform.of("href"))
             .build();
         roundTrip(misc1);
 
@@ -185,15 +208,15 @@ class PipelineSerdeTest {
             .output("dmg", c -> c
                 .stage(DomTextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.of())
+                .stage(DomNthChildTransform.of("td", 1))
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of()))
             .output("strength", c -> c
                 .stage(DomTextContainsFilter.of("Strength"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(NthChildTransform.of("td", 1))
-                .stage(NodeTextTransform.of())
+                .stage(DomNthChildTransform.of("td", 1))
+                .stage(DomTextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of()))
             .build();
