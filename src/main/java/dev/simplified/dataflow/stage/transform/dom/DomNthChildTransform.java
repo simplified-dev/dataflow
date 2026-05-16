@@ -22,7 +22,7 @@ import org.jsoup.select.Elements;
  */
 @StageSpec(
     id = "TRANSFORM_DOM_NTH_CHILD",
-    displayName = "DOM nth child",
+    displayName = "DOM Nth child",
     description = "DOM_NODE -> DOM_NODE",
     category = StageSpec.Category.TRANSFORM_DOM
 )
