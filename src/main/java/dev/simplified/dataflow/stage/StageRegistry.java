@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * Classpath-scanning registry of every {@link Stage} implementation discovered under the
- * {@code dev.sbs.dataflow.stage} package.
+ * {@code dev.simplified.dataflow.stage} package.
  * <p>
  * The registry is built once on first touch: it asks {@link Reflection#getResources()} for
  * every subtype of {@link Stage}, filters those that carry a {@link StageSpec} annotation
@@ -43,12 +43,12 @@ public final class StageRegistry {
         Map<String, Class<? extends Stage<?, ?>>> byId = new LinkedHashMap<>();
         List<Class<? extends Stage<?, ?>>> all = new ArrayList<>();
 
-        for (Class<? extends Stage> rawCls : Reflection.getResources()
-            .filterPackage("dev.sbs.dataflow.stage")
+        for (@SuppressWarnings("rawtypes") Class<? extends Stage> rawCls : Reflection.getResources()
+            .filterPackage("dev.simplified.dataflow.stage")
             .getSubtypesOf(Stage.class)) {
             StageSpec spec = rawCls.getAnnotation(StageSpec.class);
             if (spec == null) continue; // sealed parents (SourceStage / FilterStage / TransformStage / CollectStage)
-            @SuppressWarnings("unchecked")
+            @SuppressWarnings({ "unchecked", "CastCanBeRemovedNarrowingVariableType" })
             Class<? extends Stage<?, ?>> cls = (Class<? extends Stage<?, ?>>) rawCls;
             Class<? extends Stage<?, ?>> previous = byId.putIfAbsent(spec.id(), cls);
             if (previous != null)
@@ -77,8 +77,10 @@ public final class StageRegistry {
      */
     public static @NotNull Class<? extends Stage<?, ?>> byId(@NotNull String id) {
         Class<? extends Stage<?, ?>> cls = BY_ID.get(id);
+
         if (cls == null)
             throw new IllegalArgumentException("No stage registered with id: " + id);
+
         return cls;
     }
 
