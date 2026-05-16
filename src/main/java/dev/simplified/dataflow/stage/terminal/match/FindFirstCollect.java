@@ -40,7 +40,7 @@ public final class FindFirstCollect<T> implements CollectStage<List<T>, T> {
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<T, Boolean> body;
 
     /**
      * Constructs a find-first stage.

@@ -9,8 +9,8 @@ import com.google.gson.JsonParser;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.ValidationReport;
 import dev.simplified.dataflow.stage.FieldSpec;
-import dev.simplified.dataflow.stage.SourceStage;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageConfig;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
@@ -21,6 +21,9 @@ import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Gson-based serialiser for {@link DataPipeline} definitions.
@@ -64,19 +67,21 @@ public final class PipelineGson {
      * @param pipeline the pipeline to serialise
      * @return the JSON definition
      */
-    public static @NotNull String toJson(@NotNull DataPipeline pipeline) {
+    public static @NotNull String toJson(@NotNull DataPipeline<?> pipeline) {
         return GSON.toJson(toJsonArray(pipeline));
     }
 
     /**
-     * Deserialises a {@link DataPipeline} from its on-disk JSON form.
+     * Deserialises a {@link DataPipeline} from its on-disk JSON form. The returned pipeline
+     * has a wildcard output type; callers wanting a typed handle should narrow via
+     * {@link DataPipeline#expectOutput(DataType)}.
      *
      * @param json the JSON definition
      * @return the rebuilt pipeline
      * @throws IllegalArgumentException if the JSON references an unknown stage id or
      *         a {@link DataType} label that this build does not recognise
      */
-    public static @NotNull DataPipeline fromJson(@NotNull String json) {
+    public static @NotNull DataPipeline<?> fromJson(@NotNull String json) {
         JsonElement el = JsonParser.parseString(json);
 
         if (!el.isJsonArray())
@@ -87,7 +92,7 @@ public final class PipelineGson {
 
     /* ====================  internals  ==================== */
 
-    private static @NotNull JsonArray toJsonArray(@NotNull DataPipeline pipeline) {
+    private static @NotNull JsonArray toJsonArray(@NotNull DataPipeline<?> pipeline) {
         JsonArray arr = new JsonArray();
 
         for (Stage<?, ?> stage : pipeline.stages())
@@ -96,21 +101,29 @@ public final class PipelineGson {
         return arr;
     }
 
-    private static @NotNull DataPipeline fromJsonArray(@NotNull JsonArray arr) {
+    private static @NotNull DataPipeline<?> fromJsonArray(@NotNull JsonArray arr) {
         if (arr.isEmpty()) return DataPipeline.empty();
-        DataPipeline.Builder b = DataPipeline.builder();
-        boolean first = true;
+        List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
+        for (JsonElement el : arr)
+            stages.add(stageFromJson(el.getAsJsonObject()));
+        return buildPipeline(stages);
+    }
 
-        for (JsonElement el : arr) {
-            Stage<?, ?> stage = stageFromJson(el.getAsJsonObject());
-            if (first) {
-                b.source((SourceStage<?>) stage);
-                first = false;
-            } else
-                b.stage(stage);
-        }
-
-        return b.build();
+    /**
+     * Builder boundary on the deserialisation path. The wire format does not carry static
+     * type information; the last stage's runtime {@link Stage#outputType()} populates the
+     * pipeline's output type witness, and {@link DataPipeline#validate()} enforces the
+     * type-chain contract dynamically.
+     *
+     * @param stages the deserialised stage list
+     * @return the constructed pipeline
+     */
+    private static @NotNull DataPipeline<?> buildPipeline(@NotNull List<Stage<?, ?>> stages) {
+        DataPipeline<?> pipeline = DataPipeline.unchecked(stages, stages.getLast().outputType());
+        ValidationReport report = pipeline.validate();
+        if (!report.isValid())
+            throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
+        return pipeline;
     }
 
     @SuppressWarnings("unchecked")

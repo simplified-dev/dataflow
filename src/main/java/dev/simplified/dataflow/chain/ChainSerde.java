@@ -32,7 +32,7 @@ public final class ChainSerde {
      * @return the resulting JSON array
      */
     public static @NotNull JsonArray writeChain(
-        @NotNull Chain chain,
+        @NotNull Chain<?, ?> chain,
         @NotNull Function<Stage<?, ?>, JsonObject> stageWriter
     ) {
         JsonArray arr = new JsonArray();
@@ -42,20 +42,21 @@ public final class ChainSerde {
     }
 
     /**
-     * Deserialises a JSON array into a {@link Chain}.
+     * Deserialises a JSON array into a {@link Chain}. The returned chain has wildcard
+     * input/output types because the wire format does not carry them statically.
      *
      * @param arr the JSON array
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt chain
      */
-    public static @NotNull Chain readChain(
+    public static @NotNull Chain<?, ?> readChain(
         @NotNull JsonArray arr,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
         List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
         for (JsonElement el : arr)
             stages.add(stageReader.apply(el.getAsJsonObject()));
-        return Chain.of(stages);
+        return Chain.unchecked(stages);
     }
 
     /**
@@ -66,11 +67,11 @@ public final class ChainSerde {
      * @return the resulting JSON object
      */
     public static @NotNull JsonObject writeNamedChains(
-        @NotNull NamedChains chains,
+        @NotNull NamedChains<?> chains,
         @NotNull Function<Stage<?, ?>, JsonObject> stageWriter
     ) {
         JsonObject out = new JsonObject();
-        for (Map.Entry<String, Chain> entry : chains.chains().entrySet())
+        for (Map.Entry<String, ? extends Chain<?, ?>> entry : chains.chains().entrySet())
             out.add(entry.getKey(), writeChain(entry.getValue(), stageWriter));
         return out;
     }
@@ -82,14 +83,14 @@ public final class ChainSerde {
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt named chains
      */
-    public static @NotNull NamedChains readNamedChains(
+    public static @NotNull NamedChains<?> readNamedChains(
         @NotNull JsonObject obj,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
-        LinkedHashMap<String, Chain> map = new LinkedHashMap<>();
+        LinkedHashMap<String, Chain<Object, ?>> map = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : obj.entrySet())
-            map.put(entry.getKey(), readChain(entry.getValue().getAsJsonArray(), stageReader));
-        return new NamedChains(Map.copyOf(map));
+            map.put(entry.getKey(), Chain.of(readStages(entry.getValue().getAsJsonArray(), stageReader)));
+        return new NamedChains<>(Map.copyOf(map));
     }
 
     /**
@@ -101,11 +102,11 @@ public final class ChainSerde {
      * @return the resulting JSON object
      */
     public static @NotNull JsonObject writeTypedNamedChains(
-        @NotNull Map<String, TypedChain> chains,
+        @NotNull Map<String, TypedChain<?>> chains,
         @NotNull Function<Stage<?, ?>, JsonObject> stageWriter
     ) {
         JsonObject out = new JsonObject();
-        for (Map.Entry<String, TypedChain> entry : chains.entrySet()) {
+        for (Map.Entry<String, TypedChain<?>> entry : chains.entrySet()) {
             JsonObject typed = new JsonObject();
             typed.addProperty("outputType", entry.getValue().outputType().label());
             typed.add("chain", writeChain(entry.getValue().chain(), stageWriter));
@@ -115,28 +116,45 @@ public final class ChainSerde {
     }
 
     /**
-     * Deserialises a typed named-chains JSON object into a {@code Map<String, TypedChain>}.
+     * Deserialises a typed named-chains JSON object into a {@code Map<String, TypedChain<?>>}.
      *
      * @param obj the JSON object
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt typed named-chains map
      * @throws IllegalArgumentException if any entry references an unknown {@link DataType} label
      */
-    public static @NotNull Map<String, TypedChain> readTypedNamedChains(
+    public static @NotNull Map<String, TypedChain<?>> readTypedNamedChains(
         @NotNull JsonObject obj,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
-        LinkedHashMap<String, TypedChain> map = new LinkedHashMap<>();
+        LinkedHashMap<String, TypedChain<?>> map = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             JsonObject typed = entry.getValue().getAsJsonObject();
             String label = typed.get("outputType").getAsString();
             DataType<?> outputType = DataTypes.byLabel(label);
             if (outputType == null)
                 throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
-            Chain chain = readChain(typed.get("chain").getAsJsonArray(), stageReader);
-            map.put(entry.getKey(), new TypedChain(outputType, chain));
+            List<Stage<?, ?>> stages = readStages(typed.get("chain").getAsJsonArray(), stageReader);
+            map.put(entry.getKey(), typedChainOf(outputType, stages));
         }
         return Map.copyOf(map);
+    }
+
+    private static @NotNull List<Stage<?, ?>> readStages(
+        @NotNull JsonArray arr,
+        @NotNull Function<JsonObject, Stage<?, ?>> stageReader
+    ) {
+        List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
+        for (JsonElement el : arr)
+            stages.add(stageReader.apply(el.getAsJsonObject()));
+        return stages;
+    }
+
+    private static <O> @NotNull TypedChain<O> typedChainOf(
+        @NotNull DataType<O> outputType,
+        @NotNull List<Stage<?, ?>> stages
+    ) {
+        return new TypedChain<>(outputType, Chain.of(stages));
     }
 
 }

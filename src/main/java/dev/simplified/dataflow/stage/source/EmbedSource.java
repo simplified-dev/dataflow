@@ -62,15 +62,14 @@ public final class EmbedSource<O> implements SourceStage<O> {
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
     @Override
     public @Nullable O execute(@NotNull PipelineContext ctx, @Nullable Void input) {
         ctx.enterPipeline(this.embeddedPipelineId);
         try {
-            DataPipeline inner = ctx.resolver().resolve(this.embeddedPipelineId).orElseThrow(() ->
+            DataPipeline<?> inner = ctx.resolver().resolve(this.embeddedPipelineId).orElseThrow(() ->
                 new IllegalStateException("Embedded pipeline not found or not accessible: '" + this.embeddedPipelineId + "'")
             );
-            return (O) inner.execute(ctx);
+            return inner.expectOutput(this.outputType).execute(ctx);
         } finally {
             ctx.exitPipeline(this.embeddedPipelineId);
         }

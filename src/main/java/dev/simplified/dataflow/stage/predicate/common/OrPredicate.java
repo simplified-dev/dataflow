@@ -40,7 +40,7 @@ public final class OrPredicate<T> implements TransformStage<T, Boolean> {
 
     private final @NotNull DataType<T> elementType;
 
-    private final @NotNull NamedChains bodies;
+    private final @NotNull NamedChains<T> bodies;
 
     /**
      * Constructs an or-predicate from a map of named predicate bodies.
@@ -71,8 +71,8 @@ public final class OrPredicate<T> implements TransformStage<T, Boolean> {
     /** {@inheritDoc} */
     @Override
     public @NotNull Boolean execute(@NotNull PipelineContext ctx, @Nullable T input) {
-        for (Map.Entry<String, Chain> entry : this.bodies.chains().entrySet()) {
-            Boolean ok = entry.getValue().execute(ctx, input);
+        for (Map.Entry<String, Chain<T, ?>> entry : this.bodies.chains().entrySet()) {
+            Object ok = entry.getValue().execute(ctx, input);
             if (Boolean.TRUE.equals(ok)) return true;
         }
         return false;

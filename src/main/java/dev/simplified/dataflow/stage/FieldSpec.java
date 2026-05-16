@@ -80,9 +80,9 @@ public record FieldSpec<T>(
             case DOUBLE                  -> b.doubleVal(this.name, (Double) value);
             case BOOLEAN                 -> b.bool(this.name, (Boolean) value);
             case DATA_TYPE               -> b.dataType(this.name, (DataType<?>) value);
-            case SUB_PIPELINE            -> b.subPipeline(this.name, (Chain) value);
-            case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, (NamedChains) value);
-            case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, (Map<String, TypedChain>) value);
+            case SUB_PIPELINE            -> b.subPipeline(this.name, (Chain<?, ?>) value);
+            case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, (NamedChains<?>) value);
+            case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, (Map<String, TypedChain<?>>) value);
         };
     }
 
@@ -130,9 +130,9 @@ public record FieldSpec<T>(
             case DOUBLE                  -> new JsonPrimitive((Double) value);
             case BOOLEAN                 -> new JsonPrimitive((Boolean) value);
             case DATA_TYPE               -> new JsonPrimitive(((DataType<?>) value).label());
-            case SUB_PIPELINE            -> ChainSerde.writeChain((Chain) value, stageWriter);
-            case SUB_PIPELINES_MAP       -> ChainSerde.writeNamedChains((NamedChains) value, stageWriter);
-            case TYPED_SUB_PIPELINES_MAP -> ChainSerde.writeTypedNamedChains((Map<String, TypedChain>) value, stageWriter);
+            case SUB_PIPELINE            -> ChainSerde.writeChain((Chain<?, ?>) value, stageWriter);
+            case SUB_PIPELINES_MAP       -> ChainSerde.writeNamedChains((NamedChains<?>) value, stageWriter);
+            case TYPED_SUB_PIPELINES_MAP -> ChainSerde.writeTypedNamedChains((Map<String, TypedChain<?>>) value, stageWriter);
         };
     }
 

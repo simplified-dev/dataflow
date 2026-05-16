@@ -27,7 +27,7 @@ class DataTypeChainTest {
             .stage(ParseHtmlTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));
-        ValidationReport.Issue issue = report.issues().get(0);
+        ValidationReport.Issue issue = report.issues().getFirst();
         assertThat(issue.stageIndex(), is(1));
         assertThat(issue.message(), containsString("Stage #1"));
         assertThat(issue.message(), containsString("PARSE_HTML"));
@@ -37,16 +37,20 @@ class DataTypeChainTest {
 
     @Test
     @DisplayName("Mismatch deeper in the chain reports the right index")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     void deeperMismatchReportsRightIndex() {
         // Source -> ParseHtml -> CssSelect (DOM_NODE -> List<DOM_NODE>) -> ParseInt (expects STRING) - mismatch at index 3
-        ValidationReport report = DataPipeline.builder()
+        // Raw builder bypasses the compile-time chain check so this test can exercise the
+        // runtime ValidationReport diagnostic for the index-3 mismatch.
+        DataPipeline.Builder raw = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<html><body>x</body></html>"))
             .stage(ParseHtmlTransform.of())
-            .stage(CssSelectTransform.of("body"))
+            .stage(CssSelectTransform.of("body"));
+        ValidationReport report = raw
             .stage(ParseIntTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));
-        ValidationReport.Issue issue = report.issues().get(0);
+        ValidationReport.Issue issue = report.issues().getFirst();
         assertThat(issue.stageIndex(), is(3));
         assertThat(issue.message(), containsString("STRING"));
         assertThat(issue.message(), containsString("List<DOM_NODE>"));

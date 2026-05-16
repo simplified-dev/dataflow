@@ -1,30 +1,44 @@
 package dev.simplified.dataflow.chain;
 
 import dev.simplified.collection.Concurrent;
-import dev.simplified.collection.ConcurrentList;
+import dev.simplified.dataflow.DataPipeline;
+import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.stage.Stage;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Mutable builder for {@link Chain}. Stages are appended in order; the resulting chain is
- * frozen at {@link #build()}.
- */
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ChainBuilder {
+import java.util.ArrayList;
+import java.util.List;
 
-    private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
+/**
+ * Mutable builder for {@link Chain}. Phantom-typed mirror of {@link DataPipeline.Builder}:
+ * seeded with an input {@link DataType}, each {@code stage} call advances the running
+ * output type, and {@link #build()} freezes the assembled stages into an immutable chain.
+ *
+ * @param <I> input type the seeded first stage must consume
+ * @param <O> running output type of the staged chain
+ */
+public final class ChainBuilder<I, O> {
+
+    private final @NotNull List<Stage<?, ?>> stages = new ArrayList<>();
+    private final @NotNull DataType<I> seedType;
+
+    ChainBuilder(@NotNull DataType<I> seedType) {
+        this.seedType = seedType;
+    }
 
     /**
-     * Appends a stage to the chain under construction.
+     * Appends a stage to the chain under construction, advancing the running output type to
+     * {@code U}.
      *
-     * @param stage the stage to append
-     * @return this builder
+     * @param stage the stage to append, whose input must be assignable from {@code O} and
+     *              whose output is {@code U}
+     * @return this builder, retyped to run on {@code U}
+     * @param <U> the appended stage's output type
      */
-    public @NotNull ChainBuilder stage(@NotNull Stage<?, ?> stage) {
+    @SuppressWarnings("unchecked")
+    public <U> @NotNull ChainBuilder<I, U> stage(@NotNull Stage<? super O, ? extends U> stage) {
         this.stages.add(stage);
-        return this;
+        return (ChainBuilder<I, U>) this;
     }
 
     /**
@@ -32,8 +46,17 @@ public final class ChainBuilder {
      *
      * @return the built chain
      */
-    public @NotNull Chain build() {
-        return new Chain(Concurrent.newUnmodifiableList(this.stages));
+    public @NotNull Chain<I, O> build() {
+        return new Chain<>(Concurrent.newUnmodifiableList(this.stages));
+    }
+
+    /**
+     * Exposes the seed input type to package peers.
+     *
+     * @return the seed input type
+     */
+    @NotNull DataType<I> seedType() {
+        return this.seedType;
     }
 
     /**
@@ -42,7 +65,7 @@ public final class ChainBuilder {
      *
      * @return the live stage list
      */
-    @NotNull ConcurrentList<Stage<?, ?>> stages() {
+    @NotNull List<Stage<?, ?>> stages() {
         return this.stages;
     }
 

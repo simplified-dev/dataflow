@@ -27,7 +27,7 @@ class StreamOpsE2ETest {
     @Test
     @DisplayName("Source -> ParseHtml -> CssSelect -> MapTransform -> SumIntCollect aggregates DOM values")
     void mapAndSumOverDomRows() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<Integer> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))

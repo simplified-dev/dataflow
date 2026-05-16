@@ -10,5 +10,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param outputType the declared output type of the body's last stage
  * @param chain the body chain
+ * @param <O> declared output type of the body
  */
-public record TypedChain(@NotNull DataType<?> outputType, @NotNull Chain chain) {}
+public record TypedChain<O>(@NotNull DataType<O> outputType, @NotNull Chain<?, O> chain) {}

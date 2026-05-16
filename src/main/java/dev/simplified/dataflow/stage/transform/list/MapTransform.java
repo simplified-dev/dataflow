@@ -47,7 +47,7 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
 
     private final @NotNull DataType<List<Y>> outputListType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<X, Y> body;
 
     /**
      * Constructs a map stage with the given element types and body chain.

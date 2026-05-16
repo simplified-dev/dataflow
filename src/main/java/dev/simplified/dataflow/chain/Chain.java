@@ -23,30 +23,49 @@ import java.util.List;
  * semantics apply: a {@code null} from any stage short-circuits the rest of the chain.
  *
  * @param stages the ordered, immutable stages forming this chain
+ * @param <I> input type expected by the chain's first stage
+ * @param <O> output type produced by the chain's last stage
  */
-public record Chain(@NotNull ConcurrentList<Stage<?, ?>> stages) {
+public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
 
     /**
-     * Wraps {@code stages} as an immutable {@link Chain}. Delegates to
-     * {@link Concurrent#newUnmodifiableList(java.util.Collection)} which adopts a
-     * {@code ConcurrentArrayList} input view-style (no copy) and otherwise copies into a
-     * fresh unmodifiable list.
+     * Wraps {@code stages} as an immutable {@link Chain} whose type parameters are inferred
+     * at the call site from the enclosing stage's expectation. The caller asserts that the
+     * stages form a well-typed chain consuming {@code I} and producing {@code O}; the
+     * contract is checked dynamically via {@link Chain#validate}.
      *
      * @param stages the body stages in execution order
      * @return a chain whose backing list is frozen
+     * @param <I> input type expected by the chain's first stage
+     * @param <O> output type produced by the chain's last stage
      */
     @SuppressWarnings("unchecked")
-    public static @NotNull Chain of(@NotNull List<? extends Stage<?, ?>> stages) {
-        return new Chain(Concurrent.newUnmodifiableList((List<Stage<?, ?>>) stages));
+    public static <I, O> @NotNull Chain<I, O> of(@NotNull List<? extends Stage<?, ?>> stages) {
+        return new Chain<>(Concurrent.newUnmodifiableList((List<Stage<?, ?>>) stages));
     }
 
     /**
-     * Creates a fresh {@link ChainBuilder}.
+     * Serde entry that wraps {@code stages} as a fully-erased chain. Used by the wire-format
+     * reader where neither the input nor output type is statically known.
      *
-     * @return a new builder
+     * @param stages the body stages in execution order
+     * @return a chain whose type parameters are wildcards
      */
-    public static @NotNull ChainBuilder builder() {
-        return new ChainBuilder();
+    public static @NotNull Chain<?, ?> unchecked(@NotNull List<? extends Stage<?, ?>> stages) {
+        return Chain.of(stages);
+    }
+
+    /**
+     * Creates a fresh {@link ChainBuilder} seeded with the given input type. Each
+     * {@code stage} call advances the running output phantom type, mirroring
+     * {@link DataPipeline.Builder}.
+     *
+     * @param seedType the type the first stage must consume
+     * @return a new builder running on {@code seedType}
+     * @param <I> input type
+     */
+    public static <I> @NotNull ChainBuilder<I, I> builder(@NotNull DataType<I> seedType) {
+        return new ChainBuilder<>(seedType);
     }
 
     /**
@@ -93,27 +112,24 @@ public record Chain(@NotNull ConcurrentList<Stage<?, ?>> stages) {
     }
 
     /**
-     * Executes the chain against {@code input}, returning the final value with the type
-     * inferred at the call site.
+     * Executes the chain against {@code input}.
      * <p>
-     * Mirrors {@link DataPipeline#execute(PipelineContext)}: the cast from runtime
-     * {@link Object} to {@code T} is unchecked - the compiler trusts the inferred type.
-     * A {@code null} from any stage short-circuits the remainder.
+     * Mirrors {@link DataPipeline#execute(PipelineContext)}: a {@code null} from any stage
+     * short-circuits the remainder.
      *
      * @param ctx the pipeline context
      * @param input the value supplied by the enclosing stage
      * @return the final value, or {@code null} when a stage rejects its input
-     * @param <T> inferred result type
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public <T> @Nullable T execute(@NotNull PipelineContext ctx, @Nullable Object input) {
+    public @Nullable O execute(@NotNull PipelineContext ctx, @Nullable I input) {
         Object current = input;
         for (Stage stage : this.stages) {
             if (current == null) break;
             current = stage.execute(ctx, current);
             ctx.traceStage(stage, current);
         }
-        return (T) current;
+        return (O) current;
     }
 
     /**

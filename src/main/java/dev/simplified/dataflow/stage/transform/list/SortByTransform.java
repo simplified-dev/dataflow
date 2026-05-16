@@ -49,7 +49,7 @@ public final class SortByTransform<T, K extends Comparable<K>> implements Transf
 
     private final boolean ascending;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<T, K> body;
 
     /**
      * Constructs a sort-by stage.

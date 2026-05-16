@@ -8,14 +8,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Immutable map of named {@link Chain} bodies, keyed by output name in insertion order.
+ * Immutable map of named {@link Chain} bodies that share the same input type {@code I} but
+ * may produce heterogeneous outputs.
  * <p>
  * Carried by stages whose configuration fans the same input value through several named
  * sub-pipelines (e.g. {@code MapCollect}, {@code AndPredicate}, {@code OrPredicate}).
  *
  * @param chains the named-body map; iteration order is preserved
+ * @param <I> shared input type for every named chain
  */
-public record NamedChains(@NotNull Map<String, Chain> chains) {
+public record NamedChains<I>(@NotNull Map<String, Chain<I, ?>> chains) {
 
     /**
      * Wraps a raw {@code Map<String, List<Stage>>} as a {@link NamedChains}, freezing each
@@ -23,14 +25,15 @@ public record NamedChains(@NotNull Map<String, Chain> chains) {
      *
      * @param raw the raw named-bodies map
      * @return a frozen named-chains map
+     * @param <I> shared input type for every named chain
      */
-    public static @NotNull NamedChains of(
+    public static <I> @NotNull NamedChains<I> of(
         @NotNull Map<String, ? extends List<? extends Stage<?, ?>>> raw
     ) {
-        LinkedHashMap<String, Chain> frozen = new LinkedHashMap<>();
+        LinkedHashMap<String, Chain<I, ?>> frozen = new LinkedHashMap<>();
         for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : raw.entrySet())
             frozen.put(entry.getKey(), Chain.of(entry.getValue()));
-        return new NamedChains(Map.copyOf(frozen));
+        return new NamedChains<>(Map.copyOf(frozen));
     }
 
     /**

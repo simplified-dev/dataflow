@@ -43,7 +43,7 @@ public final class TakeWhileFilter<T> implements FilterStage<T> {
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<T, Boolean> body;
 
     /**
      * Constructs a take-while filter.

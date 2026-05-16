@@ -49,7 +49,7 @@ class WikiPipelineE2ETest {
     @Test
     @DisplayName("Full chain - Paste(HTML) -> ParseHtml -> CssSelect -> Filter Dmg -> First -> Nth -> Text -> Regex -> ParseInt - yields 500")
     void darkClaymoreDmgIsFiveHundred() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
@@ -69,7 +69,7 @@ class WikiPipelineE2ETest {
     @Test
     @DisplayName("Generic execute<T> infers the result type at the call site")
     void executeInfersResultType() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<Integer> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
@@ -89,7 +89,7 @@ class WikiPipelineE2ETest {
     @Test
     @DisplayName("Full infobox -> JsonObject -> Gson-deserialised DarkClaymore record")
     void darkClaymoreDeserialisesToRecord() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<DarkClaymore> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore_full.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("div.infobox"))
@@ -117,7 +117,7 @@ class WikiPipelineE2ETest {
     @DisplayName("Live wiki pipeline round-trips through PipelineGson and re-executes equivalently")
     @EnabledIfEnvironmentVariable(named = "DATAFLOW_LIVE", matches = "true")
     void darkClaymoreLivePipelineSurvivesReserialisation() {
-        DataPipeline original = DataPipeline.builder()
+        DataPipeline<DarkClaymore> original = DataPipeline.builder()
             .source(UrlSource.rawHtml("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("div.infobox"))
@@ -131,7 +131,7 @@ class WikiPipelineE2ETest {
             firstResult, is(notNullValue()));
 
         String json = PipelineGson.toJson(original);
-        DataPipeline rebuilt = PipelineGson.fromJson(json);
+        DataPipeline<DarkClaymore> rebuilt = PipelineGson.fromJson(json).expectOutput(DARK_CLAYMORE_TYPE);
         DarkClaymore secondResult = rebuilt.execute();
 
         assertThat(secondResult, is(equalTo(firstResult)));

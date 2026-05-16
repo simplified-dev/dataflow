@@ -14,42 +14,67 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Immutable, validated sequence of {@link Stage} instances that maps a source-produced
- * value through a chain of filters / transforms / collectors to a final result.
+ * value through a chain of filters / transforms / collectors to a final result of type
+ * {@code O}.
  * <p>
  * A pipeline always begins with a {@link SourceStage}. Every subsequent stage's
  * {@link Stage#inputType() input type} must equal the previous stage's
  * {@link Stage#outputType() output type}; this is enforced by {@link #validate()} and
- * re-checked at runtime by {@link #execute(PipelineContext)}.
+ * checked at compile time on the typed builder path.
+ *
+ * @param <O> output type of the pipeline's last stage
  */
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class DataPipeline {
+public final class DataPipeline<O> {
 
-    private static final @NotNull DataPipeline EMPTY = new DataPipeline(Concurrent.newUnmodifiableList());
+    private static final @NotNull DataPipeline<Void> EMPTY =
+        new DataPipeline<>(Concurrent.newUnmodifiableList(), DataTypes.NONE);
 
     private final @NotNull ConcurrentList<Stage<?, ?>> stages;
+
+    private final @NotNull DataType<O> outputType;
 
     /**
      * Returns the canonical empty pipeline; useful as a starting point for builders.
      *
      * @return the empty pipeline
      */
-    public static @NotNull DataPipeline empty() {
+    public static @NotNull DataPipeline<Void> empty() {
         return EMPTY;
     }
 
     /**
-     * Creates a fresh pipeline {@link Builder}.
+     * Creates a fresh {@link SourcelessBuilder} for assembling a pipeline starting from a
+     * {@link SourceStage}.
      *
-     * @return a new builder
+     * @return a new sourceless builder
      */
-    public static @NotNull Builder builder() {
-        return new Builder();
+    public static @NotNull SourcelessBuilder builder() {
+        return new SourcelessBuilder();
+    }
+
+    /**
+     * Serde-only entry that bypasses the typed builder. The caller asserts that
+     * {@code stages} forms a well-typed chain whose final stage produces {@code outputType};
+     * the contract is checked dynamically via {@link #validate()} on the
+     * {@link dev.simplified.dataflow.serde.PipelineGson} path. Not intended for general use -
+     * the {@link Builder} path enforces the same contract at compile time.
+     *
+     * @param stages the assembled stages in execution order
+     * @param outputType the declared output type of the last stage
+     * @return the constructed pipeline
+     * @param <O> declared output type
+     */
+    public static <O> @NotNull DataPipeline<O> unchecked(
+        @NotNull List<Stage<?, ?>> stages,
+        @NotNull DataType<O> outputType
+    ) {
+        return new DataPipeline<>(Concurrent.newUnmodifiableList(stages), outputType);
     }
 
     /**
@@ -94,42 +119,28 @@ public final class DataPipeline {
     }
 
     /**
-     * Executes the pipeline against {@link PipelineContext#defaults()}, returning the final
-     * value with the type inferred at the call site.
-     * <p>
-     * The cast from the runtime {@link Object} to {@code T} is unchecked - the compiler
-     * trusts the inferred type. A mismatch surfaces as a {@link ClassCastException} at
-     * the assignment site, the same way {@link Map#get(Object)} behaves with a
-     * casted return.
+     * Executes the pipeline against {@link PipelineContext#defaults()}.
      * <p>
      * Validation runs once at build time (see {@link Builder#build()}) so this method does
      * not re-validate before each execution.
      *
      * @return the final value, possibly {@code null} when a stage rejects its input
-     * @param <T> inferred result type
      */
-    public <T> @Nullable T execute() {
+    public @Nullable O execute() {
         return execute(PipelineContext.defaults());
     }
 
     /**
-     * Executes the pipeline against {@code ctx}, returning the final value with the type
-     * inferred at the call site.
-     * <p>
-     * The cast from the runtime {@link Object} to {@code T} is unchecked - the compiler
-     * trusts the inferred type. A mismatch surfaces as a {@link ClassCastException} at
-     * the assignment site, the same way {@link Map#get(Object)} behaves with a
-     * casted return.
+     * Executes the pipeline against {@code ctx}.
      * <p>
      * Validation runs once at build time (see {@link Builder#build()}) so this method does
      * not re-validate before each execution.
      *
      * @param ctx the pipeline context
      * @return the final value, possibly {@code null} when a stage rejects its input
-     * @param <T> inferred result type
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public <T> @Nullable T execute(@NotNull PipelineContext ctx) {
+    public @Nullable O execute(@NotNull PipelineContext ctx) {
         Object current = null;
 
         for (Stage stage : this.stages) {
@@ -138,52 +149,130 @@ public final class DataPipeline {
             if (current == null) break;
         }
 
-        return (T) current;
+        return (O) current;
     }
 
     /**
-     * Mutable builder for assembling a {@link DataPipeline} from {@link Stage} instances.
+     * Narrows this pipeline to one whose static output type is {@code type}, verifying the
+     * runtime output type matches. Used by callers of the deserialisation path to recover a
+     * typed handle from the wildcard pipeline returned by
+     * {@link dev.simplified.dataflow.serde.PipelineGson#fromJson(String)}.
+     *
+     * @param type the expected output type
+     * @return this pipeline, narrowed to produce {@code T}
+     * @param <T> the expected output type
+     * @throws IllegalStateException when the runtime output type does not equal {@code type}
+     */
+    @SuppressWarnings("unchecked")
+    public <T> @NotNull DataPipeline<T> expectOutput(@NotNull DataType<T> type) {
+        if (!this.outputType.equals(type))
+            throw new IllegalStateException(
+                "expected output type " + type + " but pipeline produces " + this.outputType
+            );
+        return (DataPipeline<T>) this;
+    }
+
+    /**
+     * Sourceless builder phase that accepts exactly one {@link SourceStage} call to begin a
+     * pipeline. The transition from {@link SourcelessBuilder} to {@link Builder} fixes the
+     * pipeline's running type at the source's output type.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class Builder {
+    public static final class SourcelessBuilder {
 
-        private final @NotNull ConcurrentList<Stage<?, ?>> stages = Concurrent.newList();
+        private final @NotNull List<Stage<?, ?>> stages = new ArrayList<>();
 
         /**
-         * Sets the source stage. Must be called exactly once before {@link #build()}.
-         * Accepts any {@link SourceStage}, including the special {@code EmbedSource}
-         * source that delegates to a saved pipeline.
+         * Sets the source stage and transitions to the typed builder phase.
          *
          * @param source the first stage
-         * @return this builder
+         * @return a typed builder running on the source's output type
+         * @param <T> the source's output type
          */
-        public @NotNull Builder source(@NotNull SourceStage<?> source) {
-            if (!this.stages.isEmpty())
-                throw new IllegalStateException("Source already set");
-
+        public <T> @NotNull Builder<T> source(@NotNull SourceStage<T> source) {
             this.stages.add(source);
-            return this;
+            return new Builder<>(this.stages, source.outputType());
         }
 
         /**
-         * Appends a non-source stage to the chain.
+         * Returns a validation report for the sourceless builder. Always reports the
+         * pipeline-level "no stages" diagnostic; provided so callers can inspect the
+         * empty-pipeline state without throwing.
          *
-         * @param stage the stage to append
-         * @return this builder
+         * @return the validation report
          */
-        public @NotNull Builder stage(@NotNull Stage<?, ?> stage) {
-            this.stages.add(stage);
-            return this;
+        public @NotNull ValidationReport validate() {
+            return new DataPipeline<>(
+                Concurrent.newUnmodifiableList(this.stages), DataTypes.NONE
+            ).validate();
         }
 
         /**
-         * Returns a validation report for the stages staged so far without building. Useful
+         * Builds an immutable {@link DataPipeline} from the staged stages, validating the
+         * type chain eagerly. Always rejects a builder with no source via the "no stages"
+         * diagnostic.
+         *
+         * @return the built pipeline
+         * @throws IllegalStateException when the type chain has any issues
+         */
+        public @NotNull DataPipeline<?> build() {
+            DataPipeline<?> pipeline = new DataPipeline<>(
+                Concurrent.newUnmodifiableList(this.stages), DataTypes.NONE
+            );
+            ValidationReport report = pipeline.validate();
+
+            if (!report.isValid())
+                throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
+
+            return pipeline;
+        }
+
+    }
+
+    /**
+     * Typed builder phase whose phantom type parameter tracks the running output type of
+     * the staged chain. Each {@code stage} call advances the phantom type to the new
+     * stage's output type.
+     *
+     * @param <T> running output type of the staged chain
+     */
+    public static final class Builder<T> {
+
+        private final @NotNull List<Stage<?, ?>> stages;
+        private @NotNull DataType<T> currentOutputType;
+
+        private Builder(@NotNull List<Stage<?, ?>> stages, @NotNull DataType<T> currentOutputType) {
+            this.stages = stages;
+            this.currentOutputType = currentOutputType;
+        }
+
+        /**
+         * Appends a non-source stage to the chain, advancing the running output type to
+         * {@code U}.
+         *
+         * @param stage the stage to append, whose input must be assignable from {@code T}
+         *              and whose output is {@code U}
+         * @return this builder, retyped to run on {@code U}
+         * @param <U> the appended stage's output type
+         */
+        @SuppressWarnings("unchecked")
+        public <U> @NotNull Builder<U> stage(@NotNull Stage<? super T, ? extends U> stage) {
+            this.stages.add(stage);
+            Builder<U> cast = (Builder<U>) this;
+            cast.currentOutputType = (DataType<U>) stage.outputType();
+            return cast;
+        }
+
+        /**
+         * Returns a validation report for the stages staged so far without throwing. Useful
          * for inspecting type-chain errors while a pipeline is still under construction.
          *
          * @return the validation report
          */
         public @NotNull ValidationReport validate() {
-            return new DataPipeline(Concurrent.newUnmodifiableList(this.stages)).validate();
+            return new DataPipeline<>(
+                Concurrent.newUnmodifiableList(this.stages), this.currentOutputType
+            ).validate();
         }
 
         /**
@@ -194,8 +283,10 @@ public final class DataPipeline {
          * @return the built pipeline
          * @throws IllegalStateException when the type chain has any issues
          */
-        public @NotNull DataPipeline build() {
-            DataPipeline pipeline = new DataPipeline(Concurrent.newUnmodifiableList(this.stages));
+        public @NotNull DataPipeline<T> build() {
+            DataPipeline<T> pipeline = new DataPipeline<>(
+                Concurrent.newUnmodifiableList(this.stages), this.currentOutputType
+            );
             ValidationReport report = pipeline.validate();
 
             if (!report.isValid())

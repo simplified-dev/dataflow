@@ -41,7 +41,7 @@ public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean>
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<T, Boolean> body;
 
     /**
      * Constructs a none-match stage.

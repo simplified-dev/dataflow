@@ -48,7 +48,7 @@ public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, Lis
 
     private final @NotNull DataType<List<Y>> outputListType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<X, List<Y>> body;
 
     /**
      * Constructs a flatMap stage with the given element types and body chain. The body's

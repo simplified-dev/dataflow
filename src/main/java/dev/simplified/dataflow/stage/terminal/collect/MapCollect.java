@@ -44,7 +44,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
 
     private final @NotNull DataType<I> inputType;
 
-    private final @NotNull NamedChains outputs;
+    private final @NotNull NamedChains<I> outputs;
 
     /**
      * Mutable builder for {@link MapCollect}.
@@ -54,7 +54,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
     public static final class Builder<I> {
 
         private final @NotNull DataType<I> inputType;
-        private final @NotNull Map<String, Chain> outputs = new LinkedHashMap<>();
+        private final @NotNull Map<String, Chain<I, ?>> outputs = new LinkedHashMap<>();
 
         private Builder(@NotNull DataType<I> inputType) {
             this.inputType = inputType;
@@ -67,8 +67,8 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @param block builder block configuring the sub-chain
          * @return this builder
          */
-        public @NotNull Builder<I> output(@NotNull String name, @NotNull Consumer<ChainBuilder> block) {
-            ChainBuilder chain = Chain.builder();
+        public @NotNull Builder<I> output(@NotNull String name, @NotNull Consumer<ChainBuilder<I, I>> block) {
+            ChainBuilder<I, I> chain = Chain.builder(this.inputType);
             block.accept(chain);
             this.outputs.put(name, chain.build());
             return this;
@@ -80,7 +80,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @return the built collect
          */
         public @NotNull MapCollect<I> build() {
-            return of(this.inputType, new NamedChains(Map.copyOf(this.outputs)));
+            return of(this.inputType, new NamedChains<>(Map.copyOf(this.outputs)));
         }
     }
 
@@ -108,7 +108,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
         @Configurable(label = "Input type", placeholder = "STRING")
         @NotNull DataType<I> inputType,
         @Configurable(label = "Outputs", placeholder = "")
-        @NotNull NamedChains outputs
+        @NotNull NamedChains<I> outputs
     ) {
         return new MapCollect<>(inputType, outputs);
     }
@@ -117,7 +117,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
     @Override
     public @NotNull Map<String, Object> execute(@NotNull PipelineContext ctx, @Nullable I input) {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<String, Chain> entry : this.outputs.chains().entrySet())
+        for (Map.Entry<String, Chain<I, ?>> entry : this.outputs.chains().entrySet())
             result.put(entry.getKey(), entry.getValue().execute(ctx, input));
         return Map.copyOf(result);
     }

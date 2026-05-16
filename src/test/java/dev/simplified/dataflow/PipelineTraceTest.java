@@ -24,7 +24,7 @@ class PipelineTraceTest {
     @Test
     @DisplayName("Tracer fires for every top-level and sub-chain stage in execution order")
     void traceCapturesAllStages() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<List<String>> pipeline = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b"))
             .stage(SplitTransform.of(","))
             .stage(MapTransform.of(DataTypes.STRING, DataTypes.STRING, List.of(UpperCaseTransform.of())))
@@ -71,7 +71,7 @@ class PipelineTraceTest {
     @Test
     @DisplayName("Context without a tracer (defaults()) executes pipelines unaffected")
     void defaultsHasNoTracer() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<String> pipeline = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "hi"))
             .stage(UpperCaseTransform.of())
             .build();

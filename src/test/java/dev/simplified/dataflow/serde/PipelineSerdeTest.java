@@ -242,7 +242,7 @@ class PipelineSerdeTest {
         String json = PipelineGson.toJson(outer);
         assertThat(json, containsString("\"embeddedPipelineId\":\"saved-id\""));
 
-        DataPipeline rebuilt = PipelineGson.fromJson(json);
+        DataPipeline<?> rebuilt = PipelineGson.fromJson(json);
         Stage<?, ?> first = rebuilt.stages().getFirst();
         assertThat(first.kindId(), is(equalTo("SOURCE_EMBED")));
     }

@@ -17,11 +17,15 @@ class DataPipelineBuilderTest {
 
     @Test
     @DisplayName("Builder.build() throws when stages have type-chain mismatches")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     void buildRejectsInvalidPipeline() {
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> DataPipeline.builder()
+        // Raw builder bypasses the compile-time chain check so this test can exercise
+        // runtime ValidationReport behaviour for type mismatches.
+        DataPipeline.Builder raw = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<html></html>"))
             .stage(ParseHtmlTransform.of())
-            .stage(CssSelectTransform.of("body"))
+            .stage(CssSelectTransform.of("body"));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> raw
             .stage(ParseIntTransform.of())  // expects STRING; previous stage produces List<DOM_NODE>
             .build());
         assertThat(ex.getMessage(), containsString("invalid pipeline"));
@@ -30,10 +34,12 @@ class DataPipelineBuilderTest {
 
     @Test
     @DisplayName("Builder.validate() returns the report without throwing")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     void builderValidateInspects() {
-        ValidationReport report = DataPipeline.builder()
+        DataPipeline.Builder raw = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<html></html>"))
-            .stage(ParseHtmlTransform.of())
+            .stage(ParseHtmlTransform.of());
+        ValidationReport report = raw
             .stage(ParseIntTransform.of())
             .validate();
         assertThat(report.isValid(), is(false));

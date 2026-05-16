@@ -49,7 +49,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
 
     private final @NotNull DataType<I> inputType;
 
-    private final @NotNull Map<String, TypedChain> outputs;
+    private final @NotNull Map<String, TypedChain<?>> outputs;
 
     /**
      * Mutable builder for {@link JsonObjectBuildTransform}.
@@ -59,7 +59,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     public static final class Builder<I> {
 
         private final @NotNull DataType<I> inputType;
-        private final @NotNull Map<String, TypedChain> outputs = new LinkedHashMap<>();
+        private final @NotNull Map<String, TypedChain<?>> outputs = new LinkedHashMap<>();
 
         private Builder(@NotNull DataType<I> inputType) {
             this.inputType = inputType;
@@ -72,21 +72,22 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
          * @param outputType the declared output {@link DataType} of the body's last stage
          * @param block builder block configuring the sub-chain
          * @return this builder
+         * @param <O> the named output's declared output type
          */
-        public @NotNull Builder<I> output(
+        public <O> @NotNull Builder<I> output(
             @NotNull String name,
-            @NotNull DataType<?> outputType,
-            @NotNull Consumer<ChainBuilder> block
+            @NotNull DataType<O> outputType,
+            @NotNull Consumer<ChainBuilder<I, I>> block
         ) {
-            ChainBuilder builder = Chain.builder();
+            ChainBuilder<I, I> builder = Chain.builder(this.inputType);
             block.accept(builder);
-            Chain chain = builder.build();
+            Chain<I, O> chain = Chain.of(builder.build().stages());
             ValidationReport report = Chain.validate(this.inputType, chain.stages(), outputType);
 
             if (!report.isValid())
                 throw new IllegalArgumentException("Invalid JsonObjectBuildTransform output '" + name + "': " + report.issues());
 
-            this.outputs.put(name, new TypedChain(outputType, chain));
+            this.outputs.put(name, new TypedChain<>(outputType, chain));
             return this;
         }
 
@@ -125,7 +126,7 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
         @Configurable(label = "Input type", placeholder = "STRING")
         @NotNull DataType<I> inputType,
         @Configurable(label = "Outputs (typed)", placeholder = "")
-        @NotNull Map<String, TypedChain> outputs
+        @NotNull Map<String, TypedChain<?>> outputs
     ) {
         return new JsonObjectBuildTransform<>(inputType, Map.copyOf(outputs));
     }
@@ -135,12 +136,30 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
     public @Nullable JsonObject execute(@NotNull PipelineContext ctx, @Nullable I input) {
         if (input == null) return null;
         JsonObject result = new JsonObject();
-        for (Map.Entry<String, TypedChain> entry : this.outputs.entrySet()) {
-            Object value = entry.getValue().chain().execute(ctx, input);
+        for (Map.Entry<String, TypedChain<?>> entry : this.outputs.entrySet()) {
+            Object value = runBranch(entry.getValue(), ctx, input);
             if (value == null) continue;
             result.add(entry.getKey(), PipelineGson.gson().toJsonTree(value));
         }
         return result;
+    }
+
+    /**
+     * Per-branch dispatch helper. {@link TypedChain#chain()} returns {@code Chain<?, O>} so
+     * its input wildcard cannot be captured statically at the call site; the cast bridges
+     * the enclosing transform's input {@code I} into the branch's unknown input slot. The
+     * unchecked cast is sound because every branch is constructed by
+     * {@link Builder#output} against {@code this.inputType} (which is {@code DataType<I>}),
+     * so the branch's runtime input type is always {@code I}.
+     *
+     * @param typed the typed-chain branch
+     * @param ctx the pipeline context
+     * @param input the input value of type {@code I}
+     * @return the branch's final value, or {@code null} when the chain rejected input
+     */
+    @SuppressWarnings("unchecked")
+    private @Nullable Object runBranch(@NotNull TypedChain<?> typed, @NotNull PipelineContext ctx, @NotNull I input) {
+        return ((Chain<I, ?>) typed.chain()).execute(ctx, input);
     }
     /** {@inheritDoc} */
     @Override

@@ -23,12 +23,12 @@ public interface DataPipelineResolver {
     @NotNull DataPipelineResolver NOOP = new DataPipelineResolver() {
 
         @Override
-        public @NotNull Optional<DataPipeline> resolve(@NotNull String id) {
+        public @NotNull Optional<DataPipeline<?>> resolve(@NotNull String id) {
             return Optional.empty();
         }
 
         @Override
-        public @Nullable String idOf(@NotNull DataPipeline pipeline) {
+        public @Nullable String idOf(@NotNull DataPipeline<?> pipeline) {
             return null;
         }
 
@@ -42,7 +42,7 @@ public interface DataPipelineResolver {
      * @param id the stable pipeline id
      * @return the pipeline if accessible to the caller, otherwise empty
      */
-    @NotNull Optional<DataPipeline> resolve(@NotNull String id);
+    @NotNull Optional<DataPipeline<?>> resolve(@NotNull String id);
 
     /**
      * Returns the stable id of {@code pipeline}, or {@code null} for an unsaved or
@@ -51,6 +51,6 @@ public interface DataPipelineResolver {
      * @param pipeline the pipeline to identify
      * @return the stable id, or {@code null} if unsaved
      */
-    @Nullable String idOf(@NotNull DataPipeline pipeline);
+    @Nullable String idOf(@NotNull DataPipeline<?> pipeline);
 
 }

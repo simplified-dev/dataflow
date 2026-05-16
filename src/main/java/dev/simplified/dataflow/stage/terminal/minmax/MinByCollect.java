@@ -43,7 +43,7 @@ public final class MinByCollect<T, K extends Comparable<K>> implements CollectSt
 
     private final @NotNull DataType<List<T>> listType;
 
-    private final @NotNull Chain body;
+    private final @NotNull Chain<T, K> body;
 
     /**
      * Constructs a min-by collect stage.

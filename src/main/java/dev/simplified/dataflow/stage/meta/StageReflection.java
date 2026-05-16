@@ -66,12 +66,12 @@ public final class StageReflection {
     private static final @NotNull ConcurrentMap<Class<? extends Stage<?, ?>>, StageMetadata> CACHE = Concurrent.newMap();
 
     private static final @NotNull Function<Object, Object> CHAIN_TO_STAGES =
-        raw -> ((Chain) raw).stages();
+        raw -> ((Chain<?, ?>) raw).stages();
 
     private static final @NotNull Function<Object, Object> NAMED_CHAINS_TO_LISTS = raw -> {
-        NamedChains named = (NamedChains) raw;
+        NamedChains<?> named = (NamedChains<?>) raw;
         Map<String, List<Stage<?, ?>>> result = new LinkedHashMap<>();
-        for (Map.Entry<String, Chain> entry : named.chains().entrySet())
+        for (Map.Entry<String, ? extends Chain<?, ?>> entry : named.chains().entrySet())
             result.put(entry.getKey(), entry.getValue().stages());
         return result;
     };

@@ -95,7 +95,7 @@ public final class StageConfig {
          * @param value the named-bodies map
          * @return this builder
          */
-        public @NotNull Builder subPipelines(@NotNull String name, @NotNull NamedChains value) {
+        public @NotNull Builder subPipelines(@NotNull String name, @NotNull NamedChains<?> value) {
             this.values.put(name, value);
             return this;
         }
@@ -108,7 +108,7 @@ public final class StageConfig {
          * @param chain the inner chain
          * @return this builder
          */
-        public @NotNull Builder subPipeline(@NotNull String name, @NotNull Chain chain) {
+        public @NotNull Builder subPipeline(@NotNull String name, @NotNull Chain<?, ?> chain) {
             this.values.put(name, chain);
             return this;
         }
@@ -120,7 +120,7 @@ public final class StageConfig {
          * @param value the typed sub-pipelines map
          * @return this builder
          */
-        public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedChain> value) {
+        public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedChain<?>> value) {
             this.values.put(name, value);
             return this;
         }
@@ -233,8 +233,8 @@ public final class StageConfig {
      * @throws ClassCastException when the field is present but not a {@link NamedChains}
      * @throws NullPointerException when the field is absent
      */
-    public @NotNull NamedChains getSubPipelines(@NotNull String name) {
-        return (NamedChains) this.values.get(name);
+    public @NotNull NamedChains<?> getSubPipelines(@NotNull String name) {
+        return (NamedChains<?>) this.values.get(name);
     }
 
     /**
@@ -245,8 +245,8 @@ public final class StageConfig {
      * @throws ClassCastException when the field is present but not a {@link Chain}
      * @throws NullPointerException when the field is absent
      */
-    public @NotNull Chain getSubPipeline(@NotNull String name) {
-        return (Chain) this.values.get(name);
+    public @NotNull Chain<?, ?> getSubPipeline(@NotNull String name) {
+        return (Chain<?, ?>) this.values.get(name);
     }
 
     /**
@@ -258,8 +258,8 @@ public final class StageConfig {
      * @throws NullPointerException when the field is absent
      */
     @SuppressWarnings("unchecked")
-    public @NotNull Map<String, TypedChain> getTypedSubPipelines(@NotNull String name) {
-        return (Map<String, TypedChain>) this.values.get(name);
+    public @NotNull Map<String, TypedChain<?>> getTypedSubPipelines(@NotNull String name) {
+        return (Map<String, TypedChain<?>>) this.values.get(name);
     }
 
     /**

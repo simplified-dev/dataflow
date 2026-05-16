@@ -22,16 +22,16 @@ class EmbedSourceTest {
      * Map-backed resolver that captures pipeline ids for cycle detection.
      */
     private static final class MapResolver implements DataPipelineResolver {
-        final Map<String, DataPipeline> pipelines = new HashMap<>();
+        final Map<String, DataPipeline<?>> pipelines = new HashMap<>();
 
         @Override
-        public @NotNull Optional<DataPipeline> resolve(@NotNull String id) {
+        public @NotNull Optional<DataPipeline<?>> resolve(@NotNull String id) {
             return Optional.ofNullable(this.pipelines.get(id));
         }
 
         @Override
-        public @Nullable String idOf(@NotNull DataPipeline pipeline) {
-            for (Map.Entry<String, DataPipeline> e : this.pipelines.entrySet()) {
+        public @Nullable String idOf(@NotNull DataPipeline<?> pipeline) {
+            for (Map.Entry<String, DataPipeline<?>> e : this.pipelines.entrySet()) {
                 if (e.getValue() == pipeline) return e.getKey();
             }
             return null;
@@ -43,12 +43,12 @@ class EmbedSourceTest {
     void nestedEmbedRunsInner() {
         MapResolver resolver = new MapResolver();
         // B: produces integer 42
-        DataPipeline b = DataPipeline.builder()
+        DataPipeline<String> b = DataPipeline.builder()
             .source(LiteralSource.text("42"))
             .build();
         resolver.pipelines.put("B", b);
 
-        DataPipeline outer = DataPipeline.builder()
+        DataPipeline<String> outer = DataPipeline.builder()
             .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
 
@@ -61,7 +61,7 @@ class EmbedSourceTest {
     @DisplayName("Self-cycle: A embeds A throws with breadcrumb")
     void selfCycleDetected() {
         MapResolver resolver = new MapResolver();
-        DataPipeline a = DataPipeline.builder()
+        DataPipeline<String> a = DataPipeline.builder()
             .source(EmbedSource.of("A", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
@@ -83,10 +83,10 @@ class EmbedSourceTest {
     void mutualCycleDetected() {
         MapResolver resolver = new MapResolver();
 
-        DataPipeline a = DataPipeline.builder()
+        DataPipeline<String> a = DataPipeline.builder()
             .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
-        DataPipeline b = DataPipeline.builder()
+        DataPipeline<String> b = DataPipeline.builder()
             .source(EmbedSource.of("A", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
@@ -109,7 +109,7 @@ class EmbedSourceTest {
     @DisplayName("Missing pipeline id throws a clear error")
     void missingPipelineThrows() {
         MapResolver resolver = new MapResolver();
-        DataPipeline a = DataPipeline.builder()
+        DataPipeline<String> a = DataPipeline.builder()
             .source(EmbedSource.of("does-not-exist", DataTypes.STRING))
             .build();
 
@@ -127,7 +127,7 @@ class EmbedSourceTest {
     @Test
     @DisplayName("EmbedSource is a valid first stage of a DataPipeline")
     void embedIsValidFirstStage() {
-        DataPipeline outer = DataPipeline.builder()
+        DataPipeline<String> outer = DataPipeline.builder()
             .source(EmbedSource.of("X", DataTypes.STRING))
             .build();
         assertThat(outer.validate().isValid(), is(true));
@@ -137,13 +137,13 @@ class EmbedSourceTest {
     @DisplayName("Three-deep embed A -> B -> C, no cycle, returns inner result")
     void threeDeepNonCycle() {
         MapResolver resolver = new MapResolver();
-        DataPipeline c = DataPipeline.builder()
+        DataPipeline<String> c = DataPipeline.builder()
             .source(LiteralSource.text("deep"))
             .build();
-        DataPipeline b = DataPipeline.builder()
+        DataPipeline<String> b = DataPipeline.builder()
             .source(EmbedSource.of("C", DataTypes.STRING))
             .build();
-        DataPipeline a = DataPipeline.builder()
+        DataPipeline<String> a = DataPipeline.builder()
             .source(EmbedSource.of("B", DataTypes.STRING))
             .build();
         resolver.pipelines.put("A", a);
