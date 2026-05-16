@@ -1,0 +1,66 @@
+package dev.simplified.dataflow.stage.transform.primitive;
+
+import dev.simplified.dataflow.DataType;
+import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.stage.TransformStage;
+import dev.simplified.dataflow.stage.meta.Configurable;
+import dev.simplified.dataflow.stage.meta.StageSpec;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * {@link TransformStage} that converts an arbitrary value to its {@link String}
+ * representation via {@link String#valueOf(Object)}.
+ *
+ * @param <T> input type
+ */
+@StageSpec(
+    id = "TRANSFORM_TO_STRING",
+    displayName = "To string",
+    description = "T -> STRING",
+    category = StageSpec.Category.TRANSFORM_PRIMITIVE
+)
+@Getter
+@Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class ToStringTransform<T> implements TransformStage<T, String> {
+
+    private final @NotNull DataType<T> inputType;
+
+    /**
+     * Constructs a to-string stage for the given input type.
+     *
+     * @param inputType the input type
+     * @return the stage
+     * @param <T> input type
+     */
+    public static <T> @NotNull ToStringTransform<T> of(
+        @Configurable(label = "Input type", placeholder = "INT")
+        @NotNull DataType<T> inputType
+    ) {
+        return new ToStringTransform<>(inputType);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable T input) {
+        return input == null ? null : String.valueOf(input);
+    }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<String> outputType() {
+        return DataTypes.STRING;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "To string (" + this.inputType.label() + ")";
+    }
+
+}

@@ -1,0 +1,94 @@
+package dev.simplified.dataflow;
+
+import dev.simplified.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
+import dev.simplified.dataflow.stage.source.LiteralListSource;
+import dev.simplified.dataflow.stage.source.LiteralSource;
+import dev.simplified.dataflow.stage.terminal.match.AnyMatchCollect;
+import dev.simplified.dataflow.stage.terminal.minmax.MaxByCollect;
+import dev.simplified.dataflow.stage.terminal.sum.SumIntCollect;
+import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
+import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
+import dev.simplified.dataflow.stage.transform.list.MapTransform;
+import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
+import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
+import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+class StreamOpsE2ETest {
+
+    @Test
+    @DisplayName("Source -> ParseHtml -> CssSelect -> MapTransform -> SumIntCollect aggregates DOM values")
+    void mapAndSumOverDomRows() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
+            .stage(ParseHtmlTransform.of())
+            .stage(CssSelectTransform.of("table.infobox tr"))
+            .stage(MapTransform.of(
+                DataTypes.DOM_NODE,
+                DataTypes.INT,
+                List.of(
+                    DomNthChildTransform.of("td", 1),
+                    DomTextTransform.of(),
+                    RegexExtractTransform.of("\\d+"),
+                    ParseIntTransform.of()
+                )
+            ))
+            .stage(SumIntCollect.of())
+            .build();
+
+        Integer total = pipeline.execute();
+        // Fixture has five numeric infobox rows: Dmg=500, Strength=220, Crit Damage=175,
+        // Crit Chance=32, Intelligence=50. Non-numeric rows (Rarity, Type) drop out when
+        // RegexExtract(\\d+) returns null. Sum is 500 + 220 + 175 + 32 + 50 = 977.
+        assertThat(total, is(977));
+    }
+
+    @Test
+    @DisplayName("LiteralListSource feeds a literal int array straight into SumIntCollect")
+    void ofListIntoSum() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(LiteralListSource.of(DataTypes.INT, "[1,2,3,4,5]"))
+            .stage(SumIntCollect.of())
+            .build();
+        assertThat(pipeline.execute(), is(15));
+    }
+
+    @Test
+    @DisplayName("LiteralSource(STRING) -> ParseInt yields the parsed value")
+    void ofSourceIntoParse() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(LiteralSource.of(DataTypes.STRING, "42"))
+            .stage(ParseIntTransform.of())
+            .build();
+        assertThat(pipeline.execute(), is(42));
+    }
+
+    @Test
+    @DisplayName("Predicate stages unlock match collectors: LiteralListSource(INT) -> AnyMatch(body=GreaterThan(12))")
+    void predicateUnlocksAnyMatch() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(LiteralListSource.of(DataTypes.INT, "[1,5,10,15,20]"))
+            .stage(AnyMatchCollect.of(DataTypes.INT, List.of(IntGreaterThanPredicate.of(12))))
+            .build();
+        assertThat(pipeline.execute(), is(true));
+    }
+
+    @Test
+    @DisplayName("MaxBy with a key extractor picks the element whose key is largest")
+    void maxByPicksLongestString() {
+        DataPipeline pipeline = DataPipeline.builder()
+            .source(LiteralListSource.of(DataTypes.STRING, "[\"a\",\"abc\",\"ab\"]"))
+            .stage(MaxByCollect.of(DataTypes.STRING, DataTypes.INT, List.of(StringLengthTransform.of())))
+            .build();
+        assertThat(pipeline.execute(), is("abc"));
+    }
+
+}

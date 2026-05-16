@@ -22,13 +22,12 @@ Requires Java 21.
 ## Quick start
 
 ```java
-import dev.sbs.dataflow.*;
-import dev.sbs.dataflow.stage.source.UrlSource;
-import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
-import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
-import dev.sbs.dataflow.stage.transform.dom.*;       // ParseHtml, CssSelect, NodeText, NthChild
-import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
-import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
+
+import source.stage.dev.simplified.dataflow.UrlSource;
+import collect.terminal.stage.dev.simplified.dataflow.FirstCollect;
+import dom.filter.stage.dev.simplified.dataflow.DomTextContainsFilter;
+import primitive.transform.stage.dev.simplified.dataflow.ParseIntTransform;
+import string.transform.stage.dev.simplified.dataflow.RegexExtractTransform;
 
 DataPipeline pipeline = DataPipeline.builder()
     .source(UrlSource.rawHtml("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))

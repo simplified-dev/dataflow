@@ -1,0 +1,76 @@
+package dev.simplified.dataflow.stage.filter.numeric;
+
+import dev.simplified.collection.Concurrent;
+import dev.simplified.collection.ConcurrentList;
+import dev.simplified.dataflow.DataType;
+import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.stage.FilterStage;
+import dev.simplified.dataflow.stage.meta.Configurable;
+import dev.simplified.dataflow.stage.meta.StageSpec;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+/**
+ * {@link FilterStage} keeping doubles strictly less than the configured threshold.
+ */
+@StageSpec(
+    id = "FILTER_DOUBLE_LESS_THAN",
+    displayName = "Double <",
+    description = "List<DOUBLE> -> List<DOUBLE>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
+@Getter
+@Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class DoubleLessThanFilter implements FilterStage<Double> {
+
+    private static final @NotNull DataType<List<Double>> LIST_DOUBLE = DataType.list(DataTypes.DOUBLE);
+
+    private final double threshold;
+
+    /**
+     * Constructs a double less-than filter.
+     *
+     * @param threshold elements must be strictly less than this
+     * @return the stage
+     */
+    public static @NotNull DoubleLessThanFilter of(
+        @Configurable(label = "Threshold", placeholder = "0.0")
+        double threshold
+    ) {
+        return new DoubleLessThanFilter(threshold);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable ConcurrentList<Double> execute(@NotNull PipelineContext ctx, @Nullable List<Double> input) {
+        return input == null ? null : input.stream()
+            .filter(d -> d != null && d < this.threshold)
+            .collect(Concurrent.toUnmodifiableList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Double>> inputType() {
+        return LIST_DOUBLE;
+    }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<List<Double>> outputType() {
+        return LIST_DOUBLE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "Double < " + this.threshold;
+    }
+
+}
