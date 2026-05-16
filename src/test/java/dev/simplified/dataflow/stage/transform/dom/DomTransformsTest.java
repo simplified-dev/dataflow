@@ -21,7 +21,7 @@ class DomTransformsTest {
         Element div = Jsoup.parse("<div><p>a</p><p>b</p><span>c</span></div>").selectFirst("div");
         List<Element> kids = DomChildrenTransform.of().execute(this.ctx, div);
         assertThat(kids.size(), is(equalTo(3)));
-        assertThat(kids.get(0).tagName(), is(equalTo("p")));
+        assertThat(kids.getFirst().tagName(), is(equalTo("p")));
         assertThat(kids.get(2).tagName(), is(equalTo("span")));
     }
 

@@ -53,7 +53,7 @@ public final class LastCollect<T> implements CollectStage<List<T>, T> {
     @Override
     public @Nullable T execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null || input.isEmpty()) return null;
-        return input.get(input.size() - 1);
+        return input.getLast();
     }
 
     /** {@inheritDoc} */

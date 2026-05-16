@@ -14,7 +14,7 @@ class DataPipelineTest {
         ValidationReport report = DataPipeline.empty().validate();
         assertThat(report.isValid(), is(false));
         assertThat(report.issues(), hasSize(1));
-        ValidationReport.Issue issue = report.issues().get(0);
+        ValidationReport.Issue issue = report.issues().getFirst();
         assertThat(issue.stageIndex(), is(equalTo(-1)));
         assertThat(issue.message(), containsString("no stages"));
     }

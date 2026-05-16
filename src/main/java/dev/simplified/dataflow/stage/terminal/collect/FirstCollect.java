@@ -53,7 +53,7 @@ public final class FirstCollect<T> implements CollectStage<List<T>, T> {
     @Override
     public @Nullable T execute(@NotNull PipelineContext ctx, @Nullable List<T> input) {
         if (input == null || input.isEmpty()) return null;
-        return input.get(0);
+        return input.getFirst();
     }
 
     /** {@inheritDoc} */

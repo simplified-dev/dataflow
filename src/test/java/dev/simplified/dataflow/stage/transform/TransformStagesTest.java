@@ -39,7 +39,7 @@ class TransformStagesTest {
         List<Element> matches = CssSelectTransform.of("p").execute(this.ctx, root);
         assertThat(matches, is(notNullValue()));
         assertThat(matches.size(), is(equalTo(2)));
-        assertThat(matches.get(0).text(), is(equalTo("a")));
+        assertThat(matches.getFirst().text(), is(equalTo("a")));
     }
 
     @Test
@@ -164,7 +164,7 @@ class TransformStagesTest {
             .execute(this.ctx, all);
         assertThat(filtered, is(notNullValue()));
         assertThat(filtered.size(), is(equalTo(1)));
-        assertThat(filtered.get(0).text(), is(equalTo("Dmg 500")));
+        assertThat(filtered.getFirst().text(), is(equalTo("Dmg 500")));
     }
 
 }

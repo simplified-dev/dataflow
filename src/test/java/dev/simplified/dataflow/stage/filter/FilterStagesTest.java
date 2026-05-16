@@ -28,7 +28,7 @@ class FilterStagesTest {
         List<Element> matches = DomTextContainsFilter.of("foo").execute(this.ctx, all);
         assertThat(matches, is(notNullValue()));
         assertThat(matches.size(), is(equalTo(2)));
-        assertThat(matches.get(0).text(), is(equalTo("has foo")));
+        assertThat(matches.getFirst().text(), is(equalTo("has foo")));
     }
 
     @Test
