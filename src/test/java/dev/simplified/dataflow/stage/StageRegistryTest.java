@@ -4,7 +4,7 @@ import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.source.LiteralSource;
-import dev.simplified.dataflow.stage.transform.list.ListLengthTransform;
+import dev.simplified.dataflow.stage.transform.list.SizeTransform;
 import dev.simplified.dataflow.stage.transform.string.TrimTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,9 +24,9 @@ class StageRegistryTest {
     }
 
     @Test
-    @DisplayName("byId('TRANSFORM_LIST_LENGTH') returns ListLengthTransform")
+    @DisplayName("byId('TRANSFORM_LIST_LENGTH') returns SizeTransform")
     void byIdResolvesKnown() {
-        assertThat(StageRegistry.byId("TRANSFORM_LIST_LENGTH"), is(sameInstance(ListLengthTransform.class)));
+        assertThat(StageRegistry.byId("TRANSFORM_LIST_LENGTH"), is(sameInstance(SizeTransform.class)));
     }
 
     @Test

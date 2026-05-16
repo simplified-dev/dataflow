@@ -1,0 +1,82 @@
+package dev.simplified.dataflow.stage.transform.json;
+
+import com.google.gson.JsonElement;
+import dev.simplified.dataflow.DataType;
+import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.stage.TransformStage;
+import dev.simplified.dataflow.stage.meta.Configurable;
+import dev.simplified.dataflow.stage.meta.StageSpec;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * {@link TransformStage} that walks a dot-separated path through a Gson {@link JsonElement}
+ * tree, returning the element at the path or {@code null} when any segment is missing or
+ * not an object.
+ * <p>
+ * Path syntax mirrors the {@code @SerializedPath} annotation used in {@code gson-extras}:
+ * dot-separated keys, no array indexing.
+ */
+@StageSpec(
+    id = "TRANSFORM_JSON_PATH",
+    displayName = "JSON path",
+    description = "JSON_ELEMENT -> JSON_ELEMENT",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
+@Getter
+@Accessors(fluent = true)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class PathTransform implements TransformStage<JsonElement, JsonElement> {
+
+    private final @NotNull String path;
+
+    /**
+     * Constructs a JSON-path walking stage.
+     *
+     * @param path dot-separated key path (e.g. {@code "stats.combat.dmg"})
+     * @return the stage
+     */
+    public static @NotNull PathTransform of(
+        @Configurable(label = "Path", placeholder = "stats.combat.dmg")
+        @NotNull String path
+    ) {
+        return new PathTransform(path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable JsonElement execute(@NotNull PipelineContext ctx, @Nullable JsonElement input) {
+        if (input == null) return null;
+        JsonElement current = input;
+        for (String segment : this.path.split("\\.")) {
+            if (segment.isEmpty()) continue;
+            if (!current.isJsonObject()) return null;
+            current = current.getAsJsonObject().get(segment);
+            if (current == null) return null;
+        }
+        return current;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<JsonElement> inputType() {
+        return DataTypes.JSON_ELEMENT;
+    }
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull DataType<JsonElement> outputType() {
+        return DataTypes.JSON_ELEMENT;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @NotNull String summary() {
+        return "JSON path '" + this.path + "'";
+    }
+
+}

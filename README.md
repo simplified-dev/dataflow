@@ -25,7 +25,7 @@ Requires Java 21.
 
 import source.stage.dev.simplified.dataflow.UrlSource;
 import collect.terminal.stage.dev.simplified.dataflow.FirstCollect;
-import dom.filter.stage.dev.simplified.dataflow.DomTextContainsFilter;
+import dom.filter.stage.dev.simplified.dataflow.TextContainsFilter;
 import primitive.transform.stage.dev.simplified.dataflow.ParseIntTransform;
 import string.transform.stage.dev.simplified.dataflow.RegexExtractTransform;
 
@@ -33,10 +33,10 @@ DataPipeline pipeline = DataPipeline.builder()
     .source(UrlSource.rawHtml("https://hypixelskyblock.minecraft.wiki/w/Dark_Claymore"))
     .stage(ParseHtmlTransform.of())
     .stage(CssSelectTransform.of("table.infobox tr"))
-    .stage(DomTextContainsFilter.of("Dmg"))
+    .stage(TextContainsFilter.of("Dmg"))
     .stage(FirstCollect.of(DataTypes.DOM_NODE))
-    .stage(DomNthChildTransform.of("td", 1))
-    .stage(DomTextTransform.of())
+    .stage(NthChildTransform.of("td", 1))
+    .stage(TextTransform.of())
     .stage(RegexExtractTransform.of("\\d+"))
     .stage(ParseIntTransform.of())
     .build();

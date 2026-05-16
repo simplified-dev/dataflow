@@ -4,10 +4,10 @@ import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.Fixtures;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.simplified.dataflow.stage.filter.dom.TextContainsFilter;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
 import org.jsoup.Jsoup;
@@ -34,26 +34,26 @@ class MapCollectTest {
         DataType<List<Element>> input = DataType.list(DataTypes.DOM_NODE);
         MapCollect<List<Element>> collect = MapCollect.over(input)
             .output("dmg", chain -> chain
-                .stage(DomTextContainsFilter.of("Dmg"))
+                .stage(TextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomNthChildTransform.of("td", 1))
-                .stage(DomTextTransform.of())
+                .stage(NthChildTransform.of("td", 1))
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )
             .output("strength", chain -> chain
-                .stage(DomTextContainsFilter.of("Strength"))
+                .stage(TextContainsFilter.of("Strength"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomNthChildTransform.of("td", 1))
-                .stage(DomTextTransform.of())
+                .stage(NthChildTransform.of("td", 1))
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )
             .output("crit_damage", chain -> chain
-                .stage(DomTextContainsFilter.of("Crit Damage"))
+                .stage(TextContainsFilter.of("Crit Damage"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomNthChildTransform.of("td", 1))
-                .stage(DomTextTransform.of())
+                .stage(NthChildTransform.of("td", 1))
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of())
             )

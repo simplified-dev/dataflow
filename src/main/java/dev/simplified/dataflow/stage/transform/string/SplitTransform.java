@@ -65,6 +65,7 @@ public final class SplitTransform implements TransformStage<String, List<String>
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<List<String>> outputType() {

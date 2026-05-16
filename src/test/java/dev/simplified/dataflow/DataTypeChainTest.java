@@ -3,7 +3,7 @@ package dev.simplified.dataflow;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import dev.simplified.dataflow.stage.terminal.collect.FirstCollect;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
@@ -66,7 +66,7 @@ class DataTypeChainTest {
             .stage(MapTransform.of(
                 DataTypes.DOM_NODE,
                 DataTypes.INT,
-                List.of(DomTextTransform.of(), ParseIntTransform.of())
+                List.of(TextTransform.of(), ParseIntTransform.of())
             ))
             .build();
         assertThat(pipeline.validate().isValid(), is(true));

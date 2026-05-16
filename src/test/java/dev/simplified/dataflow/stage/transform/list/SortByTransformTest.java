@@ -2,7 +2,7 @@ package dev.simplified.dataflow.stage.transform.list;
 
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ class SortByTransformTest {
             DataTypes.STRING,
             DataTypes.INT,
             true,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         assertThat(sort.execute(this.ctx, List.of("ccc", "a", "bb")), contains("a", "bb", "ccc"));
     }
@@ -36,7 +36,7 @@ class SortByTransformTest {
             DataTypes.STRING,
             DataTypes.INT,
             false,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         assertThat(sort.execute(this.ctx, List.of("a", "ccc", "bb")), contains("ccc", "bb", "a"));
     }
@@ -44,12 +44,12 @@ class SortByTransformTest {
     @Test
     @DisplayName("Elements whose body yields null are pushed to the end")
     void nullKeysGoToEnd() {
-        // StringLengthTransform on a null element yields null; we feed a list containing null to trigger that path.
+        // LengthTransform on a null element yields null; we feed a list containing null to trigger that path.
         SortByTransform<String, Integer> sort = SortByTransform.of(
             DataTypes.STRING,
             DataTypes.INT,
             true,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         List<String> result = sort.execute(this.ctx, Arrays.asList("bb", null, "a"));
         // "a" (len 1) and "bb" (len 2) sort naturally, null goes last regardless of direction.

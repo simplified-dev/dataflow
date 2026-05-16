@@ -2,7 +2,7 @@ package dev.simplified.dataflow.stage.terminal.minmax;
 
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ class MinByMaxByCollectTest {
         MinByCollect<String, Integer> collect = MinByCollect.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         assertThat(collect.execute(this.ctx, List.of("ccc", "a", "bb")), is(equalTo("a")));
     }
@@ -34,7 +34,7 @@ class MinByMaxByCollectTest {
         MaxByCollect<String, Integer> collect = MaxByCollect.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         assertThat(collect.execute(this.ctx, List.of("ccc", "a", "bb")), is(equalTo("ccc")));
     }
@@ -45,7 +45,7 @@ class MinByMaxByCollectTest {
         MinByCollect<String, Integer> collect = MinByCollect.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         // both "ab" and "cd" have length 2; the first one wins.
         assertThat(collect.execute(this.ctx, List.of("ab", "cd")), is(equalTo("ab")));
@@ -57,7 +57,7 @@ class MinByMaxByCollectTest {
         MinByCollect<String, Integer> collect = MinByCollect.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         assertThat(collect.execute(this.ctx, List.of()), is(nullValue()));
     }
@@ -68,7 +68,7 @@ class MinByMaxByCollectTest {
         MinByCollect<String, Integer> collect = MinByCollect.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
         // mixed list: nulls are skipped, "a" is the only real element
         assertThat(collect.execute(this.ctx, Arrays.asList(null, "a", null)), is(equalTo("a")));

@@ -8,7 +8,7 @@ import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageConfig;
 import dev.simplified.dataflow.stage.StageRegistry;
-import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.simplified.dataflow.stage.filter.dom.TextContainsFilter;
 import dev.simplified.dataflow.stage.filter.list.DistinctFilter;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
 import dev.simplified.dataflow.stage.meta.StageReflection;
@@ -25,11 +25,11 @@ import dev.simplified.dataflow.stage.terminal.collect.NthCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SetCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SubListCollect;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomAttrTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.AttrTransform;
+import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonPathTransform;
+import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseJsonTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseXmlTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseDoubleTransform;
@@ -60,10 +60,10 @@ class PipelineSerdeTest {
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
-            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(TextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(DomNthChildTransform.of("td", 1))
-            .stage(DomTextTransform.of())
+            .stage(NthChildTransform.of("td", 1))
+            .stage(TextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -94,14 +94,14 @@ class PipelineSerdeTest {
         DataPipeline<?>jsonPipeline = DataPipeline.builder()
             .source(LiteralSource.rawJson(Fixtures.load("sample.json")))
             .stage(ParseJsonTransform.of())
-            .stage(JsonPathTransform.of("stats.dmg"))
+            .stage(PathTransform.of("stats.dmg"))
             .build();
         roundTrip(jsonPipeline);
 
         DataPipeline<?>xmlPipeline = DataPipeline.builder()
             .source(LiteralSource.rawXml(Fixtures.load("sample.xml")))
             .stage(ParseXmlTransform.of())
-            .stage(JsonPathTransform.of("name"))
+            .stage(PathTransform.of("name"))
             .build();
         roundTrip(xmlPipeline);
 
@@ -161,14 +161,14 @@ class PipelineSerdeTest {
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("a"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(DomAttrTransform.of("href"))
+            .stage(AttrTransform.of("href"))
             .build();
         roundTrip(misc1);
 
         DataPipeline<?>misc2 = DataPipeline.builder()
             .source(LiteralSource.rawJson("{\"x\": 3.14}"))
             .stage(ParseJsonTransform.of())
-            .stage(JsonPathTransform.of("x"))
+            .stage(PathTransform.of("x"))
             .build();
         roundTrip(misc2);
 
@@ -200,17 +200,17 @@ class PipelineSerdeTest {
         DataType<List<org.jsoup.nodes.Element>> input = DataType.list(DataTypes.DOM_NODE);
         MapCollect<List<org.jsoup.nodes.Element>> collect = MapCollect.over(input)
             .output("dmg", c -> c
-                .stage(DomTextContainsFilter.of("Dmg"))
+                .stage(TextContainsFilter.of("Dmg"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomNthChildTransform.of("td", 1))
-                .stage(DomTextTransform.of())
+                .stage(NthChildTransform.of("td", 1))
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of()))
             .output("strength", c -> c
-                .stage(DomTextContainsFilter.of("Strength"))
+                .stage(TextContainsFilter.of("Strength"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomNthChildTransform.of("td", 1))
-                .stage(DomTextTransform.of())
+                .stage(NthChildTransform.of("td", 1))
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("\\d+"))
                 .stage(ParseIntTransform.of()))
             .build();

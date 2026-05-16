@@ -5,8 +5,8 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
 import dev.simplified.dataflow.stage.predicate.numeric.IntLessThanPredicate;
-import dev.simplified.dataflow.stage.predicate.string.StringContainsPredicate;
-import dev.simplified.dataflow.stage.predicate.string.StringNonEmptyPredicate;
+import dev.simplified.dataflow.stage.predicate.string.ContainsPredicate;
+import dev.simplified.dataflow.stage.predicate.string.NonEmptyPredicate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,8 +42,8 @@ class PredicateCombinatorsTest {
     @DisplayName("And returns true only when every body is true; empty map is vacuously true")
     void and() {
         Map<String, List<? extends Stage<?, ?>>> bodies = new LinkedHashMap<>();
-        bodies.put("hasFoo", List.of(StringContainsPredicate.of("foo")));
-        bodies.put("nonEmpty", List.of(StringNonEmptyPredicate.of()));
+        bodies.put("hasFoo", List.of(ContainsPredicate.of("foo")));
+        bodies.put("nonEmpty", List.of(NonEmptyPredicate.of()));
         AndPredicate<String> stage = AndPredicate.of(DataTypes.STRING, bodies);
         assertThat(stage.execute(this.ctx, "foobar"), is(true));
         assertThat(stage.execute(this.ctx, "bar"), is(false));
@@ -68,8 +68,8 @@ class PredicateCombinatorsTest {
     @DisplayName("Or returns true when any body is true; empty map is vacuously false")
     void or() {
         Map<String, List<? extends Stage<?, ?>>> bodies = new LinkedHashMap<>();
-        bodies.put("hasFoo", List.of(StringContainsPredicate.of("foo")));
-        bodies.put("hasBar", List.of(StringContainsPredicate.of("bar")));
+        bodies.put("hasFoo", List.of(ContainsPredicate.of("foo")));
+        bodies.put("hasBar", List.of(ContainsPredicate.of("bar")));
         OrPredicate<String> stage = OrPredicate.of(DataTypes.STRING, bodies);
         assertThat(stage.execute(this.ctx, "barbaz"), is(true));
         assertThat(stage.execute(this.ctx, "qux"), is(false));
@@ -99,7 +99,7 @@ class PredicateCombinatorsTest {
         ));
         assertThrows(IllegalArgumentException.class, () -> OrPredicate.of(
             DataTypes.STRING,
-            Map.of("bad", List.of(StringContainsPredicate.of("foo"), StringContainsPredicate.of("bar")))
+            Map.of("bad", List.of(ContainsPredicate.of("foo"), ContainsPredicate.of("bar")))
         ));
     }
 

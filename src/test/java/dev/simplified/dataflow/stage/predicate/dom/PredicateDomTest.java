@@ -17,36 +17,36 @@ class PredicateDomTest {
     @DisplayName("Text contains")
     void textContains() {
         Element el = Jsoup.parse("<p>hello world</p>").selectFirst("p");
-        assertThat(DomTextContainsPredicate.of("world").execute(this.ctx, el), is(true));
-        assertThat(DomTextContainsPredicate.of("xyz").execute(this.ctx, el), is(false));
-        assertThat(DomTextContainsPredicate.of("world").execute(this.ctx, null), is(false));
+        assertThat(TextContainsPredicate.of("world").execute(this.ctx, el), is(true));
+        assertThat(TextContainsPredicate.of("xyz").execute(this.ctx, el), is(false));
+        assertThat(TextContainsPredicate.of("world").execute(this.ctx, null), is(false));
     }
 
     @Test
     @DisplayName("Text matches regex")
     void textMatches() {
         Element el = Jsoup.parse("<p>price 42</p>").selectFirst("p");
-        assertThat(DomTextMatchesPredicate.of("\\d+").execute(this.ctx, el), is(true));
-        assertThat(DomTextMatchesPredicate.of("zzz").execute(this.ctx, el), is(false));
+        assertThat(TextMatchesPredicate.of("\\d+").execute(this.ctx, el), is(true));
+        assertThat(TextMatchesPredicate.of("zzz").execute(this.ctx, el), is(false));
     }
 
     @Test
     @DisplayName("Has attr (with and without expected value)")
     void hasAttr() {
         Element el = Jsoup.parse("<a href='https://example.com' class='primary'>x</a>").selectFirst("a");
-        assertThat(DomHasAttrPredicate.of("href").execute(this.ctx, el), is(true));
-        assertThat(DomHasAttrPredicate.of("missing").execute(this.ctx, el), is(false));
-        assertThat(DomHasAttrPredicate.of("class", "primary").execute(this.ctx, el), is(true));
-        assertThat(DomHasAttrPredicate.of("class", "secondary").execute(this.ctx, el), is(false));
+        assertThat(HasAttrPredicate.of("href").execute(this.ctx, el), is(true));
+        assertThat(HasAttrPredicate.of("missing").execute(this.ctx, el), is(false));
+        assertThat(HasAttrPredicate.of("class", "primary").execute(this.ctx, el), is(true));
+        assertThat(HasAttrPredicate.of("class", "secondary").execute(this.ctx, el), is(false));
     }
 
     @Test
     @DisplayName("Tag equals (case-insensitive)")
     void tagEquals() {
         Element el = Jsoup.parse("<DIV>x</DIV>").selectFirst("div");
-        assertThat(DomTagEqualsPredicate.of("div").execute(this.ctx, el), is(true));
-        assertThat(DomTagEqualsPredicate.of("DIV").execute(this.ctx, el), is(true));
-        assertThat(DomTagEqualsPredicate.of("p").execute(this.ctx, el), is(false));
+        assertThat(TagEqualsPredicate.of("div").execute(this.ctx, el), is(true));
+        assertThat(TagEqualsPredicate.of("DIV").execute(this.ctx, el), is(true));
+        assertThat(TagEqualsPredicate.of("p").execute(this.ctx, el), is(false));
     }
 
 }

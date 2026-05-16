@@ -17,19 +17,19 @@ class PredicateJsonTest {
     @DisplayName("Has field")
     void hasField() {
         JsonObject obj = JsonParser.parseString("{\"rare\":true,\"name\":\"foo\"}").getAsJsonObject();
-        assertThat(JsonHasFieldPredicate.of("rare").execute(this.ctx, obj), is(true));
-        assertThat(JsonHasFieldPredicate.of("missing").execute(this.ctx, obj), is(false));
-        assertThat(JsonHasFieldPredicate.of("rare").execute(this.ctx, null), is(false));
+        assertThat(HasFieldPredicate.of("rare").execute(this.ctx, obj), is(true));
+        assertThat(HasFieldPredicate.of("missing").execute(this.ctx, obj), is(false));
+        assertThat(HasFieldPredicate.of("rare").execute(this.ctx, null), is(false));
     }
 
     @Test
     @DisplayName("Field equals primitive value")
     void fieldEquals() {
         JsonObject obj = JsonParser.parseString("{\"rare\":\"true\",\"count\":5}").getAsJsonObject();
-        assertThat(JsonFieldEqualsPredicate.of("rare", "true").execute(this.ctx, obj), is(true));
-        assertThat(JsonFieldEqualsPredicate.of("rare", "false").execute(this.ctx, obj), is(false));
-        assertThat(JsonFieldEqualsPredicate.of("count", "5").execute(this.ctx, obj), is(true));
-        assertThat(JsonFieldEqualsPredicate.of("missing", "anything").execute(this.ctx, obj), is(false));
+        assertThat(FieldEqualsPredicate.of("rare", "true").execute(this.ctx, obj), is(true));
+        assertThat(FieldEqualsPredicate.of("rare", "false").execute(this.ctx, obj), is(false));
+        assertThat(FieldEqualsPredicate.of("count", "5").execute(this.ctx, obj), is(true));
+        assertThat(FieldEqualsPredicate.of("missing", "anything").execute(this.ctx, obj), is(false));
     }
 
 }

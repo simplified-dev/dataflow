@@ -2,7 +2,7 @@ package dev.simplified.dataflow.stage.transform;
 
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.transform.list.ListLengthTransform;
+import dev.simplified.dataflow.stage.transform.list.SizeTransform;
 import dev.simplified.dataflow.stage.transform.list.ReverseTransform;
 import dev.simplified.dataflow.stage.transform.primitive.AbsDoubleTransform;
 import dev.simplified.dataflow.stage.transform.primitive.AbsFloatTransform;
@@ -14,9 +14,9 @@ import dev.simplified.dataflow.stage.transform.primitive.NegateIntTransform;
 import dev.simplified.dataflow.stage.transform.primitive.NegateLongTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ToStringTransform;
 import dev.simplified.dataflow.stage.transform.string.LowerCaseTransform;
-import dev.simplified.dataflow.stage.transform.string.PrefixTransform;
-import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
-import dev.simplified.dataflow.stage.transform.string.SuffixTransform;
+import dev.simplified.dataflow.stage.transform.string.PrependTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
+import dev.simplified.dataflow.stage.transform.string.AppendTransform;
 import dev.simplified.dataflow.stage.transform.string.UpperCaseTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,15 +35,15 @@ class StringListNumericTransformsTest {
     void stringShape() {
         assertThat(LowerCaseTransform.of().execute(this.ctx, "AbC"), is(equalTo("abc")));
         assertThat(UpperCaseTransform.of().execute(this.ctx, "AbC"), is(equalTo("ABC")));
-        assertThat(StringLengthTransform.of().execute(this.ctx, "hello"), is(equalTo(5)));
-        assertThat(PrefixTransform.of(">>>").execute(this.ctx, "x"), is(equalTo(">>>x")));
-        assertThat(SuffixTransform.of("<<<").execute(this.ctx, "x"), is(equalTo("x<<<")));
+        assertThat(LengthTransform.of().execute(this.ctx, "hello"), is(equalTo(5)));
+        assertThat(PrependTransform.of(">>>").execute(this.ctx, "x"), is(equalTo(">>>x")));
+        assertThat(AppendTransform.of("<<<").execute(this.ctx, "x"), is(equalTo("x<<<")));
     }
 
     @Test
     @DisplayName("ListLength returns the input list size")
     void listLength() {
-        Integer size = ListLengthTransform.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b", "c"));
+        Integer size = SizeTransform.of(DataTypes.STRING).execute(this.ctx, List.of("a", "b", "c"));
         assertThat(size, is(equalTo(3)));
     }
 

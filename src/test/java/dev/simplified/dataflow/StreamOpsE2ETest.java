@@ -7,13 +7,13 @@ import dev.simplified.dataflow.stage.terminal.match.AnyMatchCollect;
 import dev.simplified.dataflow.stage.terminal.minmax.MaxByCollect;
 import dev.simplified.dataflow.stage.terminal.sum.SumIntCollect;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
-import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,8 +35,8 @@ class StreamOpsE2ETest {
                 DataTypes.DOM_NODE,
                 DataTypes.INT,
                 List.of(
-                    DomNthChildTransform.of("td", 1),
-                    DomTextTransform.of(),
+                    NthChildTransform.of("td", 1),
+                    TextTransform.of(),
                     RegexExtractTransform.of("\\d+"),
                     ParseIntTransform.of()
                 )
@@ -86,7 +86,7 @@ class StreamOpsE2ETest {
     void maxByPicksLongestString() {
         DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralListSource.of(DataTypes.STRING, "[\"a\",\"abc\",\"ab\"]"))
-            .stage(MaxByCollect.of(DataTypes.STRING, DataTypes.INT, List.of(StringLengthTransform.of())))
+            .stage(MaxByCollect.of(DataTypes.STRING, DataTypes.INT, List.of(LengthTransform.of())))
             .build();
         assertThat(pipeline.execute(), is("abc"));
     }

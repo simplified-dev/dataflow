@@ -3,12 +3,12 @@ package dev.simplified.dataflow.stage;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.stage.filter.list.TakeWhileFilter;
-import dev.simplified.dataflow.stage.filter.string.StringContainsFilter;
+import dev.simplified.dataflow.stage.filter.string.ContainsFilter;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
 import dev.simplified.dataflow.stage.meta.StageReflection;
 import dev.simplified.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
-import dev.simplified.dataflow.stage.transform.string.StringLengthTransform;
+import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.*;
  * Pilot smoke tests for the reflection-driven {@link StageMetadata#buildConfig}
  * and {@link StageMetadata#fromConfig} round-trip, exercising the three slot patterns:
  * <ul>
- *   <li>simple STRING slot ({@code StringContainsFilter})</li>
+ *   <li>simple STRING slot ({@code ContainsFilter})</li>
  *   <li>SUB_PIPELINE slot with a {@code List<? extends Stage<?, ?>>} factory parameter ({@code TakeWhileFilter})</li>
  *   <li>two DATA_TYPE slots with wire-key overrides plus a SUB_PIPELINE slot ({@code MapTransform})</li>
  * </ul>
@@ -29,18 +29,18 @@ import static org.hamcrest.Matchers.*;
 class StageReflectionTest {
 
     @Test
-    @DisplayName("StringContainsFilter: buildConfig writes 'needle', fromConfig rebuilds")
+    @DisplayName("ContainsFilter: buildConfig writes 'needle', fromConfig rebuilds")
     void stringContainsFilterRoundTrips() {
-        StringContainsFilter instance = StringContainsFilter.of("foo");
-        StageMetadata metadata = StageReflection.of(StringContainsFilter.class);
+        ContainsFilter instance = ContainsFilter.of("foo");
+        StageMetadata metadata = StageReflection.of(ContainsFilter.class);
 
         StageConfig built = metadata.buildConfig(instance);
         assertThat(built.has("needle"), is(true));
         assertThat(built.getString("needle"), is(equalTo("foo")));
 
         Stage<?, ?> rebuilt = metadata.fromConfig(built);
-        assertThat(rebuilt, is(instanceOf(StringContainsFilter.class)));
-        assertThat(((StringContainsFilter) rebuilt).needle(), is(equalTo("foo")));
+        assertThat(rebuilt, is(instanceOf(ContainsFilter.class)));
+        assertThat(((ContainsFilter) rebuilt).needle(), is(equalTo("foo")));
     }
 
     @Test
@@ -51,7 +51,7 @@ class StageReflectionTest {
             DataTypes.INT,
             List.of(IntGreaterThanPredicate.of(0))
         );
-        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) TakeWhileFilter.class);
+        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) (Class<?>) TakeWhileFilter.class);
 
         StageConfig built = metadata.buildConfig(instance);
         assertThat(built.has("elementType"), is(true));
@@ -80,9 +80,9 @@ class StageReflectionTest {
         MapTransform<String, Integer> instance = MapTransform.of(
             DataTypes.STRING,
             DataTypes.INT,
-            List.of(StringLengthTransform.of())
+            List.of(LengthTransform.of())
         );
-        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) MapTransform.class);
+        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) (Class<?>) MapTransform.class);
 
         StageConfig built = metadata.buildConfig(instance);
         // wire keys, not java param names

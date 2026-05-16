@@ -47,6 +47,7 @@ public final class TrimTransform implements TransformStage<String, String> {
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

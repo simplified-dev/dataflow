@@ -19,7 +19,7 @@ class DomTransformsTest {
     @DisplayName("DomChildren returns the direct children")
     void domChildren() {
         Element div = Jsoup.parse("<div><p>a</p><p>b</p><span>c</span></div>").selectFirst("div");
-        List<Element> kids = DomChildrenTransform.of().execute(this.ctx, div);
+        List<Element> kids = ChildrenTransform.of().execute(this.ctx, div);
         assertThat(kids.size(), is(equalTo(3)));
         assertThat(kids.getFirst().tagName(), is(equalTo("p")));
         assertThat(kids.get(2).tagName(), is(equalTo("span")));
@@ -29,7 +29,7 @@ class DomTransformsTest {
     @DisplayName("DomParent returns the parent element")
     void domParent() {
         Element a = Jsoup.parse("<div><p><a>x</a></p></div>").selectFirst("a");
-        Element parent = DomParentTransform.of().execute(this.ctx, a);
+        Element parent = ParentTransform.of().execute(this.ctx, a);
         assertThat(parent, is(notNullParent()));
         assertThat(parent.tagName(), is(equalTo("p")));
     }
@@ -38,7 +38,7 @@ class DomTransformsTest {
     @DisplayName("DomOuterHtml renders the element's outer markup")
     void domOuterHtml() {
         Element span = Jsoup.parse("<div><span class='x'>hi</span></div>").selectFirst("span");
-        String html = DomOuterHtmlTransform.of().execute(this.ctx, span);
+        String html = OuterHtmlTransform.of().execute(this.ctx, span);
         assertThat(html, containsString("<span class=\"x\">"));
         assertThat(html, containsString("hi"));
     }
@@ -47,7 +47,7 @@ class DomTransformsTest {
     @DisplayName("DomOwnText returns only the direct text, excluding child text")
     void domOwnText() {
         Element p = Jsoup.parse("<p>direct <b>nested</b> tail</p>").selectFirst("p");
-        String text = DomOwnTextTransform.of().execute(this.ctx, p);
+        String text = OwnTextTransform.of().execute(this.ctx, p);
         assertThat(text, is(equalTo("direct tail")));
     }
 

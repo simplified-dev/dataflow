@@ -4,11 +4,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.filter.dom.DomHasAttrFilter;
-import dev.simplified.dataflow.stage.filter.dom.DomTagEqualsFilter;
-import dev.simplified.dataflow.stage.filter.dom.DomTextMatchesFilter;
-import dev.simplified.dataflow.stage.filter.json.JsonFieldEqualsFilter;
-import dev.simplified.dataflow.stage.filter.json.JsonHasFieldFilter;
+import dev.simplified.dataflow.stage.filter.dom.HasAttrFilter;
+import dev.simplified.dataflow.stage.filter.dom.TagEqualsFilter;
+import dev.simplified.dataflow.stage.filter.dom.TextMatchesFilter;
+import dev.simplified.dataflow.stage.filter.json.FieldEqualsFilter;
+import dev.simplified.dataflow.stage.filter.json.HasFieldFilter;
 import dev.simplified.dataflow.stage.filter.list.IndexInRangeFilter;
 import dev.simplified.dataflow.stage.filter.list.NotNullFilter;
 import dev.simplified.dataflow.stage.filter.list.SkipFilter;
@@ -22,12 +22,12 @@ import dev.simplified.dataflow.stage.filter.numeric.IntLessThanFilter;
 import dev.simplified.dataflow.stage.filter.numeric.LongGreaterThanFilter;
 import dev.simplified.dataflow.stage.filter.numeric.LongInRangeFilter;
 import dev.simplified.dataflow.stage.filter.numeric.LongLessThanFilter;
-import dev.simplified.dataflow.stage.filter.string.StringContainsFilter;
-import dev.simplified.dataflow.stage.filter.string.StringEndsWithFilter;
-import dev.simplified.dataflow.stage.filter.string.StringEqualsFilter;
-import dev.simplified.dataflow.stage.filter.string.StringMatchesFilter;
-import dev.simplified.dataflow.stage.filter.string.StringNonEmptyFilter;
-import dev.simplified.dataflow.stage.filter.string.StringStartsWithFilter;
+import dev.simplified.dataflow.stage.filter.string.ContainsFilter;
+import dev.simplified.dataflow.stage.filter.string.EndsWithFilter;
+import dev.simplified.dataflow.stage.filter.string.EqualsFilter;
+import dev.simplified.dataflow.stage.filter.string.MatchesFilter;
+import dev.simplified.dataflow.stage.filter.string.NonEmptyFilter;
+import dev.simplified.dataflow.stage.filter.string.StartsWithFilter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
@@ -47,12 +47,12 @@ class FilterExpansionTest {
     @DisplayName("String filters cover contains/matches/startsWith/endsWith/equals/nonEmpty")
     void stringFilters() {
         List<String> all = List.of("apple", "banana", "apricot", "", "applepie");
-        assertThat(StringContainsFilter.of("app").execute(this.ctx, all), contains("apple", "applepie"));
-        assertThat(StringMatchesFilter.of("^ap").execute(this.ctx, all), contains("apple", "apricot", "applepie"));
-        assertThat(StringStartsWithFilter.of("ap").execute(this.ctx, all), contains("apple", "apricot", "applepie"));
-        assertThat(StringEndsWithFilter.of("ie").execute(this.ctx, all), contains("applepie"));
-        assertThat(StringEqualsFilter.of("apple").execute(this.ctx, all), contains("apple"));
-        assertThat(StringNonEmptyFilter.of().execute(this.ctx, all), contains("apple", "banana", "apricot", "applepie"));
+        assertThat(ContainsFilter.of("app").execute(this.ctx, all), contains("apple", "applepie"));
+        assertThat(MatchesFilter.of("^ap").execute(this.ctx, all), contains("apple", "apricot", "applepie"));
+        assertThat(StartsWithFilter.of("ap").execute(this.ctx, all), contains("apple", "apricot", "applepie"));
+        assertThat(EndsWithFilter.of("ie").execute(this.ctx, all), contains("applepie"));
+        assertThat(EqualsFilter.of("apple").execute(this.ctx, all), contains("apple"));
+        assertThat(NonEmptyFilter.of().execute(this.ctx, all), contains("apple", "banana", "apricot", "applepie"));
     }
 
     @Test
@@ -67,10 +67,10 @@ class FilterExpansionTest {
             "</div>");
         List<Element> nodes = doc.select("a, span").stream().toList();
 
-        assertThat(DomTextMatchesFilter.of("^[1-3]$").execute(this.ctx, nodes), hasSize(3));
-        assertThat(DomHasAttrFilter.of("href").execute(this.ctx, nodes), hasSize(3));
-        assertThat(DomHasAttrFilter.of("class", "primary").execute(this.ctx, nodes), hasSize(2));
-        assertThat(DomTagEqualsFilter.of("span").execute(this.ctx, nodes), hasSize(1));
+        assertThat(TextMatchesFilter.of("^[1-3]$").execute(this.ctx, nodes), hasSize(3));
+        assertThat(HasAttrFilter.of("href").execute(this.ctx, nodes), hasSize(3));
+        assertThat(HasAttrFilter.of("class", "primary").execute(this.ctx, nodes), hasSize(2));
+        assertThat(TagEqualsFilter.of("span").execute(this.ctx, nodes), hasSize(1));
     }
 
     @Test
@@ -81,8 +81,8 @@ class FilterExpansionTest {
         JsonObject c = JsonParser.parseString("{\"name\":\"x\"}").getAsJsonObject();
         List<JsonObject> all = List.of(a, b, c);
 
-        assertThat(JsonHasFieldFilter.of("rare").execute(this.ctx, all), hasSize(1));
-        assertThat(JsonFieldEqualsFilter.of("name", "x").execute(this.ctx, all), hasSize(2));
+        assertThat(HasFieldFilter.of("rare").execute(this.ctx, all), hasSize(1));
+        assertThat(FieldEqualsFilter.of("name", "x").execute(this.ctx, all), hasSize(2));
     }
 
     @Test
@@ -124,10 +124,10 @@ class FilterExpansionTest {
     @Test
     @DisplayName("Filter summary strings include configuration values")
     void filterSummaries() {
-        assertThat(StringContainsFilter.of("foo").summary(), equalTo("Contains 'foo'"));
+        assertThat(ContainsFilter.of("foo").summary(), equalTo("Contains 'foo'"));
         assertThat(IntInRangeFilter.of(1, 9).summary(), equalTo("Int in [1, 9]"));
-        assertThat(DomHasAttrFilter.of("class", "x").summary(), equalTo("Attr class='x'"));
-        assertThat(JsonFieldEqualsFilter.of("k", "v").summary(), equalTo("Field k='v'"));
+        assertThat(HasAttrFilter.of("class", "x").summary(), equalTo("Attr class='x'"));
+        assertThat(FieldEqualsFilter.of("k", "v").summary(), equalTo("Field k='v'"));
     }
 
 }

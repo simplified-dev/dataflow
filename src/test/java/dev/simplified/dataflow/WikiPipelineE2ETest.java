@@ -1,18 +1,18 @@
 package dev.simplified.dataflow;
 
 import dev.simplified.dataflow.serde.PipelineGson;
-import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
-import dev.simplified.dataflow.stage.predicate.string.StringContainsPredicate;
+import dev.simplified.dataflow.stage.filter.dom.TextContainsFilter;
+import dev.simplified.dataflow.stage.predicate.string.ContainsPredicate;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import dev.simplified.dataflow.stage.source.UrlSource;
 import dev.simplified.dataflow.stage.terminal.collect.FirstCollect;
 import dev.simplified.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
+import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonDeserializeTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonObjectBuildTransform;
+import dev.simplified.dataflow.stage.transform.json.DeserializeTransform;
+import dev.simplified.dataflow.stage.transform.json.ObjectBuildTransform;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
@@ -53,10 +53,10 @@ class WikiPipelineE2ETest {
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
-            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(TextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(DomNthChildTransform.of("td", 1))
-            .stage(DomTextTransform.of())
+            .stage(NthChildTransform.of("td", 1))
+            .stage(TextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -73,10 +73,10 @@ class WikiPipelineE2ETest {
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
-            .stage(DomTextContainsFilter.of("Dmg"))
+            .stage(TextContainsFilter.of("Dmg"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
-            .stage(DomNthChildTransform.of("td", 1))
-            .stage(DomTextTransform.of())
+            .stage(NthChildTransform.of("td", 1))
+            .stage(TextTransform.of())
             .stage(RegexExtractTransform.of("\\d+"))
             .stage(ParseIntTransform.of())
             .build();
@@ -95,7 +95,7 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("div.infobox"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(buildClaymoreObject())
-            .stage(JsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
+            .stage(DeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
         DarkClaymore result = pipeline.execute();
@@ -123,7 +123,7 @@ class WikiPipelineE2ETest {
             .stage(CssSelectTransform.of("div.infobox"))
             .stage(FirstCollect.of(DataTypes.DOM_NODE))
             .stage(buildClaymoreObject())
-            .stage(JsonDeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
+            .stage(DeserializeTransform.of(DataTypes.JSON_OBJECT, DARK_CLAYMORE_TYPE))
             .build();
 
         DarkClaymore firstResult = original.execute();
@@ -141,17 +141,17 @@ class WikiPipelineE2ETest {
      * Builds the per-claymore JsonObject from a single {@code <div class="infobox">} element.
      * Reused by both the fixture-based and live-URL tests.
      */
-    private static JsonObjectBuildTransform<org.jsoup.nodes.Element> buildClaymoreObject() {
-        return JsonObjectBuildTransform.over(DataTypes.DOM_NODE)
+    private static ObjectBuildTransform<org.jsoup.nodes.Element> buildClaymoreObject() {
+        return ObjectBuildTransform.over(DataTypes.DOM_NODE)
             .output("type", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label:matchesOwn(^Type$) + div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
+                .stage(TextTransform.of())
                 .stage(TrimTransform.of()))
             .output("rarity", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label:matchesOwn(^Rarity$) + div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
+                .stage(TextTransform.of())
                 .stage(TrimTransform.of()))
             .output("stats", DataTypes.JSON_OBJECT, chain -> chain
                 .stage(CssSelectTransform.of(
@@ -168,36 +168,36 @@ class WikiPipelineE2ETest {
             .build();
     }
 
-    private static JsonObjectBuildTransform<org.jsoup.nodes.Element> statsEntryBuilder() {
-        return JsonObjectBuildTransform.over(DataTypes.DOM_NODE)
+    private static ObjectBuildTransform<org.jsoup.nodes.Element> statsEntryBuilder() {
+        return ObjectBuildTransform.over(DataTypes.DOM_NODE)
             .output("key", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
+                .stage(TextTransform.of())
                 .stage(ReplaceTransform.of("[^A-Za-z ]", ""))
                 .stage(TrimTransform.of())
                 .stage(ReplaceTransform.of("\\s+", " ")))
             .output("value", DataTypes.INT, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
+                .stage(TextTransform.of())
                 .stage(RegexExtractTransform.of("-?\\d+"))
                 .stage(ParseIntTransform.of()))
             .build();
     }
 
-    private static JsonObjectBuildTransform<org.jsoup.nodes.Element> propertiesEntryBuilder() {
-        return JsonObjectBuildTransform.over(DataTypes.DOM_NODE)
+    private static ObjectBuildTransform<org.jsoup.nodes.Element> propertiesEntryBuilder() {
+        return ObjectBuildTransform.over(DataTypes.DOM_NODE)
             .output("key", DataTypes.STRING, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-label"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
+                .stage(TextTransform.of())
                 .stage(TrimTransform.of()))
             .output("value", DataTypes.BOOLEAN, chain -> chain
                 .stage(CssSelectTransform.of("div.infobox-row-value"))
                 .stage(FirstCollect.of(DataTypes.DOM_NODE))
-                .stage(DomTextTransform.of())
-                .stage(StringContainsPredicate.of("Yes")))
+                .stage(TextTransform.of())
+                .stage(ContainsPredicate.of("Yes")))
             .build();
     }
 

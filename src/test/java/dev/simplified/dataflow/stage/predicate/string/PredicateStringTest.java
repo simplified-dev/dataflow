@@ -14,46 +14,46 @@ class PredicateStringTest {
     @Test
     @DisplayName("Contains")
     void contains() {
-        assertThat(StringContainsPredicate.of("foo").execute(this.ctx, "barfoobaz"), is(true));
-        assertThat(StringContainsPredicate.of("foo").execute(this.ctx, "barbaz"), is(false));
-        assertThat(StringContainsPredicate.of("foo").execute(this.ctx, null), is(false));
+        assertThat(ContainsPredicate.of("foo").execute(this.ctx, "barfoobaz"), is(true));
+        assertThat(ContainsPredicate.of("foo").execute(this.ctx, "barbaz"), is(false));
+        assertThat(ContainsPredicate.of("foo").execute(this.ctx, null), is(false));
     }
 
     @Test
     @DisplayName("StartsWith")
     void startsWith() {
-        assertThat(StringStartsWithPredicate.of("foo").execute(this.ctx, "foobar"), is(true));
-        assertThat(StringStartsWithPredicate.of("foo").execute(this.ctx, "barfoo"), is(false));
+        assertThat(StartsWithPredicate.of("foo").execute(this.ctx, "foobar"), is(true));
+        assertThat(StartsWithPredicate.of("foo").execute(this.ctx, "barfoo"), is(false));
     }
 
     @Test
     @DisplayName("EndsWith")
     void endsWith() {
-        assertThat(StringEndsWithPredicate.of("bar").execute(this.ctx, "foobar"), is(true));
-        assertThat(StringEndsWithPredicate.of("bar").execute(this.ctx, "barfoo"), is(false));
+        assertThat(EndsWithPredicate.of("bar").execute(this.ctx, "foobar"), is(true));
+        assertThat(EndsWithPredicate.of("bar").execute(this.ctx, "barfoo"), is(false));
     }
 
     @Test
     @DisplayName("Equals")
     void equalsTo() {
-        assertThat(StringEqualsPredicate.of("foo").execute(this.ctx, "foo"), is(true));
-        assertThat(StringEqualsPredicate.of("foo").execute(this.ctx, "Foo"), is(false));
-        assertThat(StringEqualsPredicate.of("foo").execute(this.ctx, null), is(false));
+        assertThat(EqualsPredicate.of("foo").execute(this.ctx, "foo"), is(true));
+        assertThat(EqualsPredicate.of("foo").execute(this.ctx, "Foo"), is(false));
+        assertThat(EqualsPredicate.of("foo").execute(this.ctx, null), is(false));
     }
 
     @Test
     @DisplayName("Matches regex")
     void matches() {
-        assertThat(StringMatchesPredicate.of("\\d+").execute(this.ctx, "abc123"), is(true));
-        assertThat(StringMatchesPredicate.of("\\d+").execute(this.ctx, "abcdef"), is(false));
+        assertThat(MatchesPredicate.of("\\d+").execute(this.ctx, "abc123"), is(true));
+        assertThat(MatchesPredicate.of("\\d+").execute(this.ctx, "abcdef"), is(false));
     }
 
     @Test
     @DisplayName("NonEmpty")
     void nonEmpty() {
-        assertThat(StringNonEmptyPredicate.of().execute(this.ctx, "x"), is(true));
-        assertThat(StringNonEmptyPredicate.of().execute(this.ctx, ""), is(false));
-        assertThat(StringNonEmptyPredicate.of().execute(this.ctx, null), is(false));
+        assertThat(NonEmptyPredicate.of().execute(this.ctx, "x"), is(true));
+        assertThat(NonEmptyPredicate.of().execute(this.ctx, ""), is(false));
+        assertThat(NonEmptyPredicate.of().execute(this.ctx, null), is(false));
     }
 
 }

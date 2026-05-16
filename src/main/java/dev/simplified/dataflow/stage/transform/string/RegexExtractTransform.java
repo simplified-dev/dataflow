@@ -82,6 +82,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
     public @NotNull DataType<String> inputType() {
         return DataTypes.STRING;
     }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull DataType<String> outputType() {

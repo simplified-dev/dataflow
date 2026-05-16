@@ -4,13 +4,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import dev.simplified.dataflow.Fixtures;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.simplified.dataflow.stage.filter.dom.TextContainsFilter;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomAttrTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonFieldTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonPathTransform;
+import dev.simplified.dataflow.stage.transform.dom.AttrTransform;
+import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
+import dev.simplified.dataflow.stage.transform.json.FieldTransform;
+import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseDoubleTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
@@ -46,21 +46,21 @@ class TransformStagesTest {
     @DisplayName("NodeText returns the visible text")
     void nodeText() {
         Element root = Jsoup.parse("<p>hello <b>world</b></p>").selectFirst("p");
-        assertThat(DomTextTransform.of().execute(this.ctx, root), is(equalTo("hello world")));
+        assertThat(TextTransform.of().execute(this.ctx, root), is(equalTo("hello world")));
     }
 
     @Test
     @DisplayName("NodeAttr returns the attribute value")
     void nodeAttr() {
         Element link = Jsoup.parse("<a href='https://example.com'>x</a>").selectFirst("a");
-        assertThat(DomAttrTransform.of("href").execute(this.ctx, link), is(equalTo("https://example.com")));
+        assertThat(AttrTransform.of("href").execute(this.ctx, link), is(equalTo("https://example.com")));
     }
 
     @Test
     @DisplayName("NthChild picks the requested child by selector + index")
     void nthChild() {
         Element row = Jsoup.parse("<table><tr><td>a</td><td>b</td><td>c</td></tr></table>").selectFirst("tr");
-        Element second = DomNthChildTransform.of("td", 1).execute(this.ctx, row);
+        Element second = NthChildTransform.of("td", 1).execute(this.ctx, row);
         assertThat(second, is(notNullValue()));
         assertThat(second.text(), is(equalTo("b")));
     }
@@ -69,14 +69,14 @@ class TransformStagesTest {
     @DisplayName("NthChild returns null when index is out of range")
     void nthChildOutOfRange() {
         Element row = Jsoup.parse("<table><tr><td>a</td></tr></table>").selectFirst("tr");
-        assertThat(DomNthChildTransform.of("td", 5).execute(this.ctx, row), is(nullValue()));
+        assertThat(NthChildTransform.of("td", 5).execute(this.ctx, row), is(nullValue()));
     }
 
     @Test
     @DisplayName("JsonPath walks dot-separated keys through a JsonObject tree")
     void jsonPath() {
         JsonElement root = JsonParser.parseString("{\"a\":{\"b\":{\"c\":42}}}");
-        JsonElement leaf = JsonPathTransform.of("a.b.c").execute(this.ctx, root);
+        JsonElement leaf = PathTransform.of("a.b.c").execute(this.ctx, root);
         assertThat(leaf, is(notNullValue()));
         assertThat(leaf.getAsInt(), is(equalTo(42)));
     }
@@ -85,14 +85,14 @@ class TransformStagesTest {
     @DisplayName("JsonPath returns null on missing segment")
     void jsonPathMissingSegment() {
         JsonElement root = JsonParser.parseString("{\"a\":{}}");
-        assertThat(JsonPathTransform.of("a.b.c").execute(this.ctx, root), is(nullValue()));
+        assertThat(PathTransform.of("a.b.c").execute(this.ctx, root), is(nullValue()));
     }
 
     @Test
     @DisplayName("JsonField extracts a single field of a JsonObject")
     void jsonField() {
         com.google.gson.JsonObject obj = JsonParser.parseString("{\"x\":\"y\"}").getAsJsonObject();
-        JsonElement value = JsonFieldTransform.of("x").execute(this.ctx, obj);
+        JsonElement value = FieldTransform.of("x").execute(this.ctx, obj);
         assertThat(value, is(notNullValue()));
         assertThat(value.getAsString(), is(equalTo("y")));
     }
@@ -160,7 +160,7 @@ class TransformStagesTest {
         // Run the actual stages to exercise the chain
         List<Element> all = CssSelectTransform.of("table.infobox tr").execute(this.ctx, root);
         assertThat(all, is(notNullValue()));
-        List<Element> filtered = DomTextContainsFilter.of("Dmg")
+        List<Element> filtered = TextContainsFilter.of("Dmg")
             .execute(this.ctx, all);
         assertThat(filtered, is(notNullValue()));
         assertThat(filtered.size(), is(equalTo(1)));
