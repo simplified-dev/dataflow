@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -21,6 +22,11 @@ import java.util.regex.Pattern;
 /**
  * {@link FilterStage} keeping every string whose contents are a regex match.
  */
+@StageSpec(
+    displayName = "Matches regex",
+    description = "List<STRING> -> List<STRING>",
+    category = StageSpec.Category.FILTER_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,26 +44,11 @@ public final class StringMatchesFilter implements FilterStage<String> {
      * @param regex the pattern that must {@link Pattern#matcher(CharSequence) find} a match in each element
      * @return the stage
      */
-    public static @NotNull StringMatchesFilter of(@NotNull String regex) {
+    public static @NotNull StringMatchesFilter of(
+        @Configurable(label = "Regex", placeholder = "^foo")
+        @NotNull String regex
+    ) {
         return new StringMatchesFilter(regex, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringMatchesFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .build();
     }
 
     /** {@inheritDoc} */

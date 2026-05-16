@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping longs in the inclusive range {@code [min, max]}.
  */
+@StageSpec(
+    displayName = "Long in [min, max]",
+    description = "List<LONG> -> List<LONG>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,27 +44,13 @@ public final class LongInRangeFilter implements FilterStage<Long> {
      * @param max inclusive upper bound
      * @return the stage
      */
-    public static @NotNull LongInRangeFilter of(long min, long max) {
+    public static @NotNull LongInRangeFilter of(
+        @Configurable(label = "Min (inclusive)", placeholder = "0")
+        long min,
+        @Configurable(label = "Max (inclusive)", placeholder = "100")
+        long max
+    ) {
         return new LongInRangeFilter(min, max);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull LongInRangeFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getLong("min"), cfg.getLong("max"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .longVal("min", this.min)
-            .longVal("max", this.max)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping doubles in the inclusive range {@code [min, max]}.
  */
+@StageSpec(
+    displayName = "Double in [min, max]",
+    description = "List<DOUBLE> -> List<DOUBLE>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,27 +44,13 @@ public final class DoubleInRangeFilter implements FilterStage<Double> {
      * @param max inclusive upper bound
      * @return the stage
      */
-    public static @NotNull DoubleInRangeFilter of(double min, double max) {
+    public static @NotNull DoubleInRangeFilter of(
+        @Configurable(label = "Min (inclusive)", placeholder = "0.0")
+        double min,
+        @Configurable(label = "Max (inclusive)", placeholder = "100.0")
+        double max
+    ) {
         return new DoubleInRangeFilter(min, max);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DoubleInRangeFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDouble("min"), cfg.getDouble("max"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .doubleVal("min", this.min)
-            .doubleVal("max", this.max)
-            .build();
     }
 
     /** {@inheritDoc} */

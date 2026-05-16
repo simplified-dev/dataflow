@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -22,6 +23,11 @@ import java.util.regex.Pattern;
 /**
  * {@link FilterStage} keeping every DOM element whose text matches the configured regex.
  */
+@StageSpec(
+    displayName = "Text matches regex",
+    description = "List<DOM_NODE> -> List<DOM_NODE>",
+    category = StageSpec.Category.FILTER_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -39,26 +45,11 @@ public final class DomTextMatchesFilter implements FilterStage<Element> {
      * @param regex the regex pattern that must {@link Pattern#matcher(CharSequence) find} a match in each element's text
      * @return the stage
      */
-    public static @NotNull DomTextMatchesFilter of(@NotNull String regex) {
+    public static @NotNull DomTextMatchesFilter of(
+        @Configurable(label = "Text matches regex", placeholder = "\\d+")
+        @NotNull String regex
+    ) {
         return new DomTextMatchesFilter(regex, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTextMatchesFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -4,8 +4,9 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,11 @@ import java.util.List;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "Count",
+    description = "List<T> -> INT",
+    category = StageSpec.Category.TERMINAL_SUM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,26 +42,11 @@ public final class CountCollect<T> implements CollectStage<List<T>, Integer> {
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull CountCollect<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull CountCollect<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType
+    ) {
         return new CountCollect<>(elementType, DataType.list(elementType));
-    }
-
-    /**
-     * Reconstructs the collect from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull CountCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

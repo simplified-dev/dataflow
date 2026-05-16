@@ -6,9 +6,10 @@ import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,11 @@ import java.util.List;
  * @param <T> element type
  * @param <K> key type, must be {@link Comparable}
  */
+@StageSpec(
+    displayName = "MaxBy (key)",
+    description = "List<T> -> T (body: T -> K)",
+    category = StageSpec.Category.TERMINAL_MINMAX
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -51,8 +57,11 @@ public final class MaxByCollect<T, K extends Comparable<K>> implements CollectSt
      * @throws IllegalArgumentException when {@code keyType} is not supported or {@code body} fails type-chain validation
      */
     public static <T, K extends Comparable<K>> @NotNull MaxByCollect<T, K> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
         @NotNull DataType<T> elementType,
+        @Configurable(label = "Key type", placeholder = "INT")
         @NotNull DataType<K> keyType,
+        @Configurable(label = "Key extractor body")
         @NotNull List<? extends Stage<?, ?>> body
     ) {
         if (!DataTypes.COMPARABLE_KEYS.contains(keyType))
@@ -68,30 +77,6 @@ public final class MaxByCollect<T, K extends Comparable<K>> implements CollectSt
             DataType.list(elementType),
             Chain.of(body)
         );
-    }
-
-    /**
-     * Reconstructs a max-by stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull MaxByCollect<?, ?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> elementType = cfg.getDataType("elementType");
-        DataType<?> keyType = cfg.getDataType("keyType");
-        Chain body = cfg.getSubPipeline("body");
-        return of(elementType, (DataType) keyType, body.stages());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .dataType("keyType", this.keyType)
-            .subPipeline("body", this.body)
-            .build();
     }
 
     /** {@inheritDoc} */

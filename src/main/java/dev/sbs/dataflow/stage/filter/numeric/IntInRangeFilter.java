@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping ints in the inclusive range {@code [min, max]}.
  */
+@StageSpec(
+    displayName = "Int in [min, max]",
+    description = "List<INT> -> List<INT>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,27 +44,13 @@ public final class IntInRangeFilter implements FilterStage<Integer> {
      * @param max inclusive upper bound
      * @return the stage
      */
-    public static @NotNull IntInRangeFilter of(int min, int max) {
+    public static @NotNull IntInRangeFilter of(
+        @Configurable(label = "Min (inclusive)", placeholder = "0")
+        int min,
+        @Configurable(label = "Max (inclusive)", placeholder = "100")
+        int max
+    ) {
         return new IntInRangeFilter(min, max);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull IntInRangeFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getInt("min"), cfg.getInt("max"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .integer("min", this.min)
-            .integer("max", this.max)
-            .build();
     }
 
     /** {@inheritDoc} */

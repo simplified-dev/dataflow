@@ -6,9 +6,10 @@ import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.stage.CollectStage;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,11 @@ import java.util.List;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "AnyMatch",
+    description = "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
+    category = StageSpec.Category.TERMINAL_MATCH
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -45,7 +51,9 @@ public final class AnyMatchCollect<T> implements CollectStage<List<T>, Boolean> 
      * @throws IllegalArgumentException when {@code body} fails type-chain validation
      */
     public static <T> @NotNull AnyMatchCollect<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
         @NotNull DataType<T> elementType,
+        @Configurable(label = "Predicate body")
         @NotNull List<? extends Stage<?, ?>> body
     ) {
         ValidationReport report = Chain.validate(elementType, body, DataTypes.BOOLEAN);
@@ -56,27 +64,6 @@ public final class AnyMatchCollect<T> implements CollectStage<List<T>, Boolean> 
             DataType.list(elementType),
             Chain.of(body)
         );
-    }
-
-    /**
-     * Reconstructs an any-match stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull AnyMatchCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> elementType = cfg.getDataType("elementType");
-        Chain body = cfg.getSubPipeline("body");
-        return of(elementType, body.stages());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .subPipeline("body", this.body)
-            .build();
     }
 
     /** {@inheritDoc} */

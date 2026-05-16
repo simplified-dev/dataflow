@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that prepends a configured string in front of the input.
  */
+@StageSpec(
+    displayName = "Prefix",
+    description = "STRING -> STRING",
+    category = StageSpec.Category.TRANSFORM_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,26 +35,11 @@ public final class PrefixTransform implements TransformStage<String, String> {
      * @param prefix the string to prepend
      * @return the stage
      */
-    public static @NotNull PrefixTransform of(@NotNull String prefix) {
+    public static @NotNull PrefixTransform of(
+        @Configurable(label = "Prefix", placeholder = ">>>")
+        @NotNull String prefix
+    ) {
         return new PrefixTransform(prefix);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull PrefixTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("prefix"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("prefix", this.prefix)
-            .build();
     }
 
     /** {@inheritDoc} */

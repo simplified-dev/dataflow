@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.common;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +20,11 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> value type
  */
+@StageSpec(
+    displayName = "Not null",
+    description = "T -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_COMMON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,26 +39,11 @@ public final class NotNullPredicate<T> implements TransformStage<T, Boolean> {
      * @return the stage
      * @param <T> value type
      */
-    public static <T> @NotNull NotNullPredicate<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull NotNullPredicate<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType
+    ) {
         return new NotNullPredicate<>(elementType);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull NotNullPredicate<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

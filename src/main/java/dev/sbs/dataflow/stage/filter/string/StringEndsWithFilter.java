@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping every string that ends with the configured suffix.
  */
+@StageSpec(
+    displayName = "Ends with",
+    description = "List<STRING> -> List<STRING>",
+    category = StageSpec.Category.FILTER_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class StringEndsWithFilter implements FilterStage<String> {
      * @param suffix the suffix to require
      * @return the stage
      */
-    public static @NotNull StringEndsWithFilter of(@NotNull String suffix) {
+    public static @NotNull StringEndsWithFilter of(
+        @Configurable(label = "Suffix", placeholder = "bar")
+        @NotNull String suffix
+    ) {
         return new StringEndsWithFilter(suffix);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringEndsWithFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("suffix"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("suffix", this.suffix)
-            .build();
     }
 
     /** {@inheritDoc} */

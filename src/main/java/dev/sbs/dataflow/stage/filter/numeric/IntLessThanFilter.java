@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping ints strictly less than the configured threshold.
  */
+@StageSpec(
+    displayName = "Int <",
+    description = "List<INT> -> List<INT>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class IntLessThanFilter implements FilterStage<Integer> {
      * @param threshold strict upper bound; elements must be strictly less than this
      * @return the stage
      */
-    public static @NotNull IntLessThanFilter of(int threshold) {
+    public static @NotNull IntLessThanFilter of(
+        @Configurable(label = "Threshold", placeholder = "0")
+        int threshold
+    ) {
         return new IntLessThanFilter(threshold);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull IntLessThanFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getInt("threshold"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .integer("threshold", this.threshold)
-            .build();
     }
 
     /** {@inheritDoc} */

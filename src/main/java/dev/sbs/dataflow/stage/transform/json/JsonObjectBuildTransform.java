@@ -10,8 +10,9 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.ChainBuilder;
 import dev.sbs.dataflow.chain.TypedChain;
 import dev.sbs.dataflow.serde.PipelineGson;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,6 +37,11 @@ import java.util.function.Consumer;
  *
  * @param <I> input type, shared by every named sub-pipeline
  */
+@StageSpec(
+    displayName = "JsonObject build",
+    description = "I -> JSON_OBJECT",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -90,22 +96,9 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
          * @return the built stage
          */
         public @NotNull JsonObjectBuildTransform<I> build() {
-            return new JsonObjectBuildTransform<>(this.inputType, Map.copyOf(this.outputs));
+            return of(this.inputType, this.outputs);
         }
 
-    }
-
-    /**
-     * Reconstructs a {@link JsonObjectBuildTransform} from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull JsonObjectBuildTransform<?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> inputType = cfg.getDataType("inputType");
-        Map<String, TypedChain> outputs = cfg.getTypedSubPipelines("outputs");
-        return new JsonObjectBuildTransform(inputType, outputs);
     }
 
     /**
@@ -119,13 +112,22 @@ public final class JsonObjectBuildTransform<I> implements TransformStage<I, Json
         return new Builder<>(inputType);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("inputType", this.inputType)
-            .typedSubPipelines("outputs", this.outputs)
-            .build();
+    /**
+     * Canonical flat factory matching the wire shape. Constructs a {@link JsonObjectBuildTransform}
+     * from its shared input type and a map of named, typed sub-chains.
+     *
+     * @param inputType the shared input type
+     * @param outputs named sub-chains, each carrying its declared output {@link DataType}
+     * @return the built transform
+     * @param <I> input type
+     */
+    public static <I> @NotNull JsonObjectBuildTransform<I> of(
+        @Configurable(label = "Input type", placeholder = "STRING")
+        @NotNull DataType<I> inputType,
+        @Configurable(label = "Outputs (typed)", placeholder = "")
+        @NotNull Map<String, TypedChain> outputs
+    ) {
+        return new JsonObjectBuildTransform<>(inputType, Map.copyOf(outputs));
     }
 
     /** {@inheritDoc} */

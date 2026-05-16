@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.transform.primitive;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that parses a {@link String} into a {@link Double}, returning
  * {@code null} when the input is unparseable.
  */
+@StageSpec(
+    displayName = "Parse double",
+    description = "STRING -> DOUBLE",
+    category = StageSpec.Category.TRANSFORM_PRIMITIVE
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,12 +34,6 @@ public final class ParseDoubleTransform implements TransformStage<String, Double
      */
     public static @NotNull ParseDoubleTransform of() {
         return new ParseDoubleTransform();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

@@ -4,8 +4,8 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +19,11 @@ import java.util.List;
  * {@link CollectStage} that returns the arithmetic mean of a {@code List<Double>}. Returns
  * {@code null} for empty input. Skips {@code null} elements.
  */
+@StageSpec(
+    displayName = "Average DOUBLE",
+    description = "List<DOUBLE> -> DOUBLE",
+    category = StageSpec.Category.TERMINAL_AVERAGE
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,12 +38,6 @@ public final class AverageDoubleCollect implements CollectStage<List<Double>, Do
      */
     public static @NotNull AverageDoubleCollect of() {
         return new AverageDoubleCollect();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

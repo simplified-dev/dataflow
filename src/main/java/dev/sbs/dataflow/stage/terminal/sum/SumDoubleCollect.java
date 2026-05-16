@@ -4,8 +4,8 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +19,11 @@ import java.util.List;
  * {@link CollectStage} that sums every element of a {@code List<Double>}. Returns
  * {@code 0.0} for an empty list and skips {@code null} elements.
  */
+@StageSpec(
+    displayName = "Sum DOUBLE",
+    description = "List<DOUBLE> -> DOUBLE",
+    category = StageSpec.Category.TERMINAL_SUM
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -33,12 +38,6 @@ public final class SumDoubleCollect implements CollectStage<List<Double>, Double
      */
     public static @NotNull SumDoubleCollect of() {
         return new SumDoubleCollect();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

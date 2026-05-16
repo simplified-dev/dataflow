@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.predicate.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +16,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input is neither {@code null} nor empty.
  */
+@StageSpec(
+    displayName = "Non-empty",
+    description = "STRING -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -28,12 +33,6 @@ public final class StringNonEmptyPredicate implements TransformStage<String, Boo
      */
     public static @NotNull StringNonEmptyPredicate of() {
         return new StringNonEmptyPredicate();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +23,11 @@ import java.util.List;
  * {@link TransformStage} that runs a jsoup CSS selector against a {@link Element} and returns
  * every matching element as a {@code List<Element>}.
  */
+@StageSpec(
+    displayName = "CSS select",
+    description = "DOM_NODE -> List<DOM_NODE>",
+    category = StageSpec.Category.TRANSFORM_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -37,24 +43,11 @@ public final class CssSelectTransform implements TransformStage<Element, List<El
      * @param selector the jsoup-flavoured CSS selector
      * @return the stage
      */
-    public static @NotNull CssSelectTransform of(@NotNull String selector) {
+    public static @NotNull CssSelectTransform of(
+        @Configurable(label = "Selector", placeholder = "table.infobox tr")
+        @NotNull String selector
+    ) {
         return new CssSelectTransform(selector);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull CssSelectTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("selector"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder().string("selector", this.selector).build();
     }
 
     /** {@inheritDoc} */

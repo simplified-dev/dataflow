@@ -5,8 +5,9 @@ import com.google.gson.JsonObject;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +20,11 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@code true} when the input {@link JsonObject}'s named
  * field is a primitive equal to the configured string value.
  */
+@StageSpec(
+    displayName = "Field equals",
+    description = "JSON_OBJECT -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,27 +41,13 @@ public final class JsonFieldEqualsPredicate implements TransformStage<JsonObject
      * @param expectedValue the required primitive value (compared via {@code getAsString})
      * @return the stage
      */
-    public static @NotNull JsonFieldEqualsPredicate of(@NotNull String fieldName, @NotNull String expectedValue) {
+    public static @NotNull JsonFieldEqualsPredicate of(
+        @Configurable(label = "Field name", placeholder = "rare")
+        @NotNull String fieldName,
+        @Configurable(label = "Equals", placeholder = "true")
+        @NotNull String expectedValue
+    ) {
         return new JsonFieldEqualsPredicate(fieldName, expectedValue);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull JsonFieldEqualsPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("fieldName"), cfg.getString("expectedValue"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("fieldName", this.fieldName)
-            .string("expectedValue", this.expectedValue)
-            .build();
     }
 
     /** {@inheritDoc} */

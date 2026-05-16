@@ -4,9 +4,10 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -28,6 +29,11 @@ import java.util.List;
  * @param <X> input element type
  * @param <Y> output element type
  */
+@StageSpec(
+    displayName = "Map sub-pipeline",
+    description = "List<X> -> List<Y>",
+    category = StageSpec.Category.TRANSFORM_LIST
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -55,8 +61,11 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
      * @throws IllegalArgumentException when {@code body} fails type-chain validation
      */
     public static <X, Y> @NotNull MapTransform<X, Y> of(
+        @Configurable(label = "Input element type", placeholder = "STRING", name = "elementInputType")
         @NotNull DataType<X> inputElementType,
+        @Configurable(label = "Output element type", placeholder = "INT", name = "elementOutputType")
         @NotNull DataType<Y> outputElementType,
+        @Configurable(label = "Per-element body")
         @NotNull List<? extends Stage<?, ?>> body
     ) {
         ValidationReport report = Chain.validate(inputElementType, body, outputElementType);
@@ -69,29 +78,6 @@ public final class MapTransform<X, Y> implements TransformStage<List<X>, List<Y>
             DataType.list(outputElementType),
             Chain.of(body)
         );
-    }
-
-    /**
-     * Reconstructs a map stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull MapTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> inputElementType = cfg.getDataType("elementInputType");
-        DataType<?> outputElementType = cfg.getDataType("elementOutputType");
-        Chain body = cfg.getSubPipeline("body");
-        return of(inputElementType, outputElementType, body.stages());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementInputType", this.inputElementType)
-            .dataType("elementOutputType", this.outputElementType)
-            .subPipeline("body", this.body)
-            .build();
     }
 
     /** {@inheritDoc} */

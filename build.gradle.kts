@@ -36,6 +36,7 @@ dependencies {
     api("com.github.simplified-dev:client") { version { strictly("6a11168") } }
     api("com.github.simplified-dev:collections") { version { strictly("6586657") } }
     api("com.github.simplified-dev:gson-extras") { version { strictly("35d2257") } }
+    api("com.github.simplified-dev:reflection") { version { strictly("9c6485c") } }
 
     // Lombok Annotations
     compileOnly(libs.lombok)
@@ -48,6 +49,10 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.junit.platform.launcher)
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-parameters")
 }
 
 tasks.test {

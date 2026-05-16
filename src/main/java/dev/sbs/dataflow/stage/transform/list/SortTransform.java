@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.list;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -28,6 +29,11 @@ import java.util.Set;
  *
  * @param <T> element type, must be {@link Comparable}
  */
+@StageSpec(
+    displayName = "Sort list",
+    description = "List<T> -> List<T>",
+    category = StageSpec.Category.TRANSFORM_LIST
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -53,7 +59,9 @@ public final class SortTransform<T extends Comparable<T>> implements TransformSt
      * @throws IllegalArgumentException when {@code elementType} is not supported
      */
     public static <T extends Comparable<T>> @NotNull SortTransform<T> of(
+        @Configurable(label = "Element type", placeholder = "INT")
         @NotNull DataType<T> elementType,
+        @Configurable(label = "Ascending", placeholder = "true")
         boolean ascending
     ) {
         if (!SUPPORTED.contains(elementType))
@@ -61,26 +69,6 @@ public final class SortTransform<T extends Comparable<T>> implements TransformSt
                 "SortTransform supports " + SUPPORTED + " but got " + elementType
             );
         return new SortTransform<>(elementType, DataType.list(elementType), ascending);
-    }
-
-    /**
-     * Reconstructs a sort stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull SortTransform<?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("elementType"), cfg.getBoolean("ascending"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .bool("ascending", this.ascending)
-            .build();
     }
 
     /** {@inheritDoc} */

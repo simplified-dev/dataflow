@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -21,6 +22,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping only elements whose tag name equals the configured target.
  */
+@StageSpec(
+    displayName = "Tag equals",
+    description = "List<DOM_NODE> -> List<DOM_NODE>",
+    category = StageSpec.Category.FILTER_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,26 +42,11 @@ public final class DomTagEqualsFilter implements FilterStage<Element> {
      * @param tagName the tag name to require
      * @return the stage
      */
-    public static @NotNull DomTagEqualsFilter of(@NotNull String tagName) {
+    public static @NotNull DomTagEqualsFilter of(
+        @Configurable(label = "Tag", placeholder = "a")
+        @NotNull String tagName
+    ) {
         return new DomTagEqualsFilter(tagName);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTagEqualsFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("tagName"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("tagName", this.tagName)
-            .build();
     }
 
     /** {@inheritDoc} */

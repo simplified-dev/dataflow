@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +21,11 @@ import org.jsoup.select.Elements;
  * returns the {@code n}-th match, where {@code n} is 0-based. Returns {@code null} if the
  * index is out of range.
  */
+@StageSpec(
+    displayName = "Nth child",
+    description = "DOM_NODE -> DOM_NODE",
+    category = StageSpec.Category.TRANSFORM_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,27 +42,13 @@ public final class NthChildTransform implements TransformStage<Element, Element>
      * @param index zero-based index into the matches
      * @return the stage
      */
-    public static @NotNull NthChildTransform of(@NotNull String childSelector, int index) {
+    public static @NotNull NthChildTransform of(
+        @Configurable(label = "Child selector", placeholder = "td")
+        @NotNull String childSelector,
+        @Configurable(label = "Index (0-based)", placeholder = "0")
+        int index
+    ) {
         return new NthChildTransform(childSelector, index);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull NthChildTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("childSelector"), cfg.getInt("index"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("childSelector", this.childSelector)
-            .integer("index", this.index)
-            .build();
     }
 
     /** {@inheritDoc} */

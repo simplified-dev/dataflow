@@ -5,8 +5,9 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.serde.PipelineGson;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,6 +33,11 @@ import java.util.Set;
  * @param <I> input element tag (one of the Gson types)
  * @param <T> deserialisation target type
  */
+@StageSpec(
+    displayName = "Gson deserialize",
+    description = "JSON_* -> T",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -71,7 +77,9 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
      *         or {@code inputType} is not a recognised Gson type
      */
     public static <I extends JsonElement, T> @NotNull GsonDeserializeTransform<I, T> of(
+        @Configurable(label = "Input type", placeholder = "JSON_ELEMENT")
         @NotNull DataType<I> inputType,
+        @Configurable(label = "Output type", placeholder = "STRING")
         @NotNull DataType<T> outputType
     ) {
         if (!SUPPORTED_INPUT_TYPES.contains(inputType))
@@ -83,25 +91,6 @@ public final class GsonDeserializeTransform<I extends JsonElement, T> implements
                 "GsonDeserializeTransform requires a Basic output DataType but got " + outputType.label()
             );
         return new GsonDeserializeTransform<>(inputType, outputType);
-    }
-
-    /**
-     * Reconstructs a stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull GsonDeserializeTransform<?, ?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("inputType"), cfg.getDataType("outputType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("inputType", this.inputType)
-            .dataType("outputType", this.outputType)
-            .build();
     }
 
     /** {@inheritDoc} */

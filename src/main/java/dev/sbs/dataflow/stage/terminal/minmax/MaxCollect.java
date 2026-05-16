@@ -4,8 +4,9 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,11 @@ import java.util.Set;
  *
  * @param <T> element type, must be {@link Comparable}
  */
+@StageSpec(
+    displayName = "Max",
+    description = "List<T> -> T",
+    category = StageSpec.Category.TERMINAL_MINMAX
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -45,31 +51,15 @@ public final class MaxCollect<T extends Comparable<T>> implements CollectStage<L
      * @param <T> element type
      * @throws IllegalArgumentException when {@code elementType} is not supported
      */
-    public static <T extends Comparable<T>> @NotNull MaxCollect<T> of(@NotNull DataType<T> elementType) {
+    public static <T extends Comparable<T>> @NotNull MaxCollect<T> of(
+        @Configurable(label = "Element type", placeholder = "INT")
+        @NotNull DataType<T> elementType
+    ) {
         if (!SUPPORTED.contains(elementType))
             throw new IllegalArgumentException(
                 "MaxCollect supports " + SUPPORTED + " but got " + elementType
             );
         return new MaxCollect<>(elementType, DataType.list(elementType));
-    }
-
-    /**
-     * Reconstructs a max stage from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull MaxCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        return of((DataType) cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

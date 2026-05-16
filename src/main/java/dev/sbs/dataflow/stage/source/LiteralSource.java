@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.source;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,11 @@ import java.util.stream.Stream;
  *
  * @param <T> the value type
  */
+@StageSpec(
+    displayName = "Literal",
+    description = "() -> T",
+    category = StageSpec.Category.SOURCE
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -53,7 +59,12 @@ public final class LiteralSource<T> implements SourceStage<T> {
      * @throws IllegalArgumentException when {@code outputType} is unsupported or {@code value} cannot be parsed
      */
     @SuppressWarnings("unchecked")
-    public static <T> @NotNull LiteralSource<T> of(@NotNull DataType<T> outputType, @NotNull String value) {
+    public static <T> @NotNull LiteralSource<T> of(
+        @Configurable(label = "Output type", placeholder = "STRING")
+        @NotNull DataType<T> outputType,
+        @Configurable(label = "Value", placeholder = "literal")
+        @NotNull String value
+    ) {
         T parsed = (T) parse(outputType, value);
         return new LiteralSource<>(outputType, value, parsed);
     }
@@ -157,16 +168,6 @@ public final class LiteralSource<T> implements SourceStage<T> {
         return of(DataTypes.BOOLEAN, Boolean.toString(value));
     }
 
-    /**
-     * Reconstructs an {@code LiteralSource} from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull LiteralSource<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("outputType"), cfg.getString("value"));
-    }
-
     private static @NotNull Object parse(@NotNull DataType<?> type, @NotNull String raw) {
         if (STRING_LIKE.contains(type)) return raw;
         if (type.equals(DataTypes.INT)) return Integer.parseInt(raw.trim());
@@ -177,15 +178,6 @@ public final class LiteralSource<T> implements SourceStage<T> {
         throw new IllegalArgumentException(
             "LiteralSource does not support outputType " + type + "; wire LiteralSource(RAW_*) -> ParseXxxTransform instead"
         );
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("outputType", this.outputType)
-            .string("value", this.rawValue)
-            .build();
     }
 
     /** {@inheritDoc} */

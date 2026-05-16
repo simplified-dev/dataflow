@@ -2,8 +2,9 @@ package dev.sbs.dataflow.stage.transform.list;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -24,6 +25,11 @@ import java.util.List;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "Reverse list",
+    description = "List<T> -> List<T>",
+    category = StageSpec.Category.TRANSFORM_LIST
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -40,26 +46,11 @@ public final class ReverseTransform<T> implements TransformStage<List<T>, List<T
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull ReverseTransform<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull ReverseTransform<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType
+    ) {
         return new ReverseTransform<>(elementType, DataType.list(elementType));
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull ReverseTransform<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

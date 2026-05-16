@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +21,11 @@ import java.util.regex.Pattern;
  * {@link TransformStage} that returns {@code true} when the input element's
  * {@link Element#text()} matches the configured regex.
  */
+@StageSpec(
+    displayName = "Text matches regex",
+    description = "DOM_NODE -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class DomTextMatchesPredicate implements TransformStage<Element, Bo
      * @param regex the regex pattern that must {@link Pattern#matcher(CharSequence) find} a match in the element's text
      * @return the stage
      */
-    public static @NotNull DomTextMatchesPredicate of(@NotNull String regex) {
+    public static @NotNull DomTextMatchesPredicate of(
+        @Configurable(label = "Text matches regex", placeholder = "\\d+")
+        @NotNull String regex
+    ) {
         return new DomTextMatchesPredicate(regex, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTextMatchesPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input is in the inclusive range {@code [min, max]}.
  */
+@StageSpec(
+    displayName = "Int in [min, max]",
+    description = "INT -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,27 +38,13 @@ public final class IntInRangePredicate implements TransformStage<Integer, Boolea
      * @param max inclusive upper bound
      * @return the stage
      */
-    public static @NotNull IntInRangePredicate of(int min, int max) {
+    public static @NotNull IntInRangePredicate of(
+        @Configurable(label = "Min (inclusive)", placeholder = "0")
+        int min,
+        @Configurable(label = "Max (inclusive)", placeholder = "100")
+        int max
+    ) {
         return new IntInRangePredicate(min, max);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull IntInRangePredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getInt("min"), cfg.getInt("max"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .integer("min", this.min)
-            .integer("max", this.max)
-            .build();
     }
 
     /** {@inheritDoc} */

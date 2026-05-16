@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.terminal.collect;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,11 @@ import java.util.List;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "First",
+    description = "List<T> -> T",
+    category = StageSpec.Category.TERMINAL_COLLECT
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,24 +42,11 @@ public final class FirstCollect<T> implements CollectStage<List<T>, T> {
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull FirstCollect<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull FirstCollect<T> of(
+        @Configurable(label = "Element type", placeholder = "DOM_NODE")
+        @NotNull DataType<T> elementType
+    ) {
         return new FirstCollect<>(elementType, DataType.list(elementType));
-    }
-
-    /**
-     * Reconstructs the collect from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull FirstCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder().dataType("elementType", this.elementType).build();
     }
 
     /** {@inheritDoc} */

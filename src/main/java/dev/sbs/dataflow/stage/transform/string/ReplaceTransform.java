@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +20,11 @@ import java.util.regex.Pattern;
  * {@link TransformStage} that replaces every regex match in the input with a replacement
  * string, equivalent to {@link String#replaceAll(String, String)}.
  */
+@StageSpec(
+    displayName = "Replace regex",
+    description = "STRING -> STRING",
+    category = StageSpec.Category.TRANSFORM_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -37,27 +43,13 @@ public final class ReplaceTransform implements TransformStage<String, String> {
      * @param replacement the replacement string (regex back-references allowed)
      * @return the stage
      */
-    public static @NotNull ReplaceTransform of(@NotNull String regex, @NotNull String replacement) {
+    public static @NotNull ReplaceTransform of(
+        @Configurable(label = "Regex", placeholder = "\\s+")
+        @NotNull String regex,
+        @Configurable(label = "Replacement", placeholder = "_")
+        @NotNull String replacement
+    ) {
         return new ReplaceTransform(regex, replacement, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull ReplaceTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"), cfg.getString("replacement"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .string("replacement", this.replacement)
-            .build();
     }
 
     /** {@inheritDoc} */

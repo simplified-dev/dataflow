@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input starts with the configured prefix.
  */
+@StageSpec(
+    displayName = "Starts with",
+    description = "STRING -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,26 +35,11 @@ public final class StringStartsWithPredicate implements TransformStage<String, B
      * @param prefix the prefix to require
      * @return the stage
      */
-    public static @NotNull StringStartsWithPredicate of(@NotNull String prefix) {
+    public static @NotNull StringStartsWithPredicate of(
+        @Configurable(label = "Prefix", placeholder = "foo")
+        @NotNull String prefix
+    ) {
         return new StringStartsWithPredicate(prefix);
-    }
-
-    /**
-     * Reconstructs a starts-with predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringStartsWithPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("prefix"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("prefix", this.prefix)
-            .build();
     }
 
     /** {@inheritDoc} */

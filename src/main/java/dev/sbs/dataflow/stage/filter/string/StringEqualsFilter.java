@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping only strings exactly equal to the configured target.
  */
+@StageSpec(
+    displayName = "Equals",
+    description = "List<STRING> -> List<STRING>",
+    category = StageSpec.Category.FILTER_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class StringEqualsFilter implements FilterStage<String> {
      * @param target the exact string to match
      * @return the stage
      */
-    public static @NotNull StringEqualsFilter of(@NotNull String target) {
+    public static @NotNull StringEqualsFilter of(
+        @Configurable(label = "Equals", placeholder = "foo")
+        @NotNull String target
+    ) {
         return new StringEqualsFilter(target);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringEqualsFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("target"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("target", this.target)
-            .build();
     }
 
     /** {@inheritDoc} */

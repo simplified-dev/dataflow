@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,6 +18,11 @@ import org.jsoup.nodes.Element;
 /**
  * {@link TransformStage} that returns {@code true} when the input element's tag name matches the configured target (case-insensitive).
  */
+@StageSpec(
+    displayName = "Tag equals",
+    description = "DOM_NODE -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -30,26 +36,11 @@ public final class DomTagEqualsPredicate implements TransformStage<Element, Bool
      * @param tagName the tag name to require
      * @return the stage
      */
-    public static @NotNull DomTagEqualsPredicate of(@NotNull String tagName) {
+    public static @NotNull DomTagEqualsPredicate of(
+        @Configurable(label = "Tag", placeholder = "a")
+        @NotNull String tagName
+    ) {
         return new DomTagEqualsPredicate(tagName);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTagEqualsPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("tagName"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("tagName", this.tagName)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -4,8 +4,8 @@ import com.google.gson.JsonElement;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +18,11 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that returns {@link JsonElement#getAsInt()}, or {@code null} when
  * the element is not a numeric primitive.
  */
+@StageSpec(
+    displayName = "JSON as int",
+    description = "JSON_ELEMENT -> INT",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -30,12 +35,6 @@ public final class JsonAsIntTransform implements TransformStage<JsonElement, Int
      */
     public static @NotNull JsonAsIntTransform of() {
         return new JsonAsIntTransform();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

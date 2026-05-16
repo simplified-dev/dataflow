@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +19,11 @@ import org.jsoup.nodes.Element;
  * {@link TransformStage} that returns {@code true} when the input element has the configured
  * attribute. If {@link #expectedValue} is non-null, the attribute value must additionally match.
  */
+@StageSpec(
+    displayName = "Has attribute",
+    description = "DOM_NODE -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -44,28 +50,13 @@ public final class DomHasAttrPredicate implements TransformStage<Element, Boolea
      * @param expectedValue the required attribute value
      * @return the stage
      */
-    public static @NotNull DomHasAttrPredicate of(@NotNull String attributeName, @NotNull String expectedValue) {
+    public static @NotNull DomHasAttrPredicate of(
+        @Configurable(label = "Attribute name", placeholder = "class")
+        @NotNull String attributeName,
+        @Configurable(label = "Expected value (optional)", placeholder = "primary", optional = true)
+        @Nullable String expectedValue
+    ) {
         return new DomHasAttrPredicate(attributeName, expectedValue);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomHasAttrPredicate fromConfig(@NotNull StageConfig cfg) {
-        String name = cfg.getString("attributeName");
-        return cfg.has("expectedValue") ? of(name, cfg.getString("expectedValue")) : of(name);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("attributeName", this.attributeName)
-            .optionalString("expectedValue", this.expectedValue)
-            .build();
     }
 
     /** {@inheritDoc} */

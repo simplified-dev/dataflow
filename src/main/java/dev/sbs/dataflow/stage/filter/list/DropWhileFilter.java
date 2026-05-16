@@ -5,10 +5,11 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -29,6 +30,11 @@ import java.util.stream.Stream;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "DropWhile",
+    description = "List<T> -> List<T> (body: T -> BOOLEAN)",
+    category = StageSpec.Category.FILTER_LIST
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -50,7 +56,9 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
      * @throws IllegalArgumentException when {@code body} fails type-chain validation
      */
     public static <T> @NotNull DropWhileFilter<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
         @NotNull DataType<T> elementType,
+        @Configurable(label = "Predicate body")
         @NotNull List<? extends Stage<?, ?>> body
     ) {
         ValidationReport report = Chain.validate(elementType, body, DataTypes.BOOLEAN);
@@ -61,27 +69,6 @@ public final class DropWhileFilter<T> implements FilterStage<T> {
             DataType.list(elementType),
             Chain.of(body)
         );
-    }
-
-    /**
-     * Reconstructs a drop-while filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DropWhileFilter<?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> elementType = cfg.getDataType("elementType");
-        Chain body = cfg.getSubPipeline("body");
-        return of(elementType, body.stages());
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .subPipeline("body", this.body)
-            .build();
     }
 
     /** {@inheritDoc} */

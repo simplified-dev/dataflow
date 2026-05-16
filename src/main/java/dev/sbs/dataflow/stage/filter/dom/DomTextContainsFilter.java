@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -22,6 +23,11 @@ import java.util.List;
  * {@link FilterStage} over {@code List<Element>} that keeps every element whose
  * {@link Element#text()} contains the configured needle (case-sensitive).
  */
+@StageSpec(
+    displayName = "Text contains",
+    description = "List<DOM_NODE> -> List<DOM_NODE>",
+    category = StageSpec.Category.FILTER_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -37,24 +43,11 @@ public final class DomTextContainsFilter implements FilterStage<Element> {
      * @param needle the substring to look for in each node's text
      * @return the stage
      */
-    public static @NotNull DomTextContainsFilter of(@NotNull String needle) {
+    public static @NotNull DomTextContainsFilter of(
+        @Configurable(label = "Text contains", placeholder = "Dmg")
+        @NotNull String needle
+    ) {
         return new DomTextContainsFilter(needle);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTextContainsFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("needle"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder().string("needle", this.needle).build();
     }
 
     /** {@inheritDoc} */

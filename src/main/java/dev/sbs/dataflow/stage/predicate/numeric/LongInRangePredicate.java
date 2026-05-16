@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input is in the inclusive range {@code [min, max]}.
  */
+@StageSpec(
+    displayName = "Long in [min, max]",
+    description = "LONG -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,27 +38,13 @@ public final class LongInRangePredicate implements TransformStage<Long, Boolean>
      * @param max inclusive upper bound
      * @return the stage
      */
-    public static @NotNull LongInRangePredicate of(long min, long max) {
+    public static @NotNull LongInRangePredicate of(
+        @Configurable(label = "Min (inclusive)", placeholder = "0")
+        long min,
+        @Configurable(label = "Max (inclusive)", placeholder = "100")
+        long max
+    ) {
         return new LongInRangePredicate(min, max);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull LongInRangePredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getLong("min"), cfg.getLong("max"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .longVal("min", this.min)
-            .longVal("max", this.max)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -4,9 +4,10 @@ import com.google.gson.JsonObject;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -21,6 +22,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping only {@link JsonObject}s that contain the named field.
  */
+@StageSpec(
+    displayName = "Has field",
+    description = "List<JSON_OBJECT> -> List<JSON_OBJECT>",
+    category = StageSpec.Category.FILTER_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,26 +42,11 @@ public final class JsonHasFieldFilter implements FilterStage<JsonObject> {
      * @param fieldName the JSON field name that must be present
      * @return the stage
      */
-    public static @NotNull JsonHasFieldFilter of(@NotNull String fieldName) {
+    public static @NotNull JsonHasFieldFilter of(
+        @Configurable(label = "Field name", placeholder = "rare")
+        @NotNull String fieldName
+    ) {
         return new JsonHasFieldFilter(fieldName);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull JsonHasFieldFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("fieldName"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("fieldName", this.fieldName)
-            .build();
     }
 
     /** {@inheritDoc} */

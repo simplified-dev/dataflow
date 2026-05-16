@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.source;
 import dev.sbs.dataflow.DataPipeline;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,11 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <O> output type of the inner pipeline
  */
+@StageSpec(
+    displayName = "Embed pipeline",
+    description = "() -> O",
+    category = StageSpec.Category.SOURCE
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -47,29 +53,12 @@ public final class EmbedSource<O> implements SourceStage<O> {
      * @param <O> output type
      */
     public static <O> @NotNull EmbedSource<O> of(
+        @Configurable(label = "Saved pipeline id", placeholder = "wiki_dmg")
         @NotNull String embeddedPipelineId,
+        @Configurable(label = "Output type", placeholder = "INT")
         @NotNull DataType<O> outputType
     ) {
         return new EmbedSource<>(embeddedPipelineId, outputType);
-    }
-
-    /**
-     * Reconstructs the source from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull EmbedSource<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("embeddedPipelineId"), cfg.getDataType("outputType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("embeddedPipelineId", this.embeddedPipelineId)
-            .dataType("outputType", this.outputType)
-            .build();
     }
 
     /** {@inheritDoc} */

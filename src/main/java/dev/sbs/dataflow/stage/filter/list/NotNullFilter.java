@@ -2,9 +2,10 @@ package dev.sbs.dataflow.stage.filter.list;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -22,6 +23,11 @@ import java.util.Objects;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "Not null",
+    description = "List<T> -> List<T>",
+    category = StageSpec.Category.FILTER_LIST
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,26 +44,11 @@ public final class NotNullFilter<T> implements FilterStage<T> {
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull NotNullFilter<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull NotNullFilter<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType
+    ) {
         return new NotNullFilter<>(elementType, DataType.list(elementType));
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull NotNullFilter<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

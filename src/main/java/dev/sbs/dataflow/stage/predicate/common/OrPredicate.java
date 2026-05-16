@@ -6,9 +6,10 @@ import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.ValidationReport;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.NamedChains;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,6 +29,11 @@ import java.util.Map;
  *
  * @param <T> input element type
  */
+@StageSpec(
+    displayName = "Or",
+    description = "T -> BOOLEAN (OR over N predicate bodies)",
+    category = StageSpec.Category.PREDICATE_COMMON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -48,7 +54,9 @@ public final class OrPredicate<T> implements TransformStage<T, Boolean> {
      * @throws IllegalArgumentException when any body fails type-chain validation
      */
     public static <T> @NotNull OrPredicate<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
         @NotNull DataType<T> elementType,
+        @Configurable(label = "Predicate bodies")
         @NotNull Map<String, ? extends List<? extends Stage<?, ?>>> bodies
     ) {
         for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : bodies.entrySet()) {
@@ -59,30 +67,6 @@ public final class OrPredicate<T> implements TransformStage<T, Boolean> {
                 );
         }
         return new OrPredicate<>(elementType, NamedChains.of(bodies));
-    }
-
-    /**
-     * Reconstructs an or-predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull OrPredicate<?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> elementType = cfg.getDataType("elementType");
-        NamedChains bodies = cfg.getSubPipelines("bodies");
-        Map<String, List<Stage<?, ?>>> raw = new LinkedHashMap<>();
-        for (Map.Entry<String, Chain> entry : bodies.chains().entrySet())
-            raw.put(entry.getKey(), entry.getValue().stages());
-        return of(elementType, raw);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .subPipelines("bodies", this.bodies)
-            .build();
     }
 
     /** {@inheritDoc} */

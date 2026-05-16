@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,6 +24,11 @@ import java.util.regex.Pattern;
  * Group {@code 0} (the entire match) is the default; positive group indexes refer to
  * parenthesised capture groups.
  */
+@StageSpec(
+    displayName = "Regex extract",
+    description = "STRING -> STRING",
+    category = StageSpec.Category.TRANSFORM_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -51,27 +57,13 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
      * @param group the 0-based group index
      * @return the stage
      */
-    public static @NotNull RegexExtractTransform of(@NotNull String regex, int group) {
+    public static @NotNull RegexExtractTransform of(
+        @Configurable(label = "Regex", placeholder = "\\d+")
+        @NotNull String regex,
+        @Configurable(label = "Capture group", placeholder = "0")
+        int group
+    ) {
         return new RegexExtractTransform(regex, group, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull RegexExtractTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"), cfg.getInt("group"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .integer("group", this.group)
-            .build();
     }
 
     /** {@inheritDoc} */

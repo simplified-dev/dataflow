@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping longs strictly greater than the configured threshold.
  */
+@StageSpec(
+    displayName = "Long >",
+    description = "List<LONG> -> List<LONG>",
+    category = StageSpec.Category.FILTER_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class LongGreaterThanFilter implements FilterStage<Long> {
      * @param threshold elements must be strictly greater than this
      * @return the stage
      */
-    public static @NotNull LongGreaterThanFilter of(long threshold) {
+    public static @NotNull LongGreaterThanFilter of(
+        @Configurable(label = "Threshold", placeholder = "0")
+        long threshold
+    ) {
         return new LongGreaterThanFilter(threshold);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull LongGreaterThanFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getLong("threshold"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .longVal("threshold", this.threshold)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.source;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.client.fetch.UrlFetcher;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +21,11 @@ import java.net.URI;
  * {@link SourceStage} that fetches a URL via {@link UrlFetcher} and emits the response body
  * tagged as one of the {@code RAW_*} types.
  */
+@StageSpec(
+    displayName = "URL Source",
+    description = "() -> RAW_*",
+    category = StageSpec.Category.SOURCE
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -43,7 +49,12 @@ public final class UrlSource implements SourceStage<String> {
      * @return a new source
      * @throws IllegalArgumentException when {@code outputType} is not one of the supported types
      */
-    public static @NotNull UrlSource of(@NotNull DataType<String> outputType, @NotNull String url) {
+    public static @NotNull UrlSource of(
+        @Configurable(label = "Output type (RAW_HTML / RAW_XML / RAW_JSON / STRING)", placeholder = "RAW_HTML")
+        @NotNull DataType<String> outputType,
+        @Configurable(label = "URL", placeholder = "https://example.com/page")
+        @NotNull String url
+    ) {
         if (!SUPPORTED_OUTPUT_TYPES.contains(outputType))
             throw new IllegalArgumentException(
                 "UrlSource supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType
@@ -93,19 +104,6 @@ public final class UrlSource implements SourceStage<String> {
      */
     public static @NotNull UrlSource text(@NotNull String url) {
         return of(DataTypes.STRING, url);
-    }
-
-    public static @NotNull UrlSource fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("outputType"), cfg.getString("url"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("url", this.url)
-            .dataType("outputType", this.outputType)
-            .build();
     }
 
     /** {@inheritDoc} */

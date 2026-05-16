@@ -278,7 +278,7 @@ class PipelineSerdeTest {
 
     private static StageConfig buildDefaultConfig(StageKind kind) {
         StageConfig.Builder b = StageConfig.builder();
-        for (FieldSpec spec : kind.schema()) {
+        for (FieldSpec<?> spec : kind.schema()) {
             String placeholder = spec.placeholder();
             switch (spec.type()) {
                 case STRING -> b.string(spec.name(), placeholder);

@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.transform.encoding;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,6 +20,11 @@ import java.nio.charset.StandardCharsets;
  * {@link TransformStage} that percent-encodes the input string with UTF-8 using the
  * {@code application/x-www-form-urlencoded} convention.
  */
+@StageSpec(
+    displayName = "URL encode",
+    description = "STRING -> STRING",
+    category = StageSpec.Category.TRANSFORM_ENCODING
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,12 +37,6 @@ public final class UrlEncodeTransform implements TransformStage<String, String> 
      */
     public static @NotNull UrlEncodeTransform of() {
         return new UrlEncodeTransform();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

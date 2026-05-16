@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input contains the configured substring.
  */
+@StageSpec(
+    displayName = "Contains",
+    description = "STRING -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,26 +35,11 @@ public final class StringContainsPredicate implements TransformStage<String, Boo
      * @param needle the substring to look for
      * @return the stage
      */
-    public static @NotNull StringContainsPredicate of(@NotNull String needle) {
+    public static @NotNull StringContainsPredicate of(
+        @Configurable(label = "Contains", placeholder = "foo")
+        @NotNull String needle
+    ) {
         return new StringContainsPredicate(needle);
-    }
-
-    /**
-     * Reconstructs a string-contains predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringContainsPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("needle"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("needle", this.needle)
-            .build();
     }
 
     /** {@inheritDoc} */

@@ -4,8 +4,9 @@ import com.google.gson.JsonElement;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,6 +23,11 @@ import org.jetbrains.annotations.Nullable;
  * Path syntax mirrors the {@code @SerializedPath} annotation used in {@code gson-extras}:
  * dot-separated keys, no array indexing.
  */
+@StageSpec(
+    displayName = "JSON path",
+    description = "JSON_ELEMENT -> JSON_ELEMENT",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,24 +41,11 @@ public final class JsonPathTransform implements TransformStage<JsonElement, Json
      * @param path dot-separated key path (e.g. {@code "stats.combat.dmg"})
      * @return the stage
      */
-    public static @NotNull JsonPathTransform of(@NotNull String path) {
+    public static @NotNull JsonPathTransform of(
+        @Configurable(label = "Path", placeholder = "stats.combat.dmg")
+        @NotNull String path
+    ) {
         return new JsonPathTransform(path);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull JsonPathTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("path"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder().string("path", this.path).build();
     }
 
     /** {@inheritDoc} */

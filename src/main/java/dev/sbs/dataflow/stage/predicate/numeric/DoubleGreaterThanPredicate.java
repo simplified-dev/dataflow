@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.numeric;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that returns {@code true} when the input is strictly greater than the configured threshold.
  */
+@StageSpec(
+    displayName = "Double >",
+    description = "DOUBLE -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_NUMERIC
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,26 +35,11 @@ public final class DoubleGreaterThanPredicate implements TransformStage<Double, 
      * @param threshold exclusive lower bound
      * @return the stage
      */
-    public static @NotNull DoubleGreaterThanPredicate of(double threshold) {
+    public static @NotNull DoubleGreaterThanPredicate of(
+        @Configurable(label = "Threshold", placeholder = "0.0")
+        double threshold
+    ) {
         return new DoubleGreaterThanPredicate(threshold);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DoubleGreaterThanPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDouble("threshold"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .doubleVal("threshold", this.threshold)
-            .build();
     }
 
     /** {@inheritDoc} */

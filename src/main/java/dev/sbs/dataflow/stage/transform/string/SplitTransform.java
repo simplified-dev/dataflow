@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -22,6 +23,11 @@ import java.util.regex.Pattern;
  * {@link TransformStage} that splits a {@link String} on a regex into a list of substrings,
  * equivalent to {@link String#split(String)}.
  */
+@StageSpec(
+    displayName = "Split on regex",
+    description = "STRING -> List<STRING>",
+    category = StageSpec.Category.TRANSFORM_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -39,26 +45,11 @@ public final class SplitTransform implements TransformStage<String, List<String>
      * @param regex the regex used as a delimiter
      * @return the stage
      */
-    public static @NotNull SplitTransform of(@NotNull String regex) {
+    public static @NotNull SplitTransform of(
+        @Configurable(label = "Regex", placeholder = ",")
+        @NotNull String regex
+    ) {
         return new SplitTransform(regex, Pattern.compile(regex));
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull SplitTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("regex"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("regex", this.regex)
-            .build();
     }
 
     /** {@inheritDoc} */

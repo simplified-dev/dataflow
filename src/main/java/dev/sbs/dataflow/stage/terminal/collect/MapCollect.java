@@ -7,9 +7,10 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.ChainBuilder;
 import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.stage.CollectStage;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.Stage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,11 @@ import java.util.function.Consumer;
  *
  * @param <I> input type, shared by every sub-chain
  */
+@StageSpec(
+    displayName = "Map (named outputs)",
+    description = "I -> Map<String, Object>",
+    category = StageSpec.Category.TERMINAL_COLLECT
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -74,21 +80,8 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @return the built collect
          */
         public @NotNull MapCollect<I> build() {
-            return new MapCollect<>(this.inputType, new NamedChains(Map.copyOf(this.outputs)));
+            return of(this.inputType, new NamedChains(Map.copyOf(this.outputs)));
         }
-    }
-
-    /**
-     * Reconstructs a {@link MapCollect} from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt collect
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static @NotNull MapCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        DataType<?> inputType = cfg.getDataType("inputType");
-        NamedChains outputs = cfg.getSubPipelines("outputs");
-        return new MapCollect(inputType, outputs);
     }
 
     /**
@@ -102,13 +95,22 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
         return new Builder<>(inputType);
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("inputType", this.inputType)
-            .subPipelines("outputs", this.outputs)
-            .build();
+    /**
+     * Canonical flat factory matching the wire shape. Constructs a {@link MapCollect} from
+     * its shared input type and a map of named sub-chains.
+     *
+     * @param inputType the shared input type
+     * @param outputs named sub-chains whose results become entries in the output map
+     * @return the built collect
+     * @param <I> input type
+     */
+    public static <I> @NotNull MapCollect<I> of(
+        @Configurable(label = "Input type", placeholder = "STRING")
+        @NotNull DataType<I> inputType,
+        @Configurable(label = "Outputs", placeholder = "")
+        @NotNull NamedChains outputs
+    ) {
+        return new MapCollect<>(inputType, outputs);
     }
 
     /** {@inheritDoc} */

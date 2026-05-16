@@ -122,7 +122,7 @@ public final class PipelineGson {
         o.addProperty("kind", kind.name());
         StageConfig cfg = stage.config();
 
-        for (FieldSpec spec : kind.schema()) {
+        for (FieldSpec<?> spec : kind.schema()) {
             Object v = cfg.raw(spec.name());
             switch (spec.type()) {
                 case STRING    -> o.addProperty(spec.name(), (String) v);
@@ -145,7 +145,7 @@ public final class PipelineGson {
             throw new IllegalArgumentException("No factory registered for kind: " + kind);
         StageConfig.Builder b = StageConfig.builder();
 
-        for (FieldSpec spec : kind.schema()) {
+        for (FieldSpec<?> spec : kind.schema()) {
             JsonElement raw = o.get(spec.name());
             if (raw == null) continue;
 

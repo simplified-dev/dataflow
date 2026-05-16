@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.terminal.collect;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,11 @@ import java.util.Set;
  *
  * @param <T> element type
  */
+@StageSpec(
+    displayName = "Set",
+    description = "List<T> -> Set<T>",
+    category = StageSpec.Category.TERMINAL_COLLECT
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -40,26 +46,11 @@ public final class SetCollect<T> implements CollectStage<List<T>, Set<T>> {
      * @return the stage
      * @param <T> element type
      */
-    public static <T> @NotNull SetCollect<T> of(@NotNull DataType<T> elementType) {
+    public static <T> @NotNull SetCollect<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType
+    ) {
         return new SetCollect<>(elementType, DataType.list(elementType), DataType.set(elementType));
-    }
-
-    /**
-     * Reconstructs the collect from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull SetCollect<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .build();
     }
 
     /** {@inheritDoc} */

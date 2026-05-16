@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,6 +17,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * {@link TransformStage} that appends a configured string after the input.
  */
+@StageSpec(
+    displayName = "Suffix",
+    description = "STRING -> STRING",
+    category = StageSpec.Category.TRANSFORM_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,18 +35,11 @@ public final class SuffixTransform implements TransformStage<String, String> {
      * @param suffix the string to append
      * @return the stage
      */
-    public static @NotNull SuffixTransform of(@NotNull String suffix) {
+    public static @NotNull SuffixTransform of(
+        @Configurable(label = "Suffix", placeholder = "<<<")
+        @NotNull String suffix
+    ) {
         return new SuffixTransform(suffix);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull SuffixTransform fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("suffix"));
     }
 
     /** {@inheritDoc} */
@@ -50,13 +49,6 @@ public final class SuffixTransform implements TransformStage<String, String> {
     /** {@inheritDoc} */
     @Override public @NotNull StageKind kind()                { return StageKind.TRANSFORM_SUFFIX; }
 
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("suffix", this.suffix)
-            .build();
-    }
     /** {@inheritDoc} */
     @Override public @NotNull String summary()              { return "Suffix '" + this.suffix + "'"; }
 

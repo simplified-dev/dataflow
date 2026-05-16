@@ -7,6 +7,7 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,11 @@ import java.util.List;
  * duplicate keys keep the last seen value. Entries missing either field, with a non-string
  * key, or whose value is {@link JsonElement#isJsonNull()} are skipped.
  */
+@StageSpec(
+    displayName = "JsonObject from entries",
+    description = "List<JSON_OBJECT> -> JSON_OBJECT",
+    category = StageSpec.Category.TERMINAL_COLLECT
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

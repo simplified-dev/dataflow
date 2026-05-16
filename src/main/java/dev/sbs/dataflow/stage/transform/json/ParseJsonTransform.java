@@ -5,8 +5,8 @@ import com.google.gson.JsonParser;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +19,11 @@ import org.jetbrains.annotations.Nullable;
  * {@link TransformStage} that parses a {@link DataTypes#RAW_JSON} body into a Gson
  * {@link JsonElement}.
  */
+@StageSpec(
+    displayName = "Parse JSON",
+    description = "RAW_JSON -> JSON_ELEMENT",
+    category = StageSpec.Category.TRANSFORM_JSON
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -31,12 +36,6 @@ public final class ParseJsonTransform implements TransformStage<String, JsonElem
      */
     public static @NotNull ParseJsonTransform of() {
         return new ParseJsonTransform();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

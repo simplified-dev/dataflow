@@ -1,28 +1,5 @@
 package dev.sbs.dataflow.stage;
 
-import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
-import dev.sbs.dataflow.stage.terminal.match.AllMatchCollect;
-import dev.sbs.dataflow.stage.terminal.match.AnyMatchCollect;
-import dev.sbs.dataflow.stage.terminal.average.AverageDoubleCollect;
-import dev.sbs.dataflow.stage.terminal.average.AverageIntCollect;
-import dev.sbs.dataflow.stage.terminal.average.AverageLongCollect;
-import dev.sbs.dataflow.stage.terminal.sum.CountCollect;
-import dev.sbs.dataflow.stage.terminal.match.FindFirstCollect;
-import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
-import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
-import dev.sbs.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
-import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
-import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
-import dev.sbs.dataflow.stage.terminal.minmax.MaxByCollect;
-import dev.sbs.dataflow.stage.terminal.minmax.MaxCollect;
-import dev.sbs.dataflow.stage.terminal.minmax.MinByCollect;
-import dev.sbs.dataflow.stage.terminal.minmax.MinCollect;
-import dev.sbs.dataflow.stage.terminal.match.NoneMatchCollect;
-import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
-import dev.sbs.dataflow.stage.terminal.sum.SumDoubleCollect;
-import dev.sbs.dataflow.stage.terminal.sum.SumIntCollect;
-import dev.sbs.dataflow.stage.terminal.sum.SumLongCollect;
-import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.filter.dom.DomHasAttrFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTagEqualsFilter;
 import dev.sbs.dataflow.stage.filter.dom.DomTextContainsFilter;
@@ -76,9 +53,32 @@ import dev.sbs.dataflow.stage.predicate.string.StringEqualsPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringMatchesPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringNonEmptyPredicate;
 import dev.sbs.dataflow.stage.predicate.string.StringStartsWithPredicate;
+import dev.sbs.dataflow.stage.source.EmbedSource;
 import dev.sbs.dataflow.stage.source.LiteralListSource;
 import dev.sbs.dataflow.stage.source.LiteralSource;
 import dev.sbs.dataflow.stage.source.UrlSource;
+import dev.sbs.dataflow.stage.terminal.average.AverageDoubleCollect;
+import dev.sbs.dataflow.stage.terminal.average.AverageIntCollect;
+import dev.sbs.dataflow.stage.terminal.average.AverageLongCollect;
+import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
+import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
+import dev.sbs.dataflow.stage.terminal.collect.JsonObjectFromEntriesCollect;
+import dev.sbs.dataflow.stage.terminal.collect.LastCollect;
+import dev.sbs.dataflow.stage.terminal.collect.ListCollect;
+import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
+import dev.sbs.dataflow.stage.terminal.collect.SetCollect;
+import dev.sbs.dataflow.stage.terminal.match.AllMatchCollect;
+import dev.sbs.dataflow.stage.terminal.match.AnyMatchCollect;
+import dev.sbs.dataflow.stage.terminal.match.FindFirstCollect;
+import dev.sbs.dataflow.stage.terminal.match.NoneMatchCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MaxByCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MaxCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MinByCollect;
+import dev.sbs.dataflow.stage.terminal.minmax.MinCollect;
+import dev.sbs.dataflow.stage.terminal.sum.CountCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumDoubleCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumIntCollect;
+import dev.sbs.dataflow.stage.terminal.sum.SumLongCollect;
 import dev.sbs.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.sbs.dataflow.stage.transform.dom.DomChildrenTransform;
 import dev.sbs.dataflow.stage.transform.dom.DomOuterHtmlTransform;
@@ -92,7 +92,18 @@ import dev.sbs.dataflow.stage.transform.encoding.Base64DecodeTransform;
 import dev.sbs.dataflow.stage.transform.encoding.Base64EncodeTransform;
 import dev.sbs.dataflow.stage.transform.encoding.UrlDecodeTransform;
 import dev.sbs.dataflow.stage.transform.encoding.UrlEncodeTransform;
-import dev.sbs.dataflow.stage.transform.json.*;
+import dev.sbs.dataflow.stage.transform.json.GsonDeserializeTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonAsBooleanTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonAsDoubleTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonAsIntTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonAsLongTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonAsStringTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonFieldTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonObjectBuildTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonPathTransform;
+import dev.sbs.dataflow.stage.transform.json.JsonStringifyTransform;
+import dev.sbs.dataflow.stage.transform.json.ParseJsonTransform;
+import dev.sbs.dataflow.stage.transform.json.ParseXmlTransform;
 import dev.sbs.dataflow.stage.transform.list.FlatMapTransform;
 import dev.sbs.dataflow.stage.transform.list.FlattenTransform;
 import dev.sbs.dataflow.stage.transform.list.ListLengthTransform;
@@ -100,8 +111,21 @@ import dev.sbs.dataflow.stage.transform.list.MapTransform;
 import dev.sbs.dataflow.stage.transform.list.ReverseTransform;
 import dev.sbs.dataflow.stage.transform.list.SortByTransform;
 import dev.sbs.dataflow.stage.transform.list.SortTransform;
+import dev.sbs.dataflow.stage.transform.primitive.AbsDoubleTransform;
+import dev.sbs.dataflow.stage.transform.primitive.AbsFloatTransform;
+import dev.sbs.dataflow.stage.transform.primitive.AbsIntTransform;
+import dev.sbs.dataflow.stage.transform.primitive.AbsLongTransform;
+import dev.sbs.dataflow.stage.transform.primitive.NegateDoubleTransform;
+import dev.sbs.dataflow.stage.transform.primitive.NegateFloatTransform;
+import dev.sbs.dataflow.stage.transform.primitive.NegateIntTransform;
+import dev.sbs.dataflow.stage.transform.primitive.NegateLongTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseBooleanTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseDoubleTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseFloatTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseIntTransform;
+import dev.sbs.dataflow.stage.transform.primitive.ParseLongTransform;
 import dev.sbs.dataflow.stage.transform.primitive.PeekTransform;
-import dev.sbs.dataflow.stage.transform.primitive.*;
+import dev.sbs.dataflow.stage.transform.primitive.ToStringTransform;
 import dev.sbs.dataflow.stage.transform.string.LowerCaseTransform;
 import dev.sbs.dataflow.stage.transform.string.PrefixTransform;
 import dev.sbs.dataflow.stage.transform.string.RegexExtractTransform;
@@ -111,11 +135,7 @@ import dev.sbs.dataflow.stage.transform.string.StringLengthTransform;
 import dev.sbs.dataflow.stage.transform.string.SuffixTransform;
 import dev.sbs.dataflow.stage.transform.string.TrimTransform;
 import dev.sbs.dataflow.stage.transform.string.UpperCaseTransform;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -124,1295 +144,232 @@ import java.util.function.Function;
 /**
  * Stable wire-format discriminator for a {@link Stage} kind.
  * <p>
- * Each enum constant carries everything the framework needs about a stage: display name,
- * type-signature description, coarse {@link StageCategory} grouping, configuration
- * {@link FieldSpec schema}, and the {@link Function factory} that builds a fresh stage
- * instance from a populated {@link StageConfig}.
+ * Each constant binds a wire name to the implementation class. Display name, description,
+ * category, configuration schema, and the deserialisation factory are all derived
+ * reflectively on first touch by {@link StageReflection}, then cached. The constant itself
+ * is just an identifier paired with the class.
  * <p>
- * Stages whose serde lands in v2 (currently only {@code TRANSFORM_MAP}) carry a {@code null}
- * factory; any attempt to deserialise them fails fast.
+ * Adding a stage means appending one entry here plus authoring the class with
+ * {@link StageSpec} and {@link Configurable} annotations on its canonical factory.
  */
-@Getter
-@Accessors(fluent = true)
-@RequiredArgsConstructor
 public enum StageKind {
 
     /* ---- Source ---- */
-    SOURCE_EMBED(
-        "Embed pipeline",
-        "() -> O",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("embeddedPipelineId", FieldType.STRING, "Saved pipeline id", "wiki_dmg"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "INT")
-        ),
-        EmbedSource::fromConfig
-    ),
-
-    SOURCE_LITERAL(
-        "Literal",
-        "() -> T",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "STRING"),
-            new FieldSpec("value", FieldType.STRING, "Value", "literal")
-        ),
-        LiteralSource::fromConfig
-    ),
-
-    SOURCE_LITERAL_LIST(
-        "Literal list (JSON array)",
-        "() -> List<T>",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("value", FieldType.STRING, "JSON array", "[\"a\",\"b\"]")
-        ),
-        LiteralListSource::fromConfig
-    ),
-
-    SOURCE_URL(
-        "URL Source",
-        "() -> RAW_*",
-        StageCategory.SOURCE,
-        List.of(
-            new FieldSpec("url", FieldType.STRING, "URL", "https://example.com/page"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type (RAW_HTML / RAW_XML / RAW_JSON / STRING)", "RAW_HTML")
-        ),
-        UrlSource::fromConfig
-    ),
+    SOURCE_EMBED(EmbedSource.class),
+    SOURCE_LITERAL(LiteralSource.class),
+    SOURCE_LITERAL_LIST(LiteralListSource.class),
+    SOURCE_URL(UrlSource.class),
 
     /* ---- Filter ---- */
-    FILTER_DISTINCT(
-        "Distinct",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        DistinctFilter::fromConfig
-    ),
-
-    FILTER_DOM_HAS_ATTR(
-        "Has attribute",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
-        List.of(
-            new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "class"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Expected value (optional)", "primary")
-        ),
-        DomHasAttrFilter::fromConfig
-    ),
-
-    FILTER_DOM_TAG_EQUALS(
-        "Tag equals",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
-        List.of(
-            new FieldSpec("tagName", FieldType.STRING, "Tag", "a")
-        ),
-        DomTagEqualsFilter::fromConfig
-    ),
-
-    FILTER_DOM_TEXT_CONTAINS(
-        "Text contains",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
-        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
-        DomTextContainsFilter::fromConfig
-    ),
-
-    FILTER_DOM_TEXT_MATCHES(
-        "Text matches regex",
-        "List<DOM_NODE> -> List<DOM_NODE>",
-        StageCategory.FILTER_DOM,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")
-        ),
-        DomTextMatchesFilter::fromConfig
-    ),
-
-    FILTER_DOUBLE_GREATER_THAN(
-        "Double >",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
-        ),
-        DoubleGreaterThanFilter::fromConfig
-    ),
-
-    FILTER_DOUBLE_IN_RANGE(
-        "Double in [min, max]",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
-            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
-        ),
-        DoubleInRangeFilter::fromConfig
-    ),
-
-    FILTER_DOUBLE_LESS_THAN(
-        "Double <",
-        "List<DOUBLE> -> List<DOUBLE>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")
-        ),
-        DoubleLessThanFilter::fromConfig
-    ),
-
-    FILTER_DROP_WHILE(
-        "DropWhile",
-        "List<T> -> List<T> (body: T -> BOOLEAN)",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        DropWhileFilter::fromConfig
-    ),
-
-    FILTER_INDEX_IN_RANGE(
-        "Index in [from, to)",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("fromInclusive", FieldType.INT, "From (inclusive)", "0"),
-            new FieldSpec("toExclusive", FieldType.INT, "To (exclusive)", "10")
-        ),
-        IndexInRangeFilter::fromConfig
-    ),
-
-    FILTER_INT_GREATER_THAN(
-        "Int >",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
-        ),
-        IntGreaterThanFilter::fromConfig
-    ),
-
-    FILTER_INT_IN_RANGE(
-        "Int in [min, max]",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
-        ),
-        IntInRangeFilter::fromConfig
-    ),
-
-    FILTER_INT_LESS_THAN(
-        "Int <",
-        "List<INT> -> List<INT>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.INT, "Threshold", "0")
-        ),
-        IntLessThanFilter::fromConfig
-    ),
-
-    FILTER_JSON_FIELD_EQUALS(
-        "Field equals",
-        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
-        StageCategory.FILTER_JSON,
-        List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
-        ),
-        JsonFieldEqualsFilter::fromConfig
-    ),
-
-    FILTER_JSON_HAS_FIELD(
-        "Has field",
-        "List<JSON_OBJECT> -> List<JSON_OBJECT>",
-        StageCategory.FILTER_JSON,
-        List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")
-        ),
-        JsonHasFieldFilter::fromConfig
-    ),
-
-    FILTER_LONG_GREATER_THAN(
-        "Long >",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
-        ),
-        LongGreaterThanFilter::fromConfig
-    ),
-
-    FILTER_LONG_IN_RANGE(
-        "Long in [min, max]",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
-        ),
-        LongInRangeFilter::fromConfig
-    ),
-
-    FILTER_LONG_LESS_THAN(
-        "Long <",
-        "List<LONG> -> List<LONG>",
-        StageCategory.FILTER_NUMERIC,
-        List.of(
-            new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")
-        ),
-        LongLessThanFilter::fromConfig
-    ),
-
-    FILTER_NOT_NULL(
-        "Not null",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        NotNullFilter::fromConfig
-    ),
-
-    FILTER_SKIP(
-        "Skip first N",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("count", FieldType.INT, "Count", "10")
-        ),
-        SkipFilter::fromConfig
-    ),
-
-    FILTER_STRING_CONTAINS(
-        "Contains",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("needle", FieldType.STRING, "Contains", "foo")
-        ),
-        StringContainsFilter::fromConfig
-    ),
-
-    FILTER_STRING_ENDS_WITH(
-        "Ends with",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("suffix", FieldType.STRING, "Suffix", "bar")
-        ),
-        StringEndsWithFilter::fromConfig
-    ),
-
-    FILTER_STRING_EQUALS(
-        "Equals",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("target", FieldType.STRING, "Equals", "foo")
-        ),
-        StringEqualsFilter::fromConfig
-    ),
-
-    FILTER_STRING_MATCHES(
-        "Matches regex",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "^foo")
-        ),
-        StringMatchesFilter::fromConfig
-    ),
-
-    FILTER_STRING_NON_EMPTY(
-        "Non-empty",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(),
-        cfg -> StringNonEmptyFilter.of()
-    ),
-
-    FILTER_STRING_STARTS_WITH(
-        "Starts with",
-        "List<STRING> -> List<STRING>",
-        StageCategory.FILTER_STRING,
-        List.of(
-            new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")
-        ),
-        StringStartsWithFilter::fromConfig
-    ),
-
-    FILTER_TAKE(
-        "Take first N",
-        "List<T> -> List<T>",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("count", FieldType.INT, "Count", "10")
-        ),
-        TakeFilter::fromConfig
-    ),
-
-    FILTER_TAKE_WHILE(
-        "TakeWhile",
-        "List<T> -> List<T> (body: T -> BOOLEAN)",
-        StageCategory.FILTER_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        TakeWhileFilter::fromConfig
-    ),
+    FILTER_DISTINCT(DistinctFilter.class),
+    FILTER_DOM_HAS_ATTR(DomHasAttrFilter.class),
+    FILTER_DOM_TAG_EQUALS(DomTagEqualsFilter.class),
+    FILTER_DOM_TEXT_CONTAINS(DomTextContainsFilter.class),
+    FILTER_DOM_TEXT_MATCHES(DomTextMatchesFilter.class),
+    FILTER_DOUBLE_GREATER_THAN(DoubleGreaterThanFilter.class),
+    FILTER_DOUBLE_IN_RANGE(DoubleInRangeFilter.class),
+    FILTER_DOUBLE_LESS_THAN(DoubleLessThanFilter.class),
+    FILTER_DROP_WHILE(DropWhileFilter.class),
+    FILTER_INDEX_IN_RANGE(IndexInRangeFilter.class),
+    FILTER_INT_GREATER_THAN(IntGreaterThanFilter.class),
+    FILTER_INT_IN_RANGE(IntInRangeFilter.class),
+    FILTER_INT_LESS_THAN(IntLessThanFilter.class),
+    FILTER_JSON_FIELD_EQUALS(JsonFieldEqualsFilter.class),
+    FILTER_JSON_HAS_FIELD(JsonHasFieldFilter.class),
+    FILTER_LONG_GREATER_THAN(LongGreaterThanFilter.class),
+    FILTER_LONG_IN_RANGE(LongInRangeFilter.class),
+    FILTER_LONG_LESS_THAN(LongLessThanFilter.class),
+    FILTER_NOT_NULL(NotNullFilter.class),
+    FILTER_SKIP(SkipFilter.class),
+    FILTER_STRING_CONTAINS(StringContainsFilter.class),
+    FILTER_STRING_ENDS_WITH(StringEndsWithFilter.class),
+    FILTER_STRING_EQUALS(StringEqualsFilter.class),
+    FILTER_STRING_MATCHES(StringMatchesFilter.class),
+    FILTER_STRING_NON_EMPTY(StringNonEmptyFilter.class),
+    FILTER_STRING_STARTS_WITH(StringStartsWithFilter.class),
+    FILTER_TAKE(TakeFilter.class),
+    FILTER_TAKE_WHILE(TakeWhileFilter.class),
 
     /* ---- Transform ---- */
-    PARSE_HTML(
-        "Parse HTML",
-        "RAW_HTML -> DOM_NODE",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> ParseHtmlTransform.of()
-    ),
-
-    PARSE_JSON(
-        "Parse JSON",
-        "RAW_JSON -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> ParseJsonTransform.of()
-    ),
-
-    PARSE_XML(
-        "Parse XML",
-        "RAW_XML -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> ParseXmlTransform.of()
-    ),
-
-    TRANSFORM_ABS_DOUBLE(
-        "Abs double",
-        "DOUBLE -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsDoubleTransform.of()
-    ),
-
-    TRANSFORM_ABS_FLOAT(
-        "Abs float",
-        "FLOAT -> FLOAT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsFloatTransform.of()
-    ),
-
-    TRANSFORM_ABS_INT(
-        "Abs int",
-        "INT -> INT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsIntTransform.of()
-    ),
-
-    TRANSFORM_ABS_LONG(
-        "Abs long",
-        "LONG -> LONG",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> AbsLongTransform.of()
-    ),
-
-    TRANSFORM_BASE64_DECODE(
-        "Base64 decode",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
-        List.of(),
-        cfg -> Base64DecodeTransform.of()
-    ),
-
-    TRANSFORM_BASE64_ENCODE(
-        "Base64 encode",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
-        List.of(),
-        cfg -> Base64EncodeTransform.of()
-    ),
-
-    TRANSFORM_CSS_SELECT(
-        "CSS select",
-        "DOM_NODE -> List<DOM_NODE>",
-        StageCategory.TRANSFORM_DOM,
-        List.of(new FieldSpec("selector", FieldType.STRING, "Selector", "table.infobox tr")),
-        CssSelectTransform::fromConfig
-    ),
-
-    TRANSFORM_DOM_CHILDREN(
-        "DOM children",
-        "DOM_NODE -> List<DOM_NODE>",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomChildrenTransform.of()
-    ),
-
-    TRANSFORM_DOM_OUTER_HTML(
-        "DOM outerHtml",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomOuterHtmlTransform.of()
-    ),
-
-    TRANSFORM_DOM_OWN_TEXT(
-        "DOM ownText",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomOwnTextTransform.of()
-    ),
-
-    TRANSFORM_DOM_PARENT(
-        "DOM parent",
-        "DOM_NODE -> DOM_NODE",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> DomParentTransform.of()
-    ),
-
-    TRANSFORM_FLATTEN(
-        "Flatten",
-        "List<List<T>> -> List<T>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        FlattenTransform::fromConfig
-    ),
-
-    TRANSFORM_FLAT_MAP(
-        "FlatMap sub-pipeline",
-        "List<X> -> List<Y> (body: X -> List<Y>)",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
-            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body (yields List<Y>)", "")
-        ),
-        FlatMapTransform::fromConfig
-    ),
-
-    TRANSFORM_GSON_DESERIALIZE(
-        "Gson deserialize",
-        "JSON_* -> T",
-        StageCategory.TRANSFORM_JSON,
-        List.of(
-            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "JSON_ELEMENT"),
-            new FieldSpec("outputType", FieldType.DATA_TYPE, "Output type", "STRING")
-        ),
-        GsonDeserializeTransform::fromConfig
-    ),
-
-    TRANSFORM_JSON_AS_BOOLEAN(
-        "JSON as boolean",
-        "JSON_ELEMENT -> BOOLEAN",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsBooleanTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_DOUBLE(
-        "JSON as double",
-        "JSON_ELEMENT -> DOUBLE",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsDoubleTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_INT(
-        "JSON as int",
-        "JSON_ELEMENT -> INT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsIntTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_LONG(
-        "JSON as long",
-        "JSON_ELEMENT -> LONG",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsLongTransform.of()
-    ),
-
-    TRANSFORM_JSON_AS_STRING(
-        "JSON as string",
-        "JSON_ELEMENT -> STRING",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonAsStringTransform.of()
-    ),
-
-    TRANSFORM_JSON_FIELD(
-        "JSON field",
-        "JSON_OBJECT -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "stats")),
-        JsonFieldTransform::fromConfig
-    ),
-
-    TRANSFORM_JSON_OBJECT_BUILD(
-        "JsonObject build",
-        "I -> JSON_OBJECT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(
-            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "STRING"),
-            new FieldSpec("outputs", FieldType.TYPED_SUB_PIPELINES_MAP, "Outputs (typed)", "")
-        ),
-        JsonObjectBuildTransform::fromConfig
-    ),
-
-    TRANSFORM_JSON_PATH(
-        "JSON path",
-        "JSON_ELEMENT -> JSON_ELEMENT",
-        StageCategory.TRANSFORM_JSON,
-        List.of(new FieldSpec("path", FieldType.STRING, "Path", "stats.combat.dmg")),
-        JsonPathTransform::fromConfig
-    ),
-
-    TRANSFORM_JSON_STRINGIFY(
-        "JSON stringify",
-        "JSON_ELEMENT -> STRING",
-        StageCategory.TRANSFORM_JSON,
-        List.of(),
-        cfg -> JsonStringifyTransform.of()
-    ),
-
-    TRANSFORM_LIST_LENGTH(
-        "List length",
-        "List<T> -> INT",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        ListLengthTransform::fromConfig
-    ),
-
-    TRANSFORM_LOWERCASE(
-        "Lowercase",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> LowerCaseTransform.of()
-    ),
-
-    TRANSFORM_MAP(
-        "Map sub-pipeline",
-        "List<X> -> List<Y>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementInputType", FieldType.DATA_TYPE, "Input element type", "STRING"),
-            new FieldSpec("elementOutputType", FieldType.DATA_TYPE, "Output element type", "INT"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Per-element body", "")
-        ),
-        MapTransform::fromConfig
-    ),
-
-    TRANSFORM_NEGATE_DOUBLE(
-        "Negate double",
-        "DOUBLE -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateDoubleTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_FLOAT(
-        "Negate float",
-        "FLOAT -> FLOAT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateFloatTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_INT(
-        "Negate int",
-        "INT -> INT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateIntTransform.of()
-    ),
-
-    TRANSFORM_NEGATE_LONG(
-        "Negate long",
-        "LONG -> LONG",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> NegateLongTransform.of()
-    ),
-
-    TRANSFORM_NODE_ATTR(
-        "Node attribute",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "href")),
-        NodeAttrTransform::fromConfig
-    ),
-
-    TRANSFORM_NODE_TEXT(
-        "Node text",
-        "DOM_NODE -> STRING",
-        StageCategory.TRANSFORM_DOM,
-        List.of(),
-        cfg -> NodeTextTransform.of()
-    ),
-
-    TRANSFORM_NTH_CHILD(
-        "Nth child",
-        "DOM_NODE -> DOM_NODE",
-        StageCategory.TRANSFORM_DOM,
-        List.of(
-            new FieldSpec("childSelector", FieldType.STRING, "Child selector", "td"),
-            new FieldSpec("index", FieldType.INT, "Index (0-based)", "0")
-        ),
-        NthChildTransform::fromConfig
-    ),
-
-    TRANSFORM_PARSE_BOOLEAN(
-        "Parse boolean",
-        "STRING -> BOOLEAN",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseBooleanTransform.of()
-    ),
-
-    TRANSFORM_PARSE_DOUBLE(
-        "Parse double",
-        "STRING -> DOUBLE",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseDoubleTransform.of()
-    ),
-
-    TRANSFORM_PARSE_FLOAT(
-        "Parse float",
-        "STRING -> FLOAT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseFloatTransform.of()
-    ),
-
-    TRANSFORM_PARSE_INT(
-        "Parse int",
-        "STRING -> INT",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseIntTransform.of()
-    ),
-
-    TRANSFORM_PARSE_LONG(
-        "Parse long",
-        "STRING -> LONG",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(),
-        cfg -> ParseLongTransform.of()
-    ),
-
-    TRANSFORM_PEEK(
-        "Peek (log)",
-        "T -> T",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(
-            new FieldSpec("valueType", FieldType.DATA_TYPE, "Value type", "STRING"),
-            new FieldSpec("label", FieldType.STRING, "Label", "stage")
-        ),
-        PeekTransform::fromConfig
-    ),
-
-    TRANSFORM_PREFIX(
-        "Prefix",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("prefix", FieldType.STRING, "Prefix", ">>>")
-        ),
-        PrefixTransform::fromConfig
-    ),
-
-    TRANSFORM_REGEX_EXTRACT(
-        "Regex extract",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "\\d+"),
-            new FieldSpec("group", FieldType.INT, "Capture group", "0")
-        ),
-        RegexExtractTransform::fromConfig
-    ),
-
-    TRANSFORM_REPLACE(
-        "Replace regex",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", "\\s+"),
-            new FieldSpec("replacement", FieldType.STRING, "Replacement", "_")
-        ),
-        ReplaceTransform::fromConfig
-    ),
-
-    TRANSFORM_REVERSE(
-        "Reverse list",
-        "List<T> -> List<T>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        ReverseTransform::fromConfig
-    ),
-
-    TRANSFORM_SORT(
-        "Sort list",
-        "List<T> -> List<T>",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT"),
-            new FieldSpec("ascending", FieldType.BOOLEAN, "Ascending", "true")
-        ),
-        SortTransform::fromConfig
-    ),
-
-    TRANSFORM_SORT_BY(
-        "Sort by key",
-        "List<T> -> List<T> (body: T -> K)",
-        StageCategory.TRANSFORM_LIST,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("keyType", FieldType.DATA_TYPE, "Key type", "INT"),
-            new FieldSpec("ascending", FieldType.BOOLEAN, "Ascending", "true"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Key extractor body", "")
-        ),
-        SortByTransform::fromConfig
-    ),
-
-    TRANSFORM_SPLIT(
-        "Split on regex",
-        "STRING -> List<STRING>",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("regex", FieldType.STRING, "Regex", ",")
-        ),
-        SplitTransform::fromConfig
-    ),
-
-    TRANSFORM_STRING_LENGTH(
-        "String length",
-        "STRING -> INT",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> StringLengthTransform.of()
-    ),
-
-    TRANSFORM_SUFFIX(
-        "Suffix",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(
-            new FieldSpec("suffix", FieldType.STRING, "Suffix", "<<<")
-        ),
-        SuffixTransform::fromConfig
-    ),
-
-    TRANSFORM_TO_STRING(
-        "To string",
-        "T -> STRING",
-        StageCategory.TRANSFORM_PRIMITIVE,
-        List.of(
-            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "INT")
-        ),
-        ToStringTransform::fromConfig
-    ),
-
-    TRANSFORM_TRIM(
-        "Trim",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> TrimTransform.of()
-    ),
-
-    TRANSFORM_UPPERCASE(
-        "Uppercase",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_STRING,
-        List.of(),
-        cfg -> UpperCaseTransform.of()
-    ),
-
-    TRANSFORM_URL_DECODE(
-        "URL decode",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
-        List.of(),
-        cfg -> UrlDecodeTransform.of()
-    ),
-
-    TRANSFORM_URL_ENCODE(
-        "URL encode",
-        "STRING -> STRING",
-        StageCategory.TRANSFORM_ENCODING,
-        List.of(),
-        cfg -> UrlEncodeTransform.of()
-    ),
+    PARSE_HTML(ParseHtmlTransform.class),
+    PARSE_JSON(ParseJsonTransform.class),
+    PARSE_XML(ParseXmlTransform.class),
+    TRANSFORM_ABS_DOUBLE(AbsDoubleTransform.class),
+    TRANSFORM_ABS_FLOAT(AbsFloatTransform.class),
+    TRANSFORM_ABS_INT(AbsIntTransform.class),
+    TRANSFORM_ABS_LONG(AbsLongTransform.class),
+    TRANSFORM_BASE64_DECODE(Base64DecodeTransform.class),
+    TRANSFORM_BASE64_ENCODE(Base64EncodeTransform.class),
+    TRANSFORM_CSS_SELECT(CssSelectTransform.class),
+    TRANSFORM_DOM_CHILDREN(DomChildrenTransform.class),
+    TRANSFORM_DOM_OUTER_HTML(DomOuterHtmlTransform.class),
+    TRANSFORM_DOM_OWN_TEXT(DomOwnTextTransform.class),
+    TRANSFORM_DOM_PARENT(DomParentTransform.class),
+    TRANSFORM_FLATTEN(FlattenTransform.class),
+    TRANSFORM_FLAT_MAP(FlatMapTransform.class),
+    TRANSFORM_GSON_DESERIALIZE(GsonDeserializeTransform.class),
+    TRANSFORM_JSON_AS_BOOLEAN(JsonAsBooleanTransform.class),
+    TRANSFORM_JSON_AS_DOUBLE(JsonAsDoubleTransform.class),
+    TRANSFORM_JSON_AS_INT(JsonAsIntTransform.class),
+    TRANSFORM_JSON_AS_LONG(JsonAsLongTransform.class),
+    TRANSFORM_JSON_AS_STRING(JsonAsStringTransform.class),
+    TRANSFORM_JSON_FIELD(JsonFieldTransform.class),
+    TRANSFORM_JSON_OBJECT_BUILD(JsonObjectBuildTransform.class),
+    TRANSFORM_JSON_PATH(JsonPathTransform.class),
+    TRANSFORM_JSON_STRINGIFY(JsonStringifyTransform.class),
+    TRANSFORM_LIST_LENGTH(ListLengthTransform.class),
+    TRANSFORM_LOWERCASE(LowerCaseTransform.class),
+    TRANSFORM_MAP(MapTransform.class),
+    TRANSFORM_NEGATE_DOUBLE(NegateDoubleTransform.class),
+    TRANSFORM_NEGATE_FLOAT(NegateFloatTransform.class),
+    TRANSFORM_NEGATE_INT(NegateIntTransform.class),
+    TRANSFORM_NEGATE_LONG(NegateLongTransform.class),
+    TRANSFORM_NODE_ATTR(NodeAttrTransform.class),
+    TRANSFORM_NODE_TEXT(NodeTextTransform.class),
+    TRANSFORM_NTH_CHILD(NthChildTransform.class),
+    TRANSFORM_PARSE_BOOLEAN(ParseBooleanTransform.class),
+    TRANSFORM_PARSE_DOUBLE(ParseDoubleTransform.class),
+    TRANSFORM_PARSE_FLOAT(ParseFloatTransform.class),
+    TRANSFORM_PARSE_INT(ParseIntTransform.class),
+    TRANSFORM_PARSE_LONG(ParseLongTransform.class),
+    TRANSFORM_PEEK(PeekTransform.class),
+    TRANSFORM_PREFIX(PrefixTransform.class),
+    TRANSFORM_REGEX_EXTRACT(RegexExtractTransform.class),
+    TRANSFORM_REPLACE(ReplaceTransform.class),
+    TRANSFORM_REVERSE(ReverseTransform.class),
+    TRANSFORM_SORT(SortTransform.class),
+    TRANSFORM_SORT_BY(SortByTransform.class),
+    TRANSFORM_SPLIT(SplitTransform.class),
+    TRANSFORM_STRING_LENGTH(StringLengthTransform.class),
+    TRANSFORM_SUFFIX(SuffixTransform.class),
+    TRANSFORM_TO_STRING(ToStringTransform.class),
+    TRANSFORM_TRIM(TrimTransform.class),
+    TRANSFORM_UPPERCASE(UpperCaseTransform.class),
+    TRANSFORM_URL_DECODE(UrlDecodeTransform.class),
+    TRANSFORM_URL_ENCODE(UrlEncodeTransform.class),
 
     /* ---- Predicate ---- */
-    PREDICATE_AND(
-        "And",
-        "T -> BOOLEAN (AND over N predicate bodies)",
-        StageCategory.PREDICATE_COMMON,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
-        ),
-        AndPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_HAS_ATTR(
-        "Has attribute",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(
-            new FieldSpec("attributeName", FieldType.STRING, "Attribute name", "class"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Expected value (optional)", "primary")
-        ),
-        DomHasAttrPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TAG_EQUALS(
-        "Tag equals",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("tagName", FieldType.STRING, "Tag", "a")),
-        DomTagEqualsPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TEXT_CONTAINS(
-        "Text contains",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("needle", FieldType.STRING, "Text contains", "Dmg")),
-        DomTextContainsPredicate::fromConfig
-    ),
-
-    PREDICATE_DOM_TEXT_MATCHES(
-        "Text matches regex",
-        "DOM_NODE -> BOOLEAN",
-        StageCategory.PREDICATE_DOM,
-        List.of(new FieldSpec("regex", FieldType.STRING, "Text matches regex", "\\d+")),
-        DomTextMatchesPredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_GREATER_THAN(
-        "Double >",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
-        DoubleGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_IN_RANGE(
-        "Double in [min, max]",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.DOUBLE, "Min (inclusive)", "0.0"),
-            new FieldSpec("max", FieldType.DOUBLE, "Max (inclusive)", "100.0")
-        ),
-        DoubleInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_DOUBLE_LESS_THAN(
-        "Double <",
-        "DOUBLE -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.DOUBLE, "Threshold", "0.0")),
-        DoubleLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_INT_GREATER_THAN(
-        "Int >",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
-        IntGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_INT_IN_RANGE(
-        "Int in [min, max]",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.INT, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.INT, "Max (inclusive)", "100")
-        ),
-        IntInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_INT_LESS_THAN(
-        "Int <",
-        "INT -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.INT, "Threshold", "0")),
-        IntLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_JSON_FIELD_EQUALS(
-        "Field equals",
-        "JSON_OBJECT -> BOOLEAN",
-        StageCategory.PREDICATE_JSON,
-        List.of(
-            new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare"),
-            new FieldSpec("expectedValue", FieldType.STRING, "Equals", "true")
-        ),
-        JsonFieldEqualsPredicate::fromConfig
-    ),
-
-    PREDICATE_JSON_HAS_FIELD(
-        "Has field",
-        "JSON_OBJECT -> BOOLEAN",
-        StageCategory.PREDICATE_JSON,
-        List.of(new FieldSpec("fieldName", FieldType.STRING, "Field name", "rare")),
-        JsonHasFieldPredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_GREATER_THAN(
-        "Long >",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
-        LongGreaterThanPredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_IN_RANGE(
-        "Long in [min, max]",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(
-            new FieldSpec("min", FieldType.LONG, "Min (inclusive)", "0"),
-            new FieldSpec("max", FieldType.LONG, "Max (inclusive)", "100")
-        ),
-        LongInRangePredicate::fromConfig
-    ),
-
-    PREDICATE_LONG_LESS_THAN(
-        "Long <",
-        "LONG -> BOOLEAN",
-        StageCategory.PREDICATE_NUMERIC,
-        List.of(new FieldSpec("threshold", FieldType.LONG, "Threshold", "0")),
-        LongLessThanPredicate::fromConfig
-    ),
-
-    PREDICATE_NOT(
-        "Not",
-        "BOOLEAN -> BOOLEAN",
-        StageCategory.PREDICATE_COMMON,
-        List.of(),
-        cfg -> NotPredicate.of()
-    ),
-
-    PREDICATE_NOT_NULL(
-        "Not null",
-        "T -> BOOLEAN",
-        StageCategory.PREDICATE_COMMON,
-        List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")),
-        NotNullPredicate::fromConfig
-    ),
-
-    PREDICATE_OR(
-        "Or",
-        "T -> BOOLEAN (OR over N predicate bodies)",
-        StageCategory.PREDICATE_COMMON,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("bodies", FieldType.SUB_PIPELINES_MAP, "Predicate bodies", "")
-        ),
-        OrPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_CONTAINS(
-        "Contains",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("needle", FieldType.STRING, "Contains", "foo")),
-        StringContainsPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_ENDS_WITH(
-        "Ends with",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("suffix", FieldType.STRING, "Suffix", "bar")),
-        StringEndsWithPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_EQUALS(
-        "Equals",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("target", FieldType.STRING, "Equals", "foo")),
-        StringEqualsPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_MATCHES(
-        "Matches regex",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("regex", FieldType.STRING, "Regex", "^foo")),
-        StringMatchesPredicate::fromConfig
-    ),
-
-    PREDICATE_STRING_NON_EMPTY(
-        "Non-empty",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(),
-        cfg -> StringNonEmptyPredicate.of()
-    ),
-
-    PREDICATE_STRING_STARTS_WITH(
-        "Starts with",
-        "STRING -> BOOLEAN",
-        StageCategory.PREDICATE_STRING,
-        List.of(new FieldSpec("prefix", FieldType.STRING, "Prefix", "foo")),
-        StringStartsWithPredicate::fromConfig
-    ),
+    PREDICATE_AND(AndPredicate.class),
+    PREDICATE_DOM_HAS_ATTR(DomHasAttrPredicate.class),
+    PREDICATE_DOM_TAG_EQUALS(DomTagEqualsPredicate.class),
+    PREDICATE_DOM_TEXT_CONTAINS(DomTextContainsPredicate.class),
+    PREDICATE_DOM_TEXT_MATCHES(DomTextMatchesPredicate.class),
+    PREDICATE_DOUBLE_GREATER_THAN(DoubleGreaterThanPredicate.class),
+    PREDICATE_DOUBLE_IN_RANGE(DoubleInRangePredicate.class),
+    PREDICATE_DOUBLE_LESS_THAN(DoubleLessThanPredicate.class),
+    PREDICATE_INT_GREATER_THAN(IntGreaterThanPredicate.class),
+    PREDICATE_INT_IN_RANGE(IntInRangePredicate.class),
+    PREDICATE_INT_LESS_THAN(IntLessThanPredicate.class),
+    PREDICATE_JSON_FIELD_EQUALS(JsonFieldEqualsPredicate.class),
+    PREDICATE_JSON_HAS_FIELD(JsonHasFieldPredicate.class),
+    PREDICATE_LONG_GREATER_THAN(LongGreaterThanPredicate.class),
+    PREDICATE_LONG_IN_RANGE(LongInRangePredicate.class),
+    PREDICATE_LONG_LESS_THAN(LongLessThanPredicate.class),
+    PREDICATE_NOT(NotPredicate.class),
+    PREDICATE_NOT_NULL(NotNullPredicate.class),
+    PREDICATE_OR(OrPredicate.class),
+    PREDICATE_STRING_CONTAINS(StringContainsPredicate.class),
+    PREDICATE_STRING_ENDS_WITH(StringEndsWithPredicate.class),
+    PREDICATE_STRING_EQUALS(StringEqualsPredicate.class),
+    PREDICATE_STRING_MATCHES(StringMatchesPredicate.class),
+    PREDICATE_STRING_NON_EMPTY(StringNonEmptyPredicate.class),
+    PREDICATE_STRING_STARTS_WITH(StringStartsWithPredicate.class),
 
     /* ---- Collect ---- */
-    COLLECT_ALL_MATCH(
-        "AllMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        AllMatchCollect::fromConfig
-    ),
-
-    COLLECT_ANY_MATCH(
-        "AnyMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        AnyMatchCollect::fromConfig
-    ),
-
-    COLLECT_AVERAGE_DOUBLE(
-        "Average DOUBLE",
-        "List<DOUBLE> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageDoubleCollect.of()
-    ),
-
-    COLLECT_AVERAGE_INT(
-        "Average INT",
-        "List<INT> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageIntCollect.of()
-    ),
-
-    COLLECT_AVERAGE_LONG(
-        "Average LONG",
-        "List<LONG> -> DOUBLE",
-        StageCategory.TERMINAL_AVERAGE,
-        List.of(),
-        cfg -> AverageLongCollect.of()
-    ),
-
-    COLLECT_COUNT(
-        "Count",
-        "List<T> -> INT",
-        StageCategory.TERMINAL_SUM,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        CountCollect::fromConfig
-    ),
-
-    COLLECT_FIND_FIRST(
-        "FindFirst (predicate)",
-        "List<T> -> T (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        FindFirstCollect::fromConfig
-    ),
-
-    COLLECT_FIRST(
-        "First",
-        "List<T> -> T",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "DOM_NODE")),
-        FirstCollect::fromConfig
-    ),
-
-    COLLECT_JOIN(
-        "Join",
-        "List<STRING> -> STRING",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(
-            new FieldSpec("separator", FieldType.STRING, "Separator", ", ")
-        ),
-        JoinCollect::fromConfig
-    ),
-
-    COLLECT_JSON_OBJECT_FROM_ENTRIES(
-        "JsonObject from entries",
-        "List<JSON_OBJECT> -> JSON_OBJECT",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(),
-        cfg -> JsonObjectFromEntriesCollect.of()
-    ),
-
-    COLLECT_LAST(
-        "Last",
-        "List<T> -> T",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        LastCollect::fromConfig
-    ),
-
-    COLLECT_LIST(
-        "List",
-        "List<T> -> List<T>",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        ListCollect::fromConfig
-    ),
-
-    COLLECT_MAP(
-        "Map (named outputs)",
-        "I -> Map<String, Object>",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(
-            new FieldSpec("inputType", FieldType.DATA_TYPE, "Input type", "STRING"),
-            new FieldSpec("outputs", FieldType.SUB_PIPELINES_MAP, "Outputs", "")
-        ),
-        MapCollect::fromConfig
-    ),
-
-    COLLECT_MAX(
-        "Max",
-        "List<T> -> T",
-        StageCategory.TERMINAL_MINMAX,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT")
-        ),
-        MaxCollect::fromConfig
-    ),
-
-    COLLECT_MAX_BY(
-        "MaxBy (key)",
-        "List<T> -> T (body: T -> K)",
-        StageCategory.TERMINAL_MINMAX,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("keyType", FieldType.DATA_TYPE, "Key type", "INT"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Key extractor body", "")
-        ),
-        MaxByCollect::fromConfig
-    ),
-
-    COLLECT_MIN(
-        "Min",
-        "List<T> -> T",
-        StageCategory.TERMINAL_MINMAX,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "INT")
-        ),
-        MinCollect::fromConfig
-    ),
-
-    COLLECT_MIN_BY(
-        "MinBy (key)",
-        "List<T> -> T (body: T -> K)",
-        StageCategory.TERMINAL_MINMAX,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("keyType", FieldType.DATA_TYPE, "Key type", "INT"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Key extractor body", "")
-        ),
-        MinByCollect::fromConfig
-    ),
-
-    COLLECT_NONE_MATCH(
-        "NoneMatch",
-        "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
-        StageCategory.TERMINAL_MATCH,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING"),
-            new FieldSpec("body", FieldType.SUB_PIPELINE, "Predicate body", "")
-        ),
-        NoneMatchCollect::fromConfig
-    ),
-
-    COLLECT_SET(
-        "Set",
-        "List<T> -> Set<T>",
-        StageCategory.TERMINAL_COLLECT,
-        List.of(
-            new FieldSpec("elementType", FieldType.DATA_TYPE, "Element type", "STRING")
-        ),
-        SetCollect::fromConfig
-    ),
-
-    COLLECT_SUM_DOUBLE(
-        "Sum DOUBLE",
-        "List<DOUBLE> -> DOUBLE",
-        StageCategory.TERMINAL_SUM,
-        List.of(),
-        cfg -> SumDoubleCollect.of()
-    ),
-
-    COLLECT_SUM_INT(
-        "Sum INT",
-        "List<INT> -> INT",
-        StageCategory.TERMINAL_SUM,
-        List.of(),
-        cfg -> SumIntCollect.of()
-    ),
-
-    COLLECT_SUM_LONG(
-        "Sum LONG",
-        "List<LONG> -> LONG",
-        StageCategory.TERMINAL_SUM,
-        List.of(),
-        cfg -> SumLongCollect.of()
-    );
+    COLLECT_ALL_MATCH(AllMatchCollect.class),
+    COLLECT_ANY_MATCH(AnyMatchCollect.class),
+    COLLECT_AVERAGE_DOUBLE(AverageDoubleCollect.class),
+    COLLECT_AVERAGE_INT(AverageIntCollect.class),
+    COLLECT_AVERAGE_LONG(AverageLongCollect.class),
+    COLLECT_COUNT(CountCollect.class),
+    COLLECT_FIND_FIRST(FindFirstCollect.class),
+    COLLECT_FIRST(FirstCollect.class),
+    COLLECT_JOIN(JoinCollect.class),
+    COLLECT_JSON_OBJECT_FROM_ENTRIES(JsonObjectFromEntriesCollect.class),
+    COLLECT_LAST(LastCollect.class),
+    COLLECT_LIST(ListCollect.class),
+    COLLECT_MAP(MapCollect.class),
+    COLLECT_MAX(MaxCollect.class),
+    COLLECT_MAX_BY(MaxByCollect.class),
+    COLLECT_MIN(MinCollect.class),
+    COLLECT_MIN_BY(MinByCollect.class),
+    COLLECT_NONE_MATCH(NoneMatchCollect.class),
+    COLLECT_SET(SetCollect.class),
+    COLLECT_SUM_DOUBLE(SumDoubleCollect.class),
+    COLLECT_SUM_INT(SumIntCollect.class),
+    COLLECT_SUM_LONG(SumLongCollect.class);
 
     /**
      * Cached snapshot of {@link #values()} reused by lookups to avoid the per-call defensive array clone.
      */
     private static final StageKind @NotNull [] CACHED_VALUES = values();
 
-    private final @NotNull String displayName;
-    private final @NotNull String description;
-    private final @NotNull StageCategory category;
-    private final @NotNull List<FieldSpec> schema;
-    private final @Nullable Function<StageConfig, Stage<?, ?>> factory;
+    private final @NotNull Class<? extends Stage<?, ?>> stageClass;
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    StageKind(@NotNull Class<? extends Stage> stageClass) {
+        this.stageClass = (Class<? extends Stage<?, ?>>) stageClass;
+    }
+
+    /**
+     * Returns the human-friendly display name from this kind's {@link StageSpec}.
+     *
+     * @return the display name
+     */
+    public @NotNull String displayName() {
+        return metadata().annotation().displayName();
+    }
+
+    /**
+     * Returns the short type-signature description from this kind's {@link StageSpec}.
+     *
+     * @return the description
+     */
+    public @NotNull String description() {
+        return metadata().annotation().description();
+    }
+
+    /**
+     * Returns the coarse {@link StageSpec.Category} grouping for this kind.
+     *
+     * @return the category
+     */
+    public @NotNull StageSpec.Category category() {
+        return metadata().annotation().category();
+    }
+
+    /**
+     * Returns the configuration schema derived from the canonical factory's
+     * {@link Configurable} parameters.
+     *
+     * @return the schema, in factory parameter order
+     */
+    public @NotNull List<FieldSpec<?>> schema() {
+        return metadata().schema();
+    }
+
+    /**
+     * Returns the deserialisation factory that rebuilds a stage from a populated
+     * {@link StageConfig}. The lambda delegates to the cached {@link StageMetadata}.
+     *
+     * @return the factory
+     */
+    public @NotNull Function<StageConfig, Stage<?, ?>> factory() {
+        return cfg -> metadata().fromConfig(cfg);
+    }
+
+    /**
+     * Returns the implementation class this kind binds to.
+     *
+     * @return the stage class
+     */
+    public @NotNull Class<? extends Stage<?, ?>> stageClass() {
+        return this.stageClass;
+    }
+
+    private @NotNull StageMetadata metadata() {
+        return StageReflection.of(this.stageClass);
+    }
 
     /**
      * Returns every {@link StageKind} in {@code category}, in declaration order.
@@ -1420,9 +377,9 @@ public enum StageKind {
      * @param category the category
      * @return the kinds in {@code category}, possibly empty
      */
-    public static @NotNull List<StageKind> ofCategory(@NotNull StageCategory category) {
+    public static @NotNull List<StageKind> ofCategory(@NotNull StageSpec.Category category) {
         return Arrays.stream(CACHED_VALUES)
-            .filter(id -> id.category == category)
+            .filter(id -> id.category() == category)
             .toList();
     }
 

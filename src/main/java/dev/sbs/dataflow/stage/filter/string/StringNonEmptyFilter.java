@@ -4,8 +4,8 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +20,11 @@ import java.util.List;
 /**
  * {@link FilterStage} dropping null and empty strings.
  */
+@StageSpec(
+    displayName = "Non-empty",
+    description = "List<STRING> -> List<STRING>",
+    category = StageSpec.Category.FILTER_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -34,12 +39,6 @@ public final class StringNonEmptyFilter implements FilterStage<String> {
      */
     public static @NotNull StringNonEmptyFilter of() {
         return new StringNonEmptyFilter();
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.empty();
     }
 
     /** {@inheritDoc} */

@@ -3,9 +3,10 @@ package dev.sbs.dataflow.stage.filter.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -20,6 +21,11 @@ import java.util.List;
 /**
  * {@link FilterStage} keeping every string that contains the configured substring.
  */
+@StageSpec(
+    displayName = "Contains",
+    description = "List<STRING> -> List<STRING>",
+    category = StageSpec.Category.FILTER_STRING
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,26 +41,11 @@ public final class StringContainsFilter implements FilterStage<String> {
      * @param needle the substring to look for
      * @return the stage
      */
-    public static @NotNull StringContainsFilter of(@NotNull String needle) {
+    public static @NotNull StringContainsFilter of(
+        @Configurable(label = "Contains", placeholder = "foo")
+        @NotNull String needle
+    ) {
         return new StringContainsFilter(needle);
-    }
-
-    /**
-     * Reconstructs the filter from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull StringContainsFilter fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("needle"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("needle", this.needle)
-            .build();
     }
 
     /** {@inheritDoc} */

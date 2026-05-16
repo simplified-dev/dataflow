@@ -4,8 +4,9 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.CollectStage;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,11 @@ import java.util.List;
  * {@link CollectStage} that joins a {@code List<String>} into a single string with a
  * configurable separator.
  */
+@StageSpec(
+    displayName = "Join",
+    description = "List<STRING> -> STRING",
+    category = StageSpec.Category.TERMINAL_COLLECT
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -34,26 +40,11 @@ public final class JoinCollect implements CollectStage<List<String>, String> {
      * @param separator the separator inserted between each element
      * @return the stage
      */
-    public static @NotNull JoinCollect of(@NotNull String separator) {
+    public static @NotNull JoinCollect of(
+        @Configurable(label = "Separator", placeholder = ", ")
+        @NotNull String separator
+    ) {
         return new JoinCollect(separator);
-    }
-
-    /**
-     * Reconstructs the collect from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull JoinCollect fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("separator"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("separator", this.separator)
-            .build();
     }
 
     /** {@inheritDoc} */

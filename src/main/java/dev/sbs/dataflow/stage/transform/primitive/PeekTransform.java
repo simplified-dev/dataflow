@@ -2,8 +2,9 @@ package dev.sbs.dataflow.stage.transform.primitive;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -21,6 +22,11 @@ import java.util.stream.Stream;
  *
  * @param <T> value type
  */
+@StageSpec(
+    displayName = "Peek (log)",
+    description = "T -> T",
+    category = StageSpec.Category.TRANSFORM_PRIMITIVE
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -38,27 +44,13 @@ public final class PeekTransform<T> implements TransformStage<T, T> {
      * @return the stage
      * @param <T> value type
      */
-    public static <T> @NotNull PeekTransform<T> of(@NotNull DataType<T> valueType, @NotNull String label) {
+    public static <T> @NotNull PeekTransform<T> of(
+        @Configurable(label = "Value type", placeholder = "STRING")
+        @NotNull DataType<T> valueType,
+        @Configurable(label = "Label", placeholder = "stage")
+        @NotNull String label
+    ) {
         return new PeekTransform<>(valueType, label);
-    }
-
-    /**
-     * Reconstructs the transform from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull PeekTransform<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("valueType"), cfg.getString("label"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("valueType", this.valueType)
-            .string("label", this.label)
-            .build();
     }
 
     /** {@inheritDoc} */

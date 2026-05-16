@@ -9,9 +9,10 @@ import com.google.gson.stream.JsonReader;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.SourceStage;
-import dev.sbs.dataflow.stage.StageConfig;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import lombok.AccessLevel;
@@ -38,6 +39,11 @@ import java.util.Set;
  *
  * @param <T> the element type
  */
+@StageSpec(
+    displayName = "Literal list (JSON array)",
+    description = "() -> List<T>",
+    category = StageSpec.Category.SOURCE
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -64,7 +70,12 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
      * @param <T> the element type
      * @throws IllegalArgumentException when {@code elementType} is unsupported, the value is not a JSON array, or an element cannot be parsed
      */
-    public static <T> @NotNull LiteralListSource<T> of(@NotNull DataType<T> elementType, @NotNull String rawValue) {
+    public static <T> @NotNull LiteralListSource<T> of(
+        @Configurable(label = "Element type", placeholder = "STRING")
+        @NotNull DataType<T> elementType,
+        @Configurable(label = "JSON array", placeholder = "[\"a\",\"b\"]", name = "value")
+        @NotNull String rawValue
+    ) {
         ConcurrentList<T> parsed = Concurrent.newUnmodifiableList(parseArray(elementType, rawValue));
         return new LiteralListSource<>(elementType, DataType.list(elementType), rawValue, parsed);
     }
@@ -175,16 +186,6 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
         return sb.append(']').toString();
     }
 
-    /**
-     * Reconstructs an {@code LiteralListSource} from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull LiteralListSource<?> fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getDataType("elementType"), cfg.getString("value"));
-    }
-
     private static final @NotNull Set<DataType<?>> SUPPORTED_ELEMENT_TYPES = Set.of(
         DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON,
         DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.BOOLEAN
@@ -229,15 +230,6 @@ public final class LiteralListSource<T> implements SourceStage<List<T>> {
         throw new IllegalArgumentException(
             "LiteralListSource does not support elementType " + elementType
         );
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .dataType("elementType", this.elementType)
-            .string("value", this.rawValue)
-            .build();
     }
 
     /** {@inheritDoc} */

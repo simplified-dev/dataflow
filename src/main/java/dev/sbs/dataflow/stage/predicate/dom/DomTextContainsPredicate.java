@@ -3,8 +3,9 @@ package dev.sbs.dataflow.stage.predicate.dom;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.StageConfig;
+import dev.sbs.dataflow.stage.Configurable;
 import dev.sbs.dataflow.stage.StageKind;
+import dev.sbs.dataflow.stage.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +19,11 @@ import org.jsoup.nodes.Element;
  * {@link TransformStage} that returns {@code true} when the input element's
  * {@link Element#text()} contains the configured substring.
  */
+@StageSpec(
+    displayName = "Text contains",
+    description = "DOM_NODE -> BOOLEAN",
+    category = StageSpec.Category.PREDICATE_DOM
+)
 @Getter
 @Accessors(fluent = true)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -31,26 +37,11 @@ public final class DomTextContainsPredicate implements TransformStage<Element, B
      * @param needle the substring to look for in the element's text
      * @return the stage
      */
-    public static @NotNull DomTextContainsPredicate of(@NotNull String needle) {
+    public static @NotNull DomTextContainsPredicate of(
+        @Configurable(label = "Text contains", placeholder = "Dmg")
+        @NotNull String needle
+    ) {
         return new DomTextContainsPredicate(needle);
-    }
-
-    /**
-     * Reconstructs the predicate from a populated {@link StageConfig}.
-     *
-     * @param cfg the populated configuration
-     * @return the rebuilt stage
-     */
-    public static @NotNull DomTextContainsPredicate fromConfig(@NotNull StageConfig cfg) {
-        return of(cfg.getString("needle"));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NotNull StageConfig config() {
-        return StageConfig.builder()
-            .string("needle", this.needle)
-            .build();
     }
 
     /** {@inheritDoc} */
