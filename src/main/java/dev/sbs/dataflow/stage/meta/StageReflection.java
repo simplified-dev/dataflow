@@ -1,4 +1,7 @@
-package dev.sbs.dataflow.stage;
+package dev.sbs.dataflow.stage.meta;
+
+import dev.sbs.dataflow.stage.Stage;
+import dev.sbs.dataflow.stage.FieldSpec;
 
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.chain.Chain;
@@ -32,22 +35,22 @@ import java.util.stream.Collectors;
  * <p>
  * Reads the class-level {@link StageSpec} annotation, locates the canonical
  * {@code public static of(...)} factory method, and derives the ordered list of
- * configurable {@link SlotInfo slots} from the factory's {@link Configurable} parameter
+ * configurable {@link StageMetadata.Slot slots} from the factory's {@link Configurable} parameter
  * annotations. Each slot tracks both the wire-side {@link FieldSpec} and the matching
  * Java parameter / instance-field name (since a few stages override the wire key via
  * {@code @Configurable(name = ...)}).
  * <p>
  * Sub-pipeline factory parameter conventions are bridged via per-slot
- * {@link SlotInfo#argAdapter adapters}. The wire format always stores
+ * {@link StageMetadata.Slot#argAdapter adapters}. The wire format always stores
  * {@link Chain} / {@link NamedChains}, but factories may accept the looser
  * {@code List<? extends Stage<?, ?>>} / {@code Map<String, List<? extends Stage<?, ?>>>}
  * shapes for ergonomics. The derivation table:
  * <ul>
- *   <li>{@link Chain} -> {@link FieldType#SUB_PIPELINE}, identity adapter</li>
- *   <li>{@code List<? extends Stage<?, ?>>} -> {@link FieldType#SUB_PIPELINE}, adapter {@code chain -> chain.stages()}</li>
- *   <li>{@link NamedChains} -> {@link FieldType#SUB_PIPELINES_MAP}, identity adapter</li>
- *   <li>{@code Map<String, ? extends List<? extends Stage<?, ?>>>} -> {@link FieldType#SUB_PIPELINES_MAP}, adapter {@code named -> {name -> chain.stages()}}</li>
- *   <li>{@code Map<String, TypedChain>} -> {@link FieldType#TYPED_SUB_PIPELINES_MAP}, identity adapter</li>
+ *   <li>{@link Chain} -> {@link FieldSpec.Type#SUB_PIPELINE}, identity adapter</li>
+ *   <li>{@code List<? extends Stage<?, ?>>} -> {@link FieldSpec.Type#SUB_PIPELINE}, adapter {@code chain -> chain.stages()}</li>
+ *   <li>{@link NamedChains} -> {@link FieldSpec.Type#SUB_PIPELINES_MAP}, identity adapter</li>
+ *   <li>{@code Map<String, ? extends List<? extends Stage<?, ?>>>} -> {@link FieldSpec.Type#SUB_PIPELINES_MAP}, adapter {@code named -> {name -> chain.stages()}}</li>
+ *   <li>{@code Map<String, TypedChain>} -> {@link FieldSpec.Type#TYPED_SUB_PIPELINES_MAP}, identity adapter</li>
  * </ul>
  * The derived {@link StageMetadata} is cached per class so each subsequent lookup is a map
  * read.
@@ -94,7 +97,7 @@ public final class StageReflection {
         Method factoryMethod = findCanonicalFactory(stageClass);
         MethodAccessor<?> factoryAccessor = new MethodAccessor<>(reflection, factoryMethod);
 
-        List<SlotInfo<?>> slots = Arrays.stream(factoryMethod.getParameters())
+        List<StageMetadata.Slot<?>> slots = Arrays.stream(factoryMethod.getParameters())
             .filter(p -> p.isAnnotationPresent(Configurable.class))
             .map(p -> slotOf(p, reflection))
             .collect(Collectors.toUnmodifiableList());
@@ -134,7 +137,7 @@ public final class StageReflection {
         return Arrays.stream(params).allMatch(p -> p.isAnnotationPresent(Configurable.class));
     }
 
-    private static @NotNull SlotInfo<?> slotOf(@NotNull Parameter parameter, @NotNull Reflection<?> reflection) {
+    private static @NotNull StageMetadata.Slot<?> slotOf(@NotNull Parameter parameter, @NotNull Reflection<?> reflection) {
         Configurable configurable = parameter.getAnnotation(Configurable.class);
         String paramName = parameter.getName();
 
@@ -155,32 +158,32 @@ public final class StageReflection {
             configurable.optional()
         );
         FieldAccessor<?> instanceField = reflection.getField(paramName);
-        return new SlotInfo<>(spec, paramName, instanceField, resolution.adapter);
+        return new StageMetadata.Slot<>(spec, paramName, instanceField, resolution.adapter);
     }
 
     private static @NotNull TypeResolution resolveParameter(@NotNull Parameter parameter) {
         Type parameterized = parameter.getParameterizedType();
         Class<?> raw = rawType(parameterized);
 
-        if (raw == String.class) return new TypeResolution(FieldType.STRING, SlotInfo.IDENTITY);
-        if (raw == int.class || raw == Integer.class) return new TypeResolution(FieldType.INT, SlotInfo.IDENTITY);
-        if (raw == long.class || raw == Long.class) return new TypeResolution(FieldType.LONG, SlotInfo.IDENTITY);
-        if (raw == double.class || raw == Double.class) return new TypeResolution(FieldType.DOUBLE, SlotInfo.IDENTITY);
-        if (raw == boolean.class || raw == Boolean.class) return new TypeResolution(FieldType.BOOLEAN, SlotInfo.IDENTITY);
-        if (DataType.class.isAssignableFrom(raw)) return new TypeResolution(FieldType.DATA_TYPE, SlotInfo.IDENTITY);
-        if (raw == Chain.class) return new TypeResolution(FieldType.SUB_PIPELINE, SlotInfo.IDENTITY);
-        if (raw == NamedChains.class) return new TypeResolution(FieldType.SUB_PIPELINES_MAP, SlotInfo.IDENTITY);
+        if (raw == String.class) return new TypeResolution(FieldSpec.Type.STRING, StageMetadata.Slot.IDENTITY);
+        if (raw == int.class || raw == Integer.class) return new TypeResolution(FieldSpec.Type.INT, StageMetadata.Slot.IDENTITY);
+        if (raw == long.class || raw == Long.class) return new TypeResolution(FieldSpec.Type.LONG, StageMetadata.Slot.IDENTITY);
+        if (raw == double.class || raw == Double.class) return new TypeResolution(FieldSpec.Type.DOUBLE, StageMetadata.Slot.IDENTITY);
+        if (raw == boolean.class || raw == Boolean.class) return new TypeResolution(FieldSpec.Type.BOOLEAN, StageMetadata.Slot.IDENTITY);
+        if (DataType.class.isAssignableFrom(raw)) return new TypeResolution(FieldSpec.Type.DATA_TYPE, StageMetadata.Slot.IDENTITY);
+        if (raw == Chain.class) return new TypeResolution(FieldSpec.Type.SUB_PIPELINE, StageMetadata.Slot.IDENTITY);
+        if (raw == NamedChains.class) return new TypeResolution(FieldSpec.Type.SUB_PIPELINES_MAP, StageMetadata.Slot.IDENTITY);
         if (List.class.isAssignableFrom(raw) && listOfStages(parameterized))
-            return new TypeResolution(FieldType.SUB_PIPELINE, CHAIN_TO_STAGES);
+            return new TypeResolution(FieldSpec.Type.SUB_PIPELINE, CHAIN_TO_STAGES);
         if (Map.class.isAssignableFrom(raw)) {
             if (typedChainValued(parameterized))
-                return new TypeResolution(FieldType.TYPED_SUB_PIPELINES_MAP, SlotInfo.IDENTITY);
+                return new TypeResolution(FieldSpec.Type.TYPED_SUB_PIPELINES_MAP, StageMetadata.Slot.IDENTITY);
             if (stringKeyedListOfStagesValued(parameterized))
-                return new TypeResolution(FieldType.SUB_PIPELINES_MAP, NAMED_CHAINS_TO_LISTS);
+                return new TypeResolution(FieldSpec.Type.SUB_PIPELINES_MAP, NAMED_CHAINS_TO_LISTS);
         }
 
         throw new IllegalStateException(
-            "Cannot infer FieldType for parameter '" + parameter.getName() + "' of type " +
+            "Cannot infer FieldSpec.Type for parameter '" + parameter.getName() + "' of type " +
             parameterized.getTypeName() + " on " + parameter.getDeclaringExecutable()
         );
     }
@@ -225,6 +228,6 @@ public final class StageReflection {
         return valArgs.length == 1 && rawType(valArgs[0]) == Stage.class;
     }
 
-    private record TypeResolution(@NotNull FieldType fieldType, @NotNull Function<Object, Object> adapter) {}
+    private record TypeResolution(@NotNull FieldSpec.Type fieldType, @NotNull Function<Object, Object> adapter) {}
 
 }

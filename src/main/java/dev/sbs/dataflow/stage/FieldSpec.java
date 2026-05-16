@@ -1,5 +1,6 @@
 package dev.sbs.dataflow.stage;
 
+import dev.sbs.dataflow.stage.meta.Configurable;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -9,6 +10,7 @@ import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.ChainSerde;
 import dev.sbs.dataflow.chain.NamedChains;
 import dev.sbs.dataflow.chain.TypedChain;
+import dev.sbs.dataflow.stage.meta.StageReflection;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -17,7 +19,7 @@ import java.util.function.Function;
 /**
  * Declares one slot in a stage's configuration schema.
  * <p>
- * Carries the wire name + {@link FieldType} discriminator + UI hints, plus typed
+ * Carries the wire name + {@link Type} discriminator + UI hints, plus typed
  * {@link #get(StageConfig)} / {@link #put(StageConfig.Builder, Object)} accessors that
  * route to the correct {@link StageConfig} reader and {@link StageConfig.Builder} writer
  * based on {@link #type}. Instances are built reflectively by {@link StageReflection} from
@@ -33,7 +35,7 @@ import java.util.function.Function;
  */
 public record FieldSpec<T>(
     @NotNull String name,
-    @NotNull FieldType type,
+    @NotNull Type type,
     @NotNull String label,
     @NotNull String placeholder,
     boolean optional
@@ -167,6 +169,64 @@ public record FieldSpec<T>(
             case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), stageReader));
         }
         return b;
+    }
+
+    /**
+     * Discriminator for one configuration slot. Used by serde and UI code to handle each
+     * slot uniformly without switching on the concrete {@link Stage} class.
+     */
+    public enum Type {
+
+        /**
+         * UTF-8 string.
+         */
+        STRING,
+
+        /**
+         * 32-bit signed integer.
+         */
+        INT,
+
+        /**
+         * 64-bit signed integer.
+         */
+        LONG,
+
+        /**
+         * 64-bit IEEE-754 floating point.
+         */
+        DOUBLE,
+
+        /**
+         * Boolean value.
+         */
+        BOOLEAN,
+
+        /**
+         * {@link DataType} reference, serialised as its label.
+         */
+        DATA_TYPE,
+
+        /**
+         * Map of named sub-pipelines, keyed by output name. Each value is an ordered list of
+         * {@link Stage} instances forming the named output's sub-chain.
+         */
+        SUB_PIPELINES_MAP,
+
+        /**
+         * Single sub-pipeline, an ordered list of {@link Stage} instances. Carried by stages
+         * such as map / flatMap / takeWhile that run one inner chain per element.
+         */
+        SUB_PIPELINE,
+
+        /**
+         * Map of named sub-pipelines that each declare an explicit output {@link DataType}.
+         * Storage value is {@code Map<String, TypedChain>}. Used by stages that build a
+         * structured output where each named slot has its own static type, such as the JSON
+         * object builder.
+         */
+        TYPED_SUB_PIPELINES_MAP,
+
     }
 
 }

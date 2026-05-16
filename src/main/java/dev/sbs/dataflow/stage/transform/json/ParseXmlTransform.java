@@ -5,7 +5,7 @@ import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.source.XmlBridge;
-import dev.sbs.dataflow.stage.StageSpec;
+import dev.sbs.dataflow.stage.meta.StageSpec;
 import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;

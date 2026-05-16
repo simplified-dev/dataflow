@@ -6,13 +6,12 @@ import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.Fixtures;
 import dev.sbs.dataflow.PipelineContext;
 import dev.sbs.dataflow.stage.FieldSpec;
-import dev.sbs.dataflow.stage.FieldType;
 import dev.sbs.dataflow.stage.Stage;
 import dev.sbs.dataflow.stage.StageConfig;
-import dev.sbs.dataflow.stage.StageMetadata;
-import dev.sbs.dataflow.stage.StageReflection;
+import dev.sbs.dataflow.stage.meta.StageMetadata;
+import dev.sbs.dataflow.stage.meta.StageReflection;
 import dev.sbs.dataflow.stage.StageRegistry;
-import dev.sbs.dataflow.stage.StageSpec;
+import dev.sbs.dataflow.stage.meta.StageSpec;
 import dev.sbs.dataflow.stage.terminal.collect.FirstCollect;
 import dev.sbs.dataflow.stage.terminal.collect.MapCollect;
 import dev.sbs.dataflow.stage.terminal.collect.JoinCollect;
@@ -256,10 +255,10 @@ class PipelineSerdeTest {
      */
     @TestFactory
     Stream<DynamicTest> everyNonChainKindFactoryRoundTrips() {
-        Set<FieldType> chainFieldTypes = EnumSet.of(
-            FieldType.SUB_PIPELINE,
-            FieldType.SUB_PIPELINES_MAP,
-            FieldType.TYPED_SUB_PIPELINES_MAP
+        Set<FieldSpec.Type> chainFieldTypes = EnumSet.of(
+            FieldSpec.Type.SUB_PIPELINE,
+            FieldSpec.Type.SUB_PIPELINES_MAP,
+            FieldSpec.Type.TYPED_SUB_PIPELINES_MAP
         );
 
         return StageRegistry.allOrdered().stream()

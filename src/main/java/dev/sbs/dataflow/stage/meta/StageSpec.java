@@ -1,4 +1,8 @@
-package dev.sbs.dataflow.stage;
+package dev.sbs.dataflow.stage.meta;
+
+import dev.sbs.dataflow.stage.Stage;
+import dev.sbs.dataflow.stage.FieldSpec;
+import dev.sbs.dataflow.stage.StageRegistry;
 
 import org.jetbrains.annotations.NotNull;
 

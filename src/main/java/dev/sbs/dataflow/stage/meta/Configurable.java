@@ -1,4 +1,7 @@
-package dev.sbs.dataflow.stage;
+package dev.sbs.dataflow.stage.meta;
+
+import dev.sbs.dataflow.stage.FieldSpec;
+import dev.sbs.dataflow.stage.StageConfig;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +17,7 @@ import java.lang.annotation.Target;
  * <ul>
  *   <li><b>name</b> - the Java parameter name (requires {@code -parameters} compile flag),
  *       or {@link #name()} when explicitly overridden</li>
- *   <li><b>type</b> - {@link FieldType} discriminator inferred from the Java parameter type
+ *   <li><b>type</b> - {@link FieldSpec.Type} discriminator inferred from the Java parameter type
  *       (e.g. {@code String} -> {@code STRING}, {@code DataType<?>} -> {@code DATA_TYPE},
  *       {@code Chain} -> {@code SUB_PIPELINE})</li>
  *   <li><b>label</b> - {@link #label()}</li>

@@ -1,5 +1,6 @@
 package dev.sbs.dataflow.stage;
 
+import dev.sbs.dataflow.stage.meta.StageMetadata;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.chain.Chain;
 import dev.sbs.dataflow.chain.NamedChains;
@@ -126,7 +127,7 @@ public final class StageConfig {
 
         /**
          * Generic store - inserts the value as-is. Caller is responsible for matching
-         * {@link FieldType} expectations declared by the {@link FieldSpec}.
+         * {@link FieldSpec.Type} expectations declared by the {@link FieldSpec}.
          *
          * @param name the field name
          * @param value the value

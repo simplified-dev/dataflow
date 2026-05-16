@@ -1,5 +1,6 @@
 package dev.sbs.dataflow.stage;
 
+import dev.sbs.dataflow.stage.meta.StageSpec;
 import dev.simplified.reflection.Reflection;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
