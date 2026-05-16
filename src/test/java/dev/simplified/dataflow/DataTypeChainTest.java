@@ -59,7 +59,7 @@ class DataTypeChainTest {
     @Test
     @DisplayName("Wrapping the scalar tail in MapTransform fixes the previously-broken chain")
     void mapTransformBridgesScalarOverList() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<html><body><span>10</span><span>20</span></body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("span"))
@@ -75,7 +75,7 @@ class DataTypeChainTest {
     @Test
     @DisplayName("Valid wiki chain reports no issues")
     void validChainReportsNoIssues() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<table class='infobox'><tr><td>Dmg</td><td>500</td></tr></table>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))

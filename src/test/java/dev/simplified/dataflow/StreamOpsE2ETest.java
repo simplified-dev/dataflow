@@ -54,7 +54,7 @@ class StreamOpsE2ETest {
     @Test
     @DisplayName("LiteralListSource feeds a literal int array straight into SumIntCollect")
     void ofListIntoSum() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralListSource.of(DataTypes.INT, "[1,2,3,4,5]"))
             .stage(SumIntCollect.of())
             .build();
@@ -64,7 +64,7 @@ class StreamOpsE2ETest {
     @Test
     @DisplayName("LiteralSource(STRING) -> ParseInt yields the parsed value")
     void ofSourceIntoParse() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "42"))
             .stage(ParseIntTransform.of())
             .build();
@@ -74,7 +74,7 @@ class StreamOpsE2ETest {
     @Test
     @DisplayName("Predicate stages unlock match collectors: LiteralListSource(INT) -> AnyMatch(body=GreaterThan(12))")
     void predicateUnlocksAnyMatch() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralListSource.of(DataTypes.INT, "[1,5,10,15,20]"))
             .stage(AnyMatchCollect.of(DataTypes.INT, List.of(IntGreaterThanPredicate.of(12))))
             .build();
@@ -84,7 +84,7 @@ class StreamOpsE2ETest {
     @Test
     @DisplayName("MaxBy with a key extractor picks the element whose key is largest")
     void maxByPicksLongestString() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralListSource.of(DataTypes.STRING, "[\"a\",\"abc\",\"ab\"]"))
             .stage(MaxByCollect.of(DataTypes.STRING, DataTypes.INT, List.of(StringLengthTransform.of())))
             .build();

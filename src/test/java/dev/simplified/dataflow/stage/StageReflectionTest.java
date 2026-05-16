@@ -51,7 +51,7 @@ class StageReflectionTest {
             DataTypes.INT,
             List.of(IntGreaterThanPredicate.of(0))
         );
-        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) (Class) TakeWhileFilter.class);
+        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) TakeWhileFilter.class);
 
         StageConfig built = metadata.buildConfig(instance);
         assertThat(built.has("elementType"), is(true));
@@ -82,7 +82,7 @@ class StageReflectionTest {
             DataTypes.INT,
             List.of(StringLengthTransform.of())
         );
-        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) (Class) MapTransform.class);
+        StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) MapTransform.class);
 
         StageConfig built = metadata.buildConfig(instance);
         // wire keys, not java param names

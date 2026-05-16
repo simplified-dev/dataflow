@@ -44,7 +44,7 @@ class StageRegistryTest {
     @Test
     @DisplayName("Wire format byte-identity: two consecutive serialisations yield the same JSON")
     void wireFormatStable() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "  hi  "))
             .stage(TrimTransform.of())
             .build();

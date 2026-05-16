@@ -48,7 +48,7 @@ class DataPipelineBuilderTest {
     @Test
     @DisplayName("Builder.build() succeeds for a well-typed chain")
     void buildAcceptsValidPipeline() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<html><body><p>x</p></body></html>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("p"))

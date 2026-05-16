@@ -7,31 +7,31 @@ import dev.simplified.dataflow.Fixtures;
 import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageConfig;
+import dev.simplified.dataflow.stage.StageRegistry;
+import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
+import dev.simplified.dataflow.stage.filter.list.DistinctFilter;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
 import dev.simplified.dataflow.stage.meta.StageReflection;
-import dev.simplified.dataflow.stage.StageRegistry;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.source.EmbedSource;
+import dev.simplified.dataflow.stage.source.LiteralSource;
+import dev.simplified.dataflow.stage.source.UrlSource;
 import dev.simplified.dataflow.stage.terminal.collect.FirstCollect;
-import dev.simplified.dataflow.stage.terminal.collect.MapCollect;
 import dev.simplified.dataflow.stage.terminal.collect.JoinCollect;
 import dev.simplified.dataflow.stage.terminal.collect.LastCollect;
 import dev.simplified.dataflow.stage.terminal.collect.ListCollect;
+import dev.simplified.dataflow.stage.terminal.collect.MapCollect;
 import dev.simplified.dataflow.stage.terminal.collect.NthCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SetCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SubListCollect;
-import dev.simplified.dataflow.stage.source.EmbedSource;
-import dev.simplified.dataflow.stage.filter.list.DistinctFilter;
-import dev.simplified.dataflow.stage.filter.dom.DomTextContainsFilter;
-import dev.simplified.dataflow.stage.source.LiteralSource;
-import dev.simplified.dataflow.stage.source.UrlSource;
+import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
+import dev.simplified.dataflow.stage.transform.dom.DomAttrTransform;
+import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
+import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
+import dev.simplified.dataflow.stage.transform.json.JsonPathTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseJsonTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseXmlTransform;
-import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
-import dev.simplified.dataflow.stage.transform.json.JsonPathTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomAttrTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomTextTransform;
-import dev.simplified.dataflow.stage.transform.dom.DomNthChildTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseDoubleTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
@@ -39,9 +39,8 @@ import dev.simplified.dataflow.stage.transform.string.ReplaceTransform;
 import dev.simplified.dataflow.stage.transform.string.SplitTransform;
 import dev.simplified.dataflow.stage.transform.string.TrimTransform;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import java.util.EnumSet;
@@ -50,17 +49,14 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 class PipelineSerdeTest {
 
     @Test
     @DisplayName("Round-trip the wiki pipeline produces identical execution result")
     void roundTripWikiPipeline() {
-        DataPipeline original = DataPipeline.builder()
+        DataPipeline<?>original = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
@@ -73,7 +69,7 @@ class PipelineSerdeTest {
             .build();
 
         String json = PipelineGson.toJson(original);
-        DataPipeline rebuilt = PipelineGson.fromJson(json);
+        DataPipeline<?>rebuilt = PipelineGson.fromJson(json);
 
         assertThat(rebuilt.validate().isValid(), is(true));
         assertThat(rebuilt.execute(), is(equalTo(500)));
@@ -82,7 +78,7 @@ class PipelineSerdeTest {
     @Test
     @DisplayName("Round-trip JSON is stable - serialise -> deserialise -> serialise yields the same JSON")
     void serdeIsIdempotent() {
-        DataPipeline pipeline = DataPipeline.builder()
+        DataPipeline<?>pipeline = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "hi"))
             .stage(TrimTransform.of())
             .build();
@@ -95,26 +91,26 @@ class PipelineSerdeTest {
     @DisplayName("Each registered stage round-trips through JSON and re-executes equivalently")
     void everyRegisteredStageRoundTrips() {
         // Build a synthetic JSON fixture pipeline that exercises Json* stages.
-        DataPipeline jsonPipeline = DataPipeline.builder()
+        DataPipeline<?>jsonPipeline = DataPipeline.builder()
             .source(LiteralSource.rawJson(Fixtures.load("sample.json")))
             .stage(ParseJsonTransform.of())
             .stage(JsonPathTransform.of("stats.dmg"))
             .build();
         roundTrip(jsonPipeline);
 
-        DataPipeline xmlPipeline = DataPipeline.builder()
+        DataPipeline<?>xmlPipeline = DataPipeline.builder()
             .source(LiteralSource.rawXml(Fixtures.load("sample.xml")))
             .stage(ParseXmlTransform.of())
             .stage(JsonPathTransform.of("name"))
             .build();
         roundTrip(xmlPipeline);
 
-        DataPipeline urlPipeline = DataPipeline.builder()
+        DataPipeline<?>urlPipeline = DataPipeline.builder()
             .source(UrlSource.rawHtml("http://example.com/x"))
             .build();
         roundTrip(urlPipeline);
 
-        DataPipeline allTransforms = DataPipeline.builder()
+        DataPipeline<?>allTransforms = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "  hello WORLD  "))
             .stage(TrimTransform.of())
             .stage(ReplaceTransform.of("WORLD", "world"))
@@ -123,7 +119,7 @@ class PipelineSerdeTest {
             .build();
         roundTrip(allTransforms);
 
-        DataPipeline collectVariants = DataPipeline.builder()
+        DataPipeline<?>collectVariants = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,a,c"))
             .stage(SplitTransform.of(","))
             .stage(DistinctFilter.of(DataTypes.STRING))
@@ -131,28 +127,28 @@ class PipelineSerdeTest {
             .build();
         roundTrip(collectVariants);
 
-        DataPipeline collectFlavours = DataPipeline.builder()
+        DataPipeline<?>collectFlavours = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "x"))
             .stage(SplitTransform.of(""))
             .stage(LastCollect.of(DataTypes.STRING))
             .build();
         roundTrip(collectFlavours);
 
-        DataPipeline nthVariant = DataPipeline.builder()
+        DataPipeline<?>nthVariant = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d"))
             .stage(SplitTransform.of(","))
             .stage(NthCollect.of(DataTypes.STRING, 2))
             .build();
         roundTrip(nthVariant);
 
-        DataPipeline subListOpenEnded = DataPipeline.builder()
+        DataPipeline<?>subListOpenEnded = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d"))
             .stage(SplitTransform.of(","))
             .stage(SubListCollect.of(DataTypes.STRING, 1, null))
             .build();
         roundTrip(subListOpenEnded);
 
-        DataPipeline subListBounded = DataPipeline.builder()
+        DataPipeline<?>subListBounded = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,c,d,e,f"))
             .stage(SplitTransform.of(","))
             .stage(SubListCollect.of(DataTypes.STRING, 1, 5))
@@ -160,7 +156,7 @@ class PipelineSerdeTest {
         roundTrip(subListBounded);
 
         // attribute, json field, parseDouble, set
-        DataPipeline misc1 = DataPipeline.builder()
+        DataPipeline<?>misc1 = DataPipeline.builder()
             .source(LiteralSource.rawHtml("<a href='https://x'>z</a>"))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("a"))
@@ -169,27 +165,27 @@ class PipelineSerdeTest {
             .build();
         roundTrip(misc1);
 
-        DataPipeline misc2 = DataPipeline.builder()
+        DataPipeline<?>misc2 = DataPipeline.builder()
             .source(LiteralSource.rawJson("{\"x\": 3.14}"))
             .stage(ParseJsonTransform.of())
             .stage(JsonPathTransform.of("x"))
             .build();
         roundTrip(misc2);
 
-        DataPipeline misc3 = DataPipeline.builder()
+        DataPipeline<?>misc3 = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "3.14"))
             .stage(ParseDoubleTransform.of())
             .build();
         roundTrip(misc3);
 
-        DataPipeline setVariant = DataPipeline.builder()
+        DataPipeline<?>setVariant = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,a,c"))
             .stage(SplitTransform.of(","))
             .stage(SetCollect.of(DataTypes.STRING))
             .build();
         roundTrip(setVariant);
 
-        DataPipeline listVariant = DataPipeline.builder()
+        DataPipeline<?>listVariant = DataPipeline.builder()
             .source(LiteralSource.of(DataTypes.STRING, "a,b,c"))
             .stage(SplitTransform.of(","))
             .stage(ListCollect.of(DataTypes.STRING))
@@ -219,7 +215,7 @@ class PipelineSerdeTest {
                 .stage(ParseIntTransform.of()))
             .build();
 
-        DataPipeline original = DataPipeline.builder()
+        DataPipeline<?>original = DataPipeline.builder()
             .source(LiteralSource.rawHtml(Fixtures.load("dark_claymore.html")))
             .stage(ParseHtmlTransform.of())
             .stage(CssSelectTransform.of("table.infobox tr"))
@@ -227,7 +223,7 @@ class PipelineSerdeTest {
             .build();
 
         String json = PipelineGson.toJson(original);
-        DataPipeline rebuilt = PipelineGson.fromJson(json);
+        DataPipeline<?>rebuilt = PipelineGson.fromJson(json);
         Object result = rebuilt.execute();
 
         assertThat(result, is(equalTo(java.util.Map.of("dmg", 500, "strength", 220))));
@@ -236,7 +232,7 @@ class PipelineSerdeTest {
     @Test
     @DisplayName("EmbedSource round-trips")
     void embedRoundTrips() {
-        DataPipeline outer = DataPipeline.builder()
+        DataPipeline<?>outer = DataPipeline.builder()
             .source(EmbedSource.of("saved-id", DataTypes.STRING))
             .build();
         String json = PipelineGson.toJson(outer);
@@ -252,7 +248,7 @@ class PipelineSerdeTest {
     void emptyRoundTrips() {
         String json = PipelineGson.toJson(DataPipeline.empty());
         assertThat(json, is(equalTo("[]")));
-        DataPipeline rebuilt = PipelineGson.fromJson(json);
+        DataPipeline<?>rebuilt = PipelineGson.fromJson(json);
         assertThat(rebuilt.stages().size(), is(equalTo(0)));
     }
 
@@ -326,9 +322,9 @@ class PipelineSerdeTest {
         return b.build();
     }
 
-    private static void roundTrip(DataPipeline pipeline) {
+    private static void roundTrip(DataPipeline<?>pipeline) {
         String first = PipelineGson.toJson(pipeline);
-        DataPipeline rebuilt = PipelineGson.fromJson(first);
+        DataPipeline<?>rebuilt = PipelineGson.fromJson(first);
         String second = PipelineGson.toJson(rebuilt);
         assertThat(second, is(equalTo(first)));
     }
