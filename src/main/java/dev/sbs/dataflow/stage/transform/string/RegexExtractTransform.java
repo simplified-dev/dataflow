@@ -3,13 +3,14 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.TransformStage;
 import dev.sbs.dataflow.stage.meta.Configurable;
 import dev.sbs.dataflow.stage.meta.StageSpec;
-import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
      * @param regex the pattern
      * @return the stage
      */
-    public static @NotNull RegexExtractTransform of(@NotNull String regex) {
+    public static @NotNull RegexExtractTransform of(@NotNull @Language("regexp") String regex) {
         return new RegexExtractTransform(regex, 0, Pattern.compile(regex));
     }
 
@@ -59,7 +60,7 @@ public final class RegexExtractTransform implements TransformStage<String, Strin
      */
     public static @NotNull RegexExtractTransform of(
         @Configurable(label = "Regex", placeholder = "\\d+")
-        @NotNull String regex,
+        @NotNull @Language("regexp") String regex,
         @Configurable(label = "Capture group", placeholder = "0")
         int group
     ) {

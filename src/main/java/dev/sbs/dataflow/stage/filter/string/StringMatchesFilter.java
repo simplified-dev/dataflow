@@ -3,8 +3,8 @@ package dev.sbs.dataflow.stage.filter.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
-import dev.sbs.dataflow.stage.meta.Configurable;
 import dev.sbs.dataflow.stage.FilterStage;
+import dev.sbs.dataflow.stage.meta.Configurable;
 import dev.sbs.dataflow.stage.meta.StageSpec;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public final class StringMatchesFilter implements FilterStage<String> {
      */
     public static @NotNull StringMatchesFilter of(
         @Configurable(label = "Regex", placeholder = "^foo")
-        @NotNull String regex
+        @NotNull @Language("regexp") String regex
     ) {
         return new StringMatchesFilter(regex, Pattern.compile(regex));
     }

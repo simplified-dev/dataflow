@@ -3,13 +3,14 @@ package dev.sbs.dataflow.stage.transform.string;
 import dev.sbs.dataflow.DataType;
 import dev.sbs.dataflow.DataTypes;
 import dev.sbs.dataflow.PipelineContext;
+import dev.sbs.dataflow.stage.TransformStage;
 import dev.sbs.dataflow.stage.meta.Configurable;
 import dev.sbs.dataflow.stage.meta.StageSpec;
-import dev.sbs.dataflow.stage.TransformStage;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,7 +46,7 @@ public final class ReplaceTransform implements TransformStage<String, String> {
      */
     public static @NotNull ReplaceTransform of(
         @Configurable(label = "Regex", placeholder = "\\s+")
-        @NotNull String regex,
+        @NotNull @Language("regexp") String regex,
         @Configurable(label = "Replacement", placeholder = "_")
         @NotNull String replacement
     ) {
