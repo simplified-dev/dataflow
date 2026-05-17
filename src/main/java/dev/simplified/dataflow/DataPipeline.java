@@ -49,13 +49,13 @@ public final class DataPipeline<O> {
     }
 
     /**
-     * Creates a fresh {@link SourcelessBuilder} for assembling a pipeline starting from a
+     * Creates a fresh {@link Origin} for assembling a pipeline starting from a
      * {@link SourceStage}.
      *
-     * @return a new sourceless builder
+     * @return a new origin
      */
-    public static @NotNull SourcelessBuilder builder() {
-        return new SourcelessBuilder();
+    public static @NotNull Origin builder() {
+        return new Origin();
     }
 
     /**
@@ -173,14 +173,12 @@ public final class DataPipeline<O> {
     }
 
     /**
-     * Sourceless builder phase that accepts exactly one {@link SourceStage} call to begin a
-     * pipeline. The transition from {@link SourcelessBuilder} to {@link Builder} fixes the
-     * pipeline's running type at the source's output type.
+     * Typed-factory shim returned by {@link DataPipeline#builder()}. Hosts a single
+     * {@link #source} method whose generic parameter fixes the pipeline's running type
+     * at the source's output type, transitioning to {@link Builder}.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static final class SourcelessBuilder {
-
-        private final @NotNull List<Stage<?, ?>> stages = new ArrayList<>();
+    public static final class Origin {
 
         /**
          * Sets the source stage and transitions to the typed builder phase.
@@ -190,41 +188,9 @@ public final class DataPipeline<O> {
          * @param <T> the source's output type
          */
         public <T> @NotNull Builder<T> source(@NotNull SourceStage<T> source) {
-            this.stages.add(source);
-            return new Builder<>(this.stages, source.outputType());
-        }
-
-        /**
-         * Returns a validation report for the sourceless builder. Always reports the
-         * pipeline-level "no stages" diagnostic; provided so callers can inspect the
-         * empty-pipeline state without throwing.
-         *
-         * @return the validation report
-         */
-        public @NotNull ValidationReport validate() {
-            return new DataPipeline<>(
-                Concurrent.newUnmodifiableList(this.stages), DataTypes.NONE
-            ).validate();
-        }
-
-        /**
-         * Builds an immutable {@link DataPipeline} from the staged stages, validating the
-         * type chain eagerly. Always rejects a builder with no source via the "no stages"
-         * diagnostic.
-         *
-         * @return the built pipeline
-         * @throws IllegalStateException when the type chain has any issues
-         */
-        public @NotNull DataPipeline<?> build() {
-            DataPipeline<?> pipeline = new DataPipeline<>(
-                Concurrent.newUnmodifiableList(this.stages), DataTypes.NONE
-            );
-            ValidationReport report = pipeline.validate();
-
-            if (!report.isValid())
-                throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
-
-            return pipeline;
+            List<Stage<?, ?>> stages = new ArrayList<>();
+            stages.add(source);
+            return new Builder<>(stages, source.outputType());
         }
 
     }

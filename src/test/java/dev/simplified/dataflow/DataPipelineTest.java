@@ -26,17 +26,4 @@ class DataPipelineTest {
         assertThat(result, is(equalTo(null)));
     }
 
-    @Test
-    @DisplayName("Building an empty pipeline throws because validate() reports 'no stages'")
-    void emptyBuilderRejectsBuild() {
-        try {
-            DataPipeline.builder().build();
-        } catch (IllegalStateException expected) {
-            assertThat(expected.getMessage(), containsString("invalid pipeline"));
-            assertThat(expected.getMessage(), containsString("no stages"));
-            return;
-        }
-        throw new AssertionError("Expected IllegalStateException");
-    }
-
 }
