@@ -5,6 +5,7 @@ import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.util.StringUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -51,22 +52,7 @@ public final class TitleCaseTransform implements TransformStage<String, String> 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
-        if (input == null) return null;
-        StringBuilder result = new StringBuilder(input.length());
-        boolean atWordStart = true;
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            if (Character.isWhitespace(c)) {
-                result.append(c);
-                atWordStart = true;
-            } else if (atWordStart) {
-                result.append(Character.toUpperCase(c));
-                atWordStart = false;
-            } else {
-                result.append(Character.toLowerCase(c));
-            }
-        }
-        return result.toString();
+        return input == null ? null : StringUtil.toTitleCase(input);
     }
 
     /** {@inheritDoc} */

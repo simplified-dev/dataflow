@@ -33,10 +33,10 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
-    api("com.github.simplified-dev:client") { version { strictly("64ae978") } }
+    api("com.github.simplified-dev:client") { version { strictly("92c40b0") } }
     api("com.github.simplified-dev:collections") { version { strictly("2f2aa58") } }
-    api("com.github.simplified-dev:gson-extras") { version { strictly("b68510e") } }
-    api("com.github.simplified-dev:reflection") { version { strictly("c02511a") } }
+    api("com.github.simplified-dev:gson-extras") { version { strictly("f42ee07") } }
+    api("com.github.simplified-dev:reflection") { version { strictly("b2cf834") } }
 
     // Lombok Annotations
     compileOnly(libs.lombok)

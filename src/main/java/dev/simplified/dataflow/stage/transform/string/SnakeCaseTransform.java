@@ -5,14 +5,13 @@ import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.util.StringUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.regex.Pattern;
 
 /**
  * {@link TransformStage} that converts an input {@link String} to {@code snake_case}.
@@ -41,10 +40,6 @@ import java.util.regex.Pattern;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SnakeCaseTransform implements TransformStage<String, String> {
 
-    private static final @NotNull Pattern WORD_BOUNDARY = Pattern.compile(
-        "[\\s_-]+|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
-    );
-
     /**
      * Constructs a snake-case stage.
      *
@@ -57,17 +52,7 @@ public final class SnakeCaseTransform implements TransformStage<String, String> 
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
-        if (input == null) return null;
-        String[] words = WORD_BOUNDARY.split(input);
-        StringBuilder result = new StringBuilder(input.length());
-        boolean first = true;
-        for (String word : words) {
-            if (word.isEmpty()) continue;
-            if (!first) result.append('_');
-            result.append(word.toLowerCase());
-            first = false;
-        }
-        return result.toString();
+        return input == null ? null : StringUtil.toSnakeCase(input);
     }
 
     /** {@inheritDoc} */
