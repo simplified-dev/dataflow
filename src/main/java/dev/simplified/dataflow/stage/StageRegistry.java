@@ -1,9 +1,9 @@
 package dev.simplified.dataflow.stage;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.reflection.Reflection;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

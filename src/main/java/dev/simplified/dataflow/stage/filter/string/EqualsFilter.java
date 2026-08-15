@@ -1,5 +1,9 @@
 package dev.simplified.dataflow.stage.filter.string;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.dataflow.DataType;
@@ -8,10 +12,6 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.FilterStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,8 +26,7 @@ import java.util.List;
     description = "List<STRING> -> List<STRING>",
     category = StageSpec.Category.FILTER_STRING
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class EqualsFilter implements FilterStage<String> {
 

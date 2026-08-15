@@ -1,16 +1,16 @@
 package dev.simplified.dataflow.stage.filter.list;
 
-import dev.simplified.dataflow.DataType;
-import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.meta.Configurable;
-import dev.simplified.dataflow.stage.FilterStage;
-import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
+import dev.simplified.dataflow.DataType;
+import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.stage.FilterStage;
+import dev.simplified.dataflow.stage.meta.Configurable;
+import dev.simplified.dataflow.stage.meta.StageSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,8 +28,7 @@ import java.util.Objects;
     description = "List<T> -> List<T>",
     category = StageSpec.Category.FILTER_LIST
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NotNullFilter<T> implements FilterStage<T> {
 

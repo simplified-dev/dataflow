@@ -1,5 +1,6 @@
 package dev.simplified.dataflow.stage.meta;
 
+import dev.simplified.annotations.EnumLookup;
 import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageRegistry;
@@ -68,6 +69,7 @@ public @interface StageSpec {
      * <p>
      * Downstream UI code can rely on {@link Enum#ordinal()} for natural display order.
      */
+    @EnumLookup
     enum Category {
 
         /**

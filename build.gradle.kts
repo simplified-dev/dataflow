@@ -33,16 +33,16 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
-    api("com.github.simplified-dev:client") { version { strictly("3d87a03") } }
-    api("com.github.simplified-dev:collections") { version { strictly("652c22d") } }
-    api("com.github.simplified-dev:gson-extras") { version { strictly("2ba8143") } }
-    api("com.github.simplified-dev:reflection") { version { strictly("7a28c3a") } }
+    api("com.github.simplified-dev:client") { version { strictly("2a3f2fc") } }
+    api("com.github.simplified-dev:collections") { version { strictly("23f01b6") } }
+    api("com.github.simplified-dev:gson-extras") { version { strictly("c4bde8d") } }
+    api("com.github.simplified-dev:reflection") { version { strictly("d02f3ea") } }
 
-    // Lombok Annotations
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
-    testCompileOnly(libs.lombok)
-    testAnnotationProcessor(libs.lombok)
+    // Simplified Annotations
+    implementation(libs.simplified.annotations)
+    annotationProcessor(libs.simplified.annotations)
+    testImplementation(libs.simplified.annotations)
+    testAnnotationProcessor(libs.simplified.annotations)
 
     // Tests
     testImplementation(libs.hamcrest)

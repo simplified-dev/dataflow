@@ -2,15 +2,13 @@ package dev.simplified.dataflow.stage.terminal.collect;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.CollectStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,8 +29,6 @@ import java.util.List;
     description = "List<JSON_OBJECT> -> JSON_OBJECT",
     category = StageSpec.Category.TERMINAL_COLLECT
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JsonObjectFromEntriesCollect implements CollectStage<List<JsonObject>, JsonObject> {
 

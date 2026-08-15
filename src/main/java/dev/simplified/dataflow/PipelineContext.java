@@ -1,17 +1,20 @@
 package dev.simplified.dataflow;
 
 import com.google.gson.Gson;
-import dev.simplified.dataflow.stage.Stage;
-import dev.simplified.dataflow.stage.source.EmbedSource;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.BuilderIgnore;
+import dev.simplified.annotations.ClassBuilder;
+import dev.simplified.annotations.Collector;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.SetterNames;
 import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.client.fetch.UrlFetcherConfig;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
 import dev.simplified.collection.ConcurrentSet;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
+import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.source.EmbedSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,9 +31,11 @@ import java.util.function.BiConsumer;
  * mutable {@code activeIds} set guards against {@link EmbedSource} cycles. An optional
  * tracing hook fires after every stage's {@code execute} for debugging / instrumentation.
  */
-@Getter
-@Accessors(fluent = true)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter(style = NamingStyle.FLUENT)
+@ClassBuilder(
+    constructorAccess = AccessLevel.PRIVATE,
+    setters = @SetterNames(set = "with{}", put = "with{}")
+)
 public final class PipelineContext {
 
     private static final @NotNull Logger DEFAULT_LOG = LoggerFactory.getLogger(PipelineContext.class);
@@ -38,12 +43,26 @@ public final class PipelineContext {
         UrlFetcherConfig.builder(new Gson()).build()
     );
 
-    private final @NotNull UrlFetcher fetcher;
-    private final @NotNull Logger log;
-    private final @NotNull DataPipelineResolver resolver;
-    private final @NotNull ConcurrentMap<String, Object> bag;
-    private final @NotNull ConcurrentSet<String> activeIds;
-    private final @Nullable BiConsumer<Stage<?, ?>, Object> trace;
+    private final @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
+    private final @NotNull Logger log = DEFAULT_LOG;
+    private final @NotNull DataPipelineResolver resolver = DataPipelineResolver.NOOP;
+
+    @Collector(singular = true, singularMethodName = "BagEntry")
+    private final @NotNull ConcurrentMap<String, Object> bag = Concurrent.newMap();
+
+    @BuilderIgnore
+    private final @NotNull ConcurrentSet<String> activeIds = Concurrent.newSet();
+
+    /**
+     * Per-stage callback fired after every stage's {@code execute}, in both top-level
+     * {@link DataPipeline} and sub-chain {@code Chain} execution, receiving the stage that
+     * just ran and its post-execute output - {@code null} installs no hook.
+     * <p>
+     * Useful for debugging: inspect intermediate values, time each stage, or assert in tests
+     * that the expected stages ran in order. It fires even when a stage returns {@code null},
+     * so traces capture rejection points.
+     */
+    private final @Nullable BiConsumer<Stage<?, ?>, Object> trace = null;
 
     /**
      * Convenience factory returning a fully defaulted context: default fetcher, default
@@ -57,16 +76,7 @@ public final class PipelineContext {
     }
 
     /**
-     * Creates a fresh {@link Builder} for assembling a context.
-     *
-     * @return a new builder
-     */
-    public static @NotNull Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Fires the {@linkplain Builder#withTrace tracing hook} (if configured) after a stage's
+     * Fires the {@code trace} hook (if configured) after a stage's
      * {@code execute} has run. Both {@link DataPipeline#execute(PipelineContext)} and the
      * body walk inside {@code Chain.execute} call this; no-op when no tracer was installed.
      *
@@ -97,62 +107,6 @@ public final class PipelineContext {
      */
     public void exitPipeline(@NotNull String id) {
         this.activeIds.remove(id);
-    }
-
-    /**
-     * Mutable builder for {@link PipelineContext}.
-     */
-    public static final class Builder {
-
-        private @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
-        private @NotNull Logger log = DEFAULT_LOG;
-        private @NotNull DataPipelineResolver resolver = DataPipelineResolver.NOOP;
-        private final @NotNull ConcurrentMap<String, Object> bag = Concurrent.newMap();
-        private @Nullable BiConsumer<Stage<?, ?>, Object> trace = null;
-
-        private Builder() {}
-
-        public @NotNull Builder withFetcher(@NotNull UrlFetcher fetcher) {
-            this.fetcher = fetcher;
-            return this;
-        }
-
-        public @NotNull Builder withLogger(@NotNull Logger log) {
-            this.log = log;
-            return this;
-        }
-
-        public @NotNull Builder withResolver(@NotNull DataPipelineResolver resolver) {
-            this.resolver = resolver;
-            return this;
-        }
-
-        public @NotNull Builder withBagEntry(@NotNull String key, @NotNull Object value) {
-            this.bag.put(key, value);
-            return this;
-        }
-
-        /**
-         * Installs a tracing hook that fires after every stage in both top-level
-         * {@link DataPipeline} and sub-chain {@code Chain} execution. The callback receives
-         * the stage that just ran and its post-execute output (possibly {@code null}).
-         * <p>
-         * Useful for debugging: inspect intermediate values, time each stage, or assert in
-         * tests that the expected stages ran in order. The hook is fired even when a stage
-         * returns {@code null} so traces capture rejection points.
-         *
-         * @param trace the per-stage callback, or {@code null} to install none
-         * @return this builder
-         */
-        public @NotNull Builder withTrace(@Nullable BiConsumer<Stage<?, ?>, Object> trace) {
-            this.trace = trace;
-            return this;
-        }
-
-        public @NotNull PipelineContext build() {
-            return new PipelineContext(this.fetcher, this.log, this.resolver, this.bag, Concurrent.newSet(), this.trace);
-        }
-
     }
 
 }

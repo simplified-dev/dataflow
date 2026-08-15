@@ -1,18 +1,18 @@
 package dev.simplified.dataflow.stage.terminal.match;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.ValidationReport;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.stage.CollectStage;
-import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,8 +32,7 @@ import java.util.stream.Stream;
     description = "List<T> -> BOOLEAN (body: T -> BOOLEAN)",
     category = StageSpec.Category.TERMINAL_MATCH
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NoneMatchCollect<T> implements CollectStage<List<T>, Boolean> {
 

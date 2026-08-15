@@ -1,14 +1,14 @@
 package dev.simplified.dataflow.stage;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.NamedChains;
 import dev.simplified.dataflow.chain.TypedChain;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,5 +1,9 @@
 package dev.simplified.dataflow.stage.source;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
@@ -7,10 +11,6 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.SourceStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,8 +26,7 @@ import java.net.URI;
     description = "() -> RAW_*",
     category = StageSpec.Category.SOURCE
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UrlSource implements SourceStage<String> {
 

@@ -1,5 +1,9 @@
 package dev.simplified.dataflow.stage.transform.list;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.dataflow.DataType;
@@ -10,10 +14,6 @@ import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,8 +35,7 @@ import java.util.stream.Stream;
     description = "List<X> -> List<Y> (body: X -> List<Y>)",
     category = StageSpec.Category.TRANSFORM_LIST
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FlatMapTransform<X, Y> implements TransformStage<List<X>, List<Y>> {
 

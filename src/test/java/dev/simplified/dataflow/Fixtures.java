@@ -1,7 +1,6 @@
 package dev.simplified.dataflow;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import dev.simplified.annotations.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -11,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Loads small text fixture bodies from {@code src/test/resources/fixtures/}.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class Fixtures {
 
     /**

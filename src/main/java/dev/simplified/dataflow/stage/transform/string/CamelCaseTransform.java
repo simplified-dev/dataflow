@@ -1,15 +1,13 @@
 package dev.simplified.dataflow.stage.transform.string;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.util.StringUtil;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,8 +34,6 @@ import org.jetbrains.annotations.Nullable;
     description = "STRING -> STRING",
     category = StageSpec.Category.TRANSFORM_STRING
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CamelCaseTransform implements TransformStage<String, String> {
 
