@@ -1,5 +1,9 @@
 package dev.simplified.dataflow.stage.filter.dom;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.dataflow.DataType;
@@ -8,10 +12,6 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.FilterStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,8 +29,7 @@ import java.util.regex.Pattern;
     description = "List<DOM_NODE> -> List<DOM_NODE>",
     category = StageSpec.Category.FILTER_DOM
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TextMatchesFilter implements FilterStage<Element> {
 

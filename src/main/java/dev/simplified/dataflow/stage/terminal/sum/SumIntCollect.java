@@ -1,14 +1,12 @@
 package dev.simplified.dataflow.stage.terminal.sum;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.CollectStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,8 +22,6 @@ import java.util.List;
     description = "List<INT> -> INT",
     category = StageSpec.Category.TERMINAL_SUM
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SumIntCollect implements CollectStage<List<Integer>, Integer> {
 

@@ -1,14 +1,12 @@
 package dev.simplified.dataflow.stage.predicate.common;
 
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.TransformStage;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
+import dev.simplified.dataflow.stage.meta.StageSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,8 +19,6 @@ import org.jetbrains.annotations.Nullable;
     description = "BOOLEAN -> BOOLEAN",
     category = StageSpec.Category.PREDICATE_COMMON
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NotPredicate implements TransformStage<Boolean, Boolean> {
 

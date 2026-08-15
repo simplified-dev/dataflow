@@ -1,15 +1,13 @@
 package dev.simplified.dataflow.stage.transform.json;
 
 import com.google.gson.JsonElement;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
     description = "JSON_ELEMENT -> LONG",
     category = StageSpec.Category.TRANSFORM_JSON
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AsLongTransform implements TransformStage<JsonElement, Long> {
 

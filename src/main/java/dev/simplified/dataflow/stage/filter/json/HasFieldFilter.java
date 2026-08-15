@@ -1,6 +1,10 @@
 package dev.simplified.dataflow.stage.filter.json;
 
 import com.google.gson.JsonObject;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
 import dev.simplified.dataflow.DataType;
@@ -9,10 +13,6 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.FilterStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,8 +27,7 @@ import java.util.List;
     description = "List<JSON_OBJECT> -> List<JSON_OBJECT>",
     category = StageSpec.Category.FILTER_JSON
 )
-@Getter
-@Accessors(fluent = true)
+@Getter(style = NamingStyle.FLUENT)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HasFieldFilter implements FilterStage<JsonObject> {
 

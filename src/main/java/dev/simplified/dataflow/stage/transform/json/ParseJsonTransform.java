@@ -2,15 +2,13 @@ package dev.simplified.dataflow.stage.transform.json;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import dev.simplified.annotations.AccessLevel;
+import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
-import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.TransformStage;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
+import dev.simplified.dataflow.stage.meta.StageSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,8 +22,6 @@ import org.jetbrains.annotations.Nullable;
     description = "RAW_JSON -> JSON_ELEMENT",
     category = StageSpec.Category.TRANSFORM_JSON
 )
-@Getter
-@Accessors(fluent = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParseJsonTransform implements TransformStage<String, JsonElement> {
 

@@ -1,9 +1,9 @@
 package dev.simplified.dataflow;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Accessors;
+import dev.simplified.annotations.EqualsAndHashCode;
+import dev.simplified.annotations.Getter;
+import dev.simplified.annotations.NamingStyle;
+import dev.simplified.annotations.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -62,8 +62,7 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <T> the runtime java type
      */
-    @Getter
-    @Accessors(fluent = true)
+    @Getter(style = NamingStyle.FLUENT)
     @EqualsAndHashCode(of = "label")
     @RequiredArgsConstructor
     final class Basic<T> implements DataType<T> {
@@ -83,8 +82,7 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <E> element type
      */
-    @Getter
-    @Accessors(fluent = true)
+    @Getter(style = NamingStyle.FLUENT)
     @EqualsAndHashCode
     @RequiredArgsConstructor
     final class ListType<E> implements DataType<List<E>> {
@@ -114,8 +112,7 @@ public sealed interface DataType<T> permits DataType.Basic, DataType.ListType, D
      *
      * @param <E> element type
      */
-    @Getter
-    @Accessors(fluent = true)
+    @Getter(style = NamingStyle.FLUENT)
     @EqualsAndHashCode
     @RequiredArgsConstructor
     final class SetType<E> implements DataType<Set<E>> {
