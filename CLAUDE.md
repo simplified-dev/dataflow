@@ -1,6 +1,6 @@
 # dataflow
 
-Typed pipeline lib (Java 21, Gradle, Lombok). Java-8-Streams shape.
+Typed pipeline lib (Java 21, Gradle, Simplified Annotations). Java-8-Streams shape.
 
 ## Stage hierarchy
 
@@ -15,7 +15,7 @@ Typed pipeline lib (Java 21, Gradle, Lombok). Java-8-Streams shape.
 - `public static @NotNull XStage of(...)` factory
 - `public static @NotNull XStage fromConfig(StageConfig)` for serde
 - Implements `inputType/outputType/kind/summary/config/execute`
-- `@Getter @Accessors(fluent=true) @RequiredArgsConstructor(access=PRIVATE)` (or `@NoArgsConstructor(PRIVATE)` stateless)
+- `@Getter(style = NamingStyle.FLUENT) @RequiredArgsConstructor(access=PRIVATE)` (or `@NoArgsConstructor(PRIVATE)` stateless)
 - `if (input == null) return null;` (rejection semantics)
 - List outputs: `Concurrent.newUnmodifiableList(...)`
 - Regex stages: `Pattern.compile(...)` cached in `of(...)`
