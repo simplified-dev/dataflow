@@ -33,15 +33,15 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
-    api("com.github.simplified-dev:client") { version { strictly("2a3f2fc") } }
-    api("com.github.simplified-dev:collections") { version { strictly("23f01b6") } }
-    api("com.github.simplified-dev:gson-extras") { version { strictly("c4bde8d") } }
-    api("com.github.simplified-dev:reflection") { version { strictly("d02f3ea") } }
+    api("com.github.simplified-dev:client") { version { strictly("1ca9934") } }
+    api("com.github.simplified-dev:collections") { version { strictly("8ca6cb8") } }
+    api("com.github.simplified-dev:gson-extras") { version { strictly("f143dc1") } }
+    api("com.github.simplified-dev:reflection") { version { strictly("6c3b7c5") } }
 
     // Simplified Annotations
-    implementation(libs.simplified.annotations)
+    compileOnly(libs.simplified.annotations)
     annotationProcessor(libs.simplified.annotations)
-    testImplementation(libs.simplified.annotations)
+    testCompileOnly(libs.simplified.annotations)
     testAnnotationProcessor(libs.simplified.annotations)
 
     // Tests
