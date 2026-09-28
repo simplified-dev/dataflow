@@ -15,6 +15,7 @@ import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageReflection;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -63,6 +64,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINES_MAP        -> cfg.getSubPipelines(this.name);
             case TYPED_SUB_PIPELINES_MAP  -> cfg.getTypedSubPipelines(this.name);
             case PIPELINE                 -> cfg.getPipeline(this.name);
+            case STRING_MAP               -> cfg.getStringMap(this.name);
         };
     }
 
@@ -87,6 +89,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, (NamedChains<?>) value);
             case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, (Map<String, TypedChain<?>>) value);
             case PIPELINE                -> b.pipeline(this.name, (DataPipeline<?>) value);
+            case STRING_MAP              -> b.stringMap(this.name, (Map<String, String>) value);
         };
     }
 
@@ -138,6 +141,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINES_MAP       -> ChainSerde.writeNamedChains((NamedChains<?>) value, stageWriter);
             case TYPED_SUB_PIPELINES_MAP -> ChainSerde.writeTypedNamedChains((Map<String, TypedChain<?>>) value, stageWriter);
             case PIPELINE                -> ChainSerde.writePipeline((DataPipeline<?>) value, stageWriter);
+            case STRING_MAP              -> writeStringMap((Map<String, String>) value);
         };
     }
 
@@ -150,6 +154,7 @@ public record FieldSpec<T>(
      * @param stageReader recursive callback used by sub-pipeline types to deserialise nested stages
      * @return {@code b} for chaining
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
+     * @throws IllegalArgumentException when a {@code STRING_MAP} slot maps a key to a JSON null, object or array
      * @throws IllegalStateException when a {@code PIPELINE} slot's stage array does not form a valid pipeline
      */
     public @NotNull StageConfig.Builder readJson(
@@ -174,8 +179,33 @@ public record FieldSpec<T>(
             case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, ChainSerde.readNamedChains(raw.getAsJsonObject(), stageReader));
             case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), stageReader));
             case PIPELINE                -> b.pipeline(this.name, ChainSerde.readPipeline(raw.getAsJsonArray(), stageReader));
+            case STRING_MAP              -> b.stringMap(this.name, this.readStringMap(raw.getAsJsonObject()));
         }
         return b;
+    }
+
+    private static @NotNull JsonObject writeStringMap(@NotNull Map<String, String> value) {
+        JsonObject out = new JsonObject();
+        for (Map.Entry<String, String> entry : value.entrySet())
+            out.addProperty(entry.getKey(), entry.getValue());
+        return out;
+    }
+
+    private @NotNull Map<String, String> readStringMap(@NotNull JsonObject raw) {
+        Map<String, String> out = new LinkedHashMap<>();
+
+        for (Map.Entry<String, JsonElement> entry : raw.entrySet()) {
+            JsonElement value = entry.getValue();
+
+            if (!value.isJsonPrimitive())
+                throw new IllegalArgumentException(
+                    "Field '" + this.name + "' maps '" + entry.getKey() + "' to '" + value + "' but a string was expected"
+                );
+
+            out.put(entry.getKey(), value.getAsString());
+        }
+
+        return out;
     }
 
     /**
@@ -242,6 +272,12 @@ public record FieldSpec<T>(
          * {@link PipelineContext#evaluateOperand(DataPipeline)}.
          */
         PIPELINE,
+
+        /**
+         * Map of string keys to string values, storage value {@code Map<String, String>} that
+         * keeps insertion order. Serialised as a JSON object whose values are strings.
+         */
+        STRING_MAP,
 
     }
 

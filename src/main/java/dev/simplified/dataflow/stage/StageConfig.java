@@ -140,6 +140,19 @@ public final class StageConfig {
         }
 
         /**
+         * Stores an unmodifiable copy of a string-to-string map under {@code name}, keeping the
+         * iteration order of {@code value}.
+         *
+         * @param name the field name
+         * @param value the map to copy
+         * @return this builder
+         */
+        public @NotNull Builder stringMap(@NotNull String name, @NotNull Map<String, String> value) {
+            this.values.put(name, Concurrent.newUnmodifiableLinkedMap(value));
+            return this;
+        }
+
+        /**
          * Generic store - inserts the value as-is. Caller is responsible for matching
          * {@link FieldSpec.Type} expectations declared by the {@link FieldSpec}.
          *
@@ -272,6 +285,18 @@ public final class StageConfig {
      */
     public @NotNull DataPipeline<?> getPipeline(@NotNull String name) {
         return (DataPipeline<?>) this.values.get(name);
+    }
+
+    /**
+     * Returns the string-to-string map stored under {@code name}, in the order it was stored.
+     *
+     * @param name the field name
+     * @return the unmodifiable map
+     * @throws ClassCastException when the field is present but not a map
+     */
+    @SuppressWarnings("unchecked")
+    public @NotNull Map<String, String> getStringMap(@NotNull String name) {
+        return (Map<String, String>) this.values.get(name);
     }
 
     /**
