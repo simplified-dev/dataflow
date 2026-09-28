@@ -108,6 +108,12 @@ class RangeExpandTransformTest {
     }
 
     @Test
+    @DisplayName("A range at the bottom of the int range expands without overflowing")
+    void rangeAtIntMinExpands() {
+        assertThat(expand("-2147483648--2147483647"), is(equalTo(List.of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1))));
+    }
+
+    @Test
     @DisplayName("The whole int range is refused by the size guard rather than overflowing")
     void wholeIntRangeYieldsNull() {
         assertThat(expand("-2147483648-2147483647"), is(nullValue()));

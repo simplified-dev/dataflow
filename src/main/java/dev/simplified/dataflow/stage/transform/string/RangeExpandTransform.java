@@ -12,6 +12,7 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
  * of its members.
  * <p>
  * The regex is searched for as {@link Matcher#find()} finds it, and its groups {@code 1} and
- * {@code 2} hold the low and the high bound, each parsed as {@code TRANSFORM_PARSE_INT} parses.
+ * {@code 2} hold the low and the high bound, each parsed as {@link ParseIntTransform} parses.
  * With the default regex, {@code "1-15"} becomes {@code [1, 2, ..., 15]} and {@code "-3--1"}
  * becomes {@code [-3, -2, -1]}. Members run from the low bound upward by the step, and the high
  * bound is a member only when the step lands on it. The input rejects with {@code null} when:
