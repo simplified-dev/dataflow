@@ -90,6 +90,27 @@ class HtmlDecodeTransformTest {
     }
 
     @Test
+    @DisplayName("Line breaks, carriage returns and NUL characters pass through unchanged")
+    void controlCharactersPassThrough() {
+        assertThat(decode("a\r\nb\rc\u0000d&#10;"), is(equalTo("a\r\nb\rc\u0000d\n")));
+    }
+
+    @Test
+    @DisplayName("A reference decodes wherever it falls in a long input")
+    void referencesAcrossLongInput() {
+        String padding = "x".repeat(32760);
+        StringBuilder input = new StringBuilder();
+        StringBuilder expected = new StringBuilder();
+
+        for (int shift = 0; shift < 16; shift++) {
+            input.append(padding, 0, 32760 - shift).append("&#123;&amp;&#x7D;");
+            expected.append(padding, 0, 32760 - shift).append("{&}");
+        }
+
+        assertThat(decode(input.toString()), is(equalTo(expected.toString())));
+    }
+
+    @Test
     @DisplayName("A pipeline round-trips to the same JSON")
     void wireRoundTripIsStable() {
         String first = PipelineGson.toJson(pipeline());
