@@ -70,25 +70,26 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
     /**
      * Configured join mode exactly as given, carried on the wire under {@code mode}.
      */
-    private final @NotNull String mode;
+    private final @NotNull String rawMode;
 
     /**
-     * Configured comma-separated column list exactly as given, or {@code null} when every right
-     * key may fill a cell.
+     * Configured comma-separated column list exactly as given, carried on the wire under
+     * {@code columns}, or {@code null} when every right key may fill a cell.
      */
-    private final @Nullable String columns;
+    private final @Nullable String rawColumns;
 
     private final @NotNull DataPipeline<List<JsonObject>> right;
 
     /**
-     * Join mode parsed from {@link #mode}.
+     * Join mode parsed from {@link #rawMode}.
      */
-    private final @NotNull Mode joinMode;
+    private final @NotNull Mode mode;
 
     /**
-     * Right keys parsed from {@link #columns}, or {@code null} when every right key may fill a cell.
+     * Right keys parsed from {@link #rawColumns}, or {@code null} when every right key may fill a
+     * cell.
      */
-    private final @Nullable Set<String> columnSet;
+    private final @Nullable Set<String> columns;
 
     /**
      * The right rows indexed by {@link #rightKey}, built at most once per context.
@@ -123,11 +124,13 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
      *
      * @param leftKey the field of a running row that keys it
      * @param rightKey the field of an operand row that keys it
-     * @param mode the {@link Mode} name - {@code INNER}, {@code LEFT} or {@code FULL}
-     * @param columns comma-separated right keys that may fill a cell, or {@code null} for every key
+     * @param rawMode the {@link Mode} name - {@code INNER}, {@code LEFT} or {@code FULL}; carried on
+     *                the wire as {@code mode}
+     * @param rawColumns comma-separated right keys that may fill a cell, or {@code null} for every
+     *                   key; carried on the wire as {@code columns}
      * @param right the operand pipeline, whose output must be {@code List<JSON_OBJECT>}
      * @return the stage
-     * @throws IllegalArgumentException when {@code mode} names no {@link Mode}, {@code columns}
+     * @throws IllegalArgumentException when {@code rawMode} names no {@link Mode}, {@code rawColumns}
      *         names no key, or {@code right} is invalid or does not produce {@code List<JSON_OBJECT>}
      */
     @SuppressWarnings("unchecked")
@@ -136,15 +139,15 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
         @NotNull String leftKey,
         @Configurable(label = "Right key", placeholder = "id")
         @NotNull String rightKey,
-        @Configurable(label = "Mode (INNER, LEFT or FULL)", placeholder = "LEFT")
-        @NotNull String mode,
-        @Configurable(label = "Columns (optional)", placeholder = "name,gameType", optional = true)
-        @Nullable String columns,
+        @Configurable(name = "mode", label = "Mode (INNER, LEFT or FULL)", placeholder = "LEFT")
+        @NotNull String rawMode,
+        @Configurable(name = "columns", label = "Columns (optional)", placeholder = "name,gameType", optional = true)
+        @Nullable String rawColumns,
         @Configurable(label = "Right pipeline")
         @NotNull DataPipeline<?> right
     ) {
-        Mode joinMode = parseMode(mode);
-        Set<String> columnSet = columns == null ? null : parseColumns(columns);
+        Mode mode = parseMode(rawMode);
+        Set<String> columns = rawColumns == null ? null : parseColumns(rawColumns);
         ValidationReport report = right.validate(ROWS);
 
         if (!report.isValid())
@@ -154,11 +157,11 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
         return new JoinByKeyTransform(
             leftKey,
             rightKey,
+            rawMode,
+            rawColumns,
+            rows,
             mode,
             columns,
-            rows,
-            joinMode,
-            columnSet,
             RowKeys.index(rows, rightKey, "TRANSFORM_JOIN_BY_KEY")
         );
     }
@@ -204,7 +207,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
             JsonObject match = key == null ? null : index.get(key);
 
             if (match == null) {
-                if (this.joinMode != Mode.INNER) joined.add(left.deepCopy());
+                if (this.mode != Mode.INNER) joined.add(left.deepCopy());
                 continue;
             }
 
@@ -212,7 +215,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
             joined.add(this.fill(left.deepCopy(), match));
         }
 
-        if (this.joinMode == Mode.FULL) {
+        if (this.mode == Mode.FULL) {
             for (Map.Entry<String, JsonObject> entry : index.entrySet()) {
                 if (matched.contains(entry.getKey())) continue;
                 JsonObject row = new JsonObject();
@@ -236,7 +239,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
         for (Map.Entry<String, JsonElement> cell : match.entrySet()) {
             String column = cell.getKey();
             if (column.equals(this.rightKey)) continue;
-            if (this.columnSet != null && !this.columnSet.contains(column)) continue;
+            if (this.columns != null && !this.columns.contains(column)) continue;
             if (RowKeys.populated(row.get(column)) || !RowKeys.populated(cell.getValue())) continue;
             row.add(column, cell.getValue().deepCopy());
         }
@@ -260,7 +263,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
     @Override
     public @NotNull String summary() {
         return "Join " + this.mode + " on '" + this.leftKey + "' = '" + this.rightKey + "'"
-            + (this.columns == null ? "" : " (" + this.columns + ")");
+            + (this.rawColumns == null ? "" : " (" + this.rawColumns + ")");
     }
 
 }
