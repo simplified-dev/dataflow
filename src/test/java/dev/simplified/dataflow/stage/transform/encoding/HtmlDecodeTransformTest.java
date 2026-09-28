@@ -1,0 +1,105 @@
+package dev.simplified.dataflow.stage.transform.encoding;
+
+import dev.simplified.dataflow.DataPipeline;
+import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.source.LiteralSource;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+class HtmlDecodeTransformTest {
+
+    private static final @NotNull String MSGNW = "&#123;&#9;name &#61; &#39;Hilda&#39;, cost &#61; 5 &#125;";
+
+    private final PipelineContext ctx = PipelineContext.defaults();
+
+    private @Nullable String decode(@NotNull String input) {
+        return HtmlDecodeTransform.of().execute(this.ctx, input);
+    }
+
+    private static @NotNull DataPipeline<String> pipeline() {
+        return DataPipeline.builder()
+            .source(LiteralSource.text(MSGNW))
+            .stage(HtmlDecodeTransform.of())
+            .build();
+    }
+
+    @Test
+    @DisplayName("Null input returns null")
+    void nullInput() {
+        assertThat(HtmlDecodeTransform.of().execute(this.ctx, null), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("A string with no reference is returned unchanged")
+    void noReference() {
+        assertThat(decode("plain text"), is(equalTo("plain text")));
+    }
+
+    @Test
+    @DisplayName("Decimal references decode, including a tab")
+    void decimalReferences() {
+        assertThat(decode(MSGNW), is(equalTo("{\tname = 'Hilda', cost = 5 }")));
+    }
+
+    @Test
+    @DisplayName("Hexadecimal references decode in either case")
+    void hexReferences() {
+        assertThat(decode("&#x7B;&#X7d;"), is(equalTo("{}")));
+    }
+
+    @Test
+    @DisplayName("Named references decode")
+    void namedReferences() {
+        assertThat(decode("&lt;b&gt; &quot;x&quot; &amp; &eacute;"), is(equalTo("<b> \"x\" & \u00e9")));
+    }
+
+    @Test
+    @DisplayName("A name HTML does not define stays as written")
+    void unknownNameStays() {
+        assertThat(decode("a &bogus; b"), is(equalTo("a &bogus; b")));
+    }
+
+    @Test
+    @DisplayName("A bare ampersand stays as written")
+    void bareAmpersandStays() {
+        assertThat(decode("salt & pepper"), is(equalTo("salt & pepper")));
+    }
+
+    @Test
+    @DisplayName("Decoded text is not decoded a second time")
+    void noDoubleDecode() {
+        assertThat(decode("&#38;#61;"), is(equalTo("&#61;")));
+    }
+
+    @Test
+    @DisplayName("A legacy name without its semicolon decodes, as in HTML text")
+    void legacyNameWithoutSemicolon() {
+        assertThat(decode("a &amp b"), is(equalTo("a & b")));
+    }
+
+    @Test
+    @DisplayName("A supplementary character reference decodes to one code point")
+    void supplementaryReference() {
+        assertThat(decode("&#128512;").codePointAt(0), is(equalTo(0x1F600)));
+    }
+
+    @Test
+    @DisplayName("A pipeline round-trips to the same JSON")
+    void wireRoundTripIsStable() {
+        String first = PipelineGson.toJson(pipeline());
+        assertThat(PipelineGson.toJson(PipelineGson.fromJson(first)), is(equalTo(first)));
+    }
+
+    @Test
+    @DisplayName("A pipeline round-trips to the same output")
+    void wireRoundTripExecutes() {
+        assertThat(PipelineGson.fromJson(PipelineGson.toJson(pipeline())).execute(), is(equalTo(pipeline().execute())));
+    }
+
+}
