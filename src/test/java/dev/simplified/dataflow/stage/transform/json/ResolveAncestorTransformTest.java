@@ -132,6 +132,27 @@ class ResolveAncestorTransformTest {
     }
 
     @Test
+    @DisplayName("A cycle removes an output and depth field the row already held")
+    void cycleRemovesHeldFields() {
+        assertThat(resolve(null, "depth", "[{'id':'a','parent':'b','root':'old','depth':9},{'id':'b','parent':'a'}]"),
+            is(equalTo(q("[{'id':'a','parent':'b'},{'id':'b','parent':'a'}]"))));
+    }
+
+    @Test
+    @DisplayName("A cycle leaves no direct parent behind when the parent field is also the output field")
+    void cycleOverParentFieldLeavesNoGuess() {
+        List<JsonObject> resolved = ResolveAncestorTransform.of("id", "region", "region", null, null)
+            .execute(PipelineContext.defaults(), rows("[{'id':'a','region':'b'},{'id':'b','region':'a'}]"));
+        assertThat(text(resolved), is(equalTo(q("[{'id':'a'},{'id':'b'}]"))));
+    }
+
+    @Test
+    @DisplayName("A root without the value field removes an output field the row already held")
+    void missingRootValueRemovesHeldOutput() {
+        assertThat(resolve("name", null, "[{'id':'a','root':'old'}]"), is(equalTo(q("[{'id':'a'}]"))));
+    }
+
+    @Test
     @DisplayName("A row naming itself as parent is a cycle")
     void selfParentIsCycle() {
         assertThat(resolve(null, null, "[{'id':'a','parent':'a'}]"), is(equalTo(q("[{'id':'a','parent':'a'}]"))));

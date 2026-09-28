@@ -35,10 +35,10 @@ import java.util.Set;
  * lacks; that row is the root, so a row with no parent is its own root at depth 0.
  * <p>
  * The root's {@code valueField}, or its {@code keyField} when no {@code valueField} is set, is
- * copied into {@code outputField}, and is left off when the root has no such value. The number
- * of parent steps to the root is written into {@code depthField} when one is set. A walk that
- * reaches a key it has already seen is a cycle: the row keeps neither field rather than taking a
- * guessed root.
+ * copied into {@code outputField}; when the root has no such value the row carries no
+ * {@code outputField}, even one it held before. The number of parent steps to the root is
+ * written into {@code depthField} when one is set. A walk that reaches a key it has already seen
+ * is a cycle: the row carries neither field, even one it held before, rather than a guessed root.
  * <p>
  * Rows keep their order and are deep copies; the input rows are never mutated. A {@code null}
  * input rejects with {@code null}.
@@ -104,9 +104,8 @@ public final class ResolveAncestorTransform implements TransformStage<List<JsonO
 
         List<JsonObject> resolved = new ArrayList<>(input.size());
 
-        for (JsonObject row : input) {
+        for (JsonObject row : input)
             if (row != null) resolved.add(this.resolve(row, index));
-        }
 
         return Concurrent.newUnmodifiableList(resolved);
     }
@@ -133,13 +132,24 @@ public final class ResolveAncestorTransform implements TransformStage<List<JsonO
             String parentKey = RowKeys.keyOf(parentValue);
             JsonObject parent = index.get(parentKey);
             if (parent == null) break;
-            if (!seen.add(parentKey)) return copy;
+
+            if (!seen.add(parentKey)) {
+                copy.remove(this.outputField);
+                if (this.depthField != null) copy.remove(this.depthField);
+                return copy;
+            }
+
             current = parent;
             depth++;
         }
 
         JsonElement value = current.get(this.valueField == null ? this.keyField : this.valueField);
-        if (value != null && !value.isJsonNull()) copy.add(this.outputField, value.deepCopy());
+
+        if (value == null || value.isJsonNull())
+            copy.remove(this.outputField);
+        else
+            copy.add(this.outputField, value.deepCopy());
+
         if (this.depthField != null) copy.addProperty(this.depthField, depth);
         return copy;
     }
