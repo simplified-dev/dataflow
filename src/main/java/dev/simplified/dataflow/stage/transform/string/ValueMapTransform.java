@@ -62,7 +62,8 @@ public final class ValueMapTransform implements TransformStage<String, String> {
      * @param defaultValue the value for an input the table lacks, or {@code null} for none
      * @param strict whether an input the table lacks rejects with {@code null}, where {@code null} is false
      * @return the stage
-     * @throws IllegalArgumentException when {@code defaultValue} is set and {@code strict} is true
+     * @throws IllegalArgumentException when {@code table} holds a {@code null} key or value, or
+     *         {@code defaultValue} is set and {@code strict} is true
      */
     public static @NotNull ValueMapTransform of(
         @Configurable(label = "Table", placeholder = "{\"PINK\":\"LIGHT_PURPLE\"}")
@@ -72,6 +73,14 @@ public final class ValueMapTransform implements TransformStage<String, String> {
         @Configurable(label = "Strict (optional)", placeholder = "false", optional = true)
         @Nullable Boolean strict
     ) {
+        for (Map.Entry<String, String> entry : table.entrySet()) {
+            if (entry.getKey() == null)
+                throw new IllegalArgumentException("ValueMapTransform table holds a null key");
+
+            if (entry.getValue() == null)
+                throw new IllegalArgumentException(String.format("ValueMapTransform table maps '%s' to null", entry.getKey()));
+        }
+
         if (defaultValue != null && Boolean.TRUE.equals(strict))
             throw new IllegalArgumentException("ValueMapTransform takes 'defaultValue' or 'strict', not both");
 

@@ -124,6 +124,22 @@ class ValueMapTransformTest {
     }
 
     @Test
+    @DisplayName("of refuses a table holding a null key, which the wire form cannot carry")
+    void ofRefusesNullKey() {
+        Map<String, String> table = colours();
+        table.put(null, "WHITE");
+        assertThrows(IllegalArgumentException.class, () -> ValueMapTransform.of(table, null, null));
+    }
+
+    @Test
+    @DisplayName("of refuses a table mapping a key to null, which the wire form cannot carry")
+    void ofRefusesNullValue() {
+        Map<String, String> table = colours();
+        table.put("BLACK", null);
+        assertThrows(IllegalArgumentException.class, () -> ValueMapTransform.of(table, null, null));
+    }
+
+    @Test
     @DisplayName("The table keeps the caller's order")
     void tableKeepsOrder() {
         assertThat(List.copyOf(ValueMapTransform.of(colours(), null, null).table().keySet()), contains("PINK", "GREY", "AQUA"));
@@ -195,6 +211,13 @@ class ValueMapTransformTest {
     @DisplayName("A strict pipeline round-trips to the same JSON")
     void wireRoundTripStrictIsStable() {
         String first = PipelineGson.toJson(pipeline("BLACK", ValueMapTransform.of(colours(), null, true)));
+        assertThat(PipelineGson.toJson(PipelineGson.fromJson(first)), is(equalTo(first)));
+    }
+
+    @Test
+    @DisplayName("A pipeline with strict set to false round-trips to the same JSON")
+    void wireRoundTripNotStrictIsStable() {
+        String first = PipelineGson.toJson(pipeline("BLACK", ValueMapTransform.of(colours(), "WHITE", false)));
         assertThat(PipelineGson.toJson(PipelineGson.fromJson(first)), is(equalTo(first)));
     }
 
