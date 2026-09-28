@@ -76,7 +76,7 @@ public final class UrlSource implements SourceStage<String> {
                 "UrlSource supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType
             );
         if (maxBodyBytes != null && maxBodyBytes < 0)
-            throw new IllegalArgumentException("UrlSource maxBodyBytes must not be negative but got " + maxBodyBytes);
+            throw new IllegalArgumentException("UrlSource maxBodyBytes must not be negative but got '" + maxBodyBytes + "'");
         return new UrlSource(url, outputType, maxBodyBytes);
     }
 

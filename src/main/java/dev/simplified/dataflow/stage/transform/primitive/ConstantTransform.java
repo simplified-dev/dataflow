@@ -107,7 +107,7 @@ public final class ConstantTransform<I, T> implements TransformStage<I, T> {
 
         if (!SUPPORTED_TYPES.contains(type)) {
             throw new IllegalArgumentException(
-                stage + " cannot parse " + slot + " as " + type.label() + "; it parses " + labels()
+                stage + " cannot parse " + slot + " as '" + type.label() + "'; it parses " + labels()
             );
         }
 

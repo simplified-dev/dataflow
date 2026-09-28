@@ -53,7 +53,7 @@ public final class ToRawTransform implements TransformStage<String, String> {
     ) {
         if (!SUPPORTED_OUTPUT_TYPES.contains(outputType)) {
             throw new IllegalArgumentException(
-                "ToRawTransform supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType.label()
+                "ToRawTransform supports " + SUPPORTED_OUTPUT_TYPES + " but got '" + outputType.label() + "'"
             );
         }
 
