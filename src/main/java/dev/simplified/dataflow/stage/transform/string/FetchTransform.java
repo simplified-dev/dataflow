@@ -31,11 +31,11 @@ import java.util.Set;
  * {@code maxBodyBytes} when one is configured and to the fetcher's configured cap otherwise.
  * <p>
  * A {@code 2xx} body is emitted. Every {@code 4xx} the origin answers rejects with {@code null},
- * so a map body drops a page that does not exist - and drops a page the origin refused with a
- * {@code 408} or a {@code 429} the same way. Every other failure throws - a {@code 5xx}, a
- * transport failure, a body past the cap, a request the local rate limit refuses, a blank input,
- * or an input that does not form a URI - so a collection is never silently short a page because
- * the server or the network failed.
+ * whatever the size of its body, so a map body drops a page that does not exist - and drops a
+ * page the origin refused with a {@code 408} or a {@code 429} the same way. Every other failure
+ * throws - a {@code 5xx}, a transport failure, a {@code 2xx} body past the cap, a request the
+ * local rate limit refuses, a blank input, or an input that does not form a URI - so a collection
+ * is never silently short a page because the server or the network failed.
  */
 @StageSpec(
     id = "TRANSFORM_FETCH",
@@ -89,7 +89,7 @@ public final class FetchTransform implements TransformStage<String, String> {
     ) {
         if (!SUPPORTED_OUTPUT_TYPES.contains(outputType)) {
             throw new IllegalArgumentException(
-                "FetchTransform supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType.label()
+                "FetchTransform supports " + SUPPORTED_OUTPUT_TYPES + " but got '" + outputType.label() + "'"
             );
         }
 
@@ -100,7 +100,7 @@ public final class FetchTransform implements TransformStage<String, String> {
         }
 
         if (maxBodyBytes != null && maxBodyBytes < 0)
-            throw new IllegalArgumentException("FetchTransform maxBodyBytes must not be negative but got " + maxBodyBytes);
+            throw new IllegalArgumentException("FetchTransform maxBodyBytes must not be negative but got '" + maxBodyBytes + "'");
 
         return new FetchTransform(outputType, urlTemplate, maxBodyBytes);
     }

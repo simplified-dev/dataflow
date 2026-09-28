@@ -231,6 +231,13 @@ class FetchTransformTest {
     }
 
     @Test
+    @DisplayName("A 404 whose page is larger than maxBodyBytes still rejects with null")
+    void clientErrorPastTheCapRejects() {
+        FetchTransform stage = FetchTransform.of(DataTypes.RAW_HTML, template(), 4L);
+        assertThat(stage.execute(context(), "Missing"), is(nullValue()));
+    }
+
+    @Test
     @DisplayName("maxBodyBytes above the body lifts a smaller configured cap")
     void capOverridesConfiguredCap() {
         FetchTransform stage = FetchTransform.of(DataTypes.RAW_HTML, template(), 1024L);
