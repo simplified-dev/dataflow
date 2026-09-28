@@ -14,10 +14,10 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
-import org.jsoup.select.Selector;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -265,7 +265,28 @@ class SpanExpandTransformTest {
     @Test
     @DisplayName("of rejects a row selector that does not parse")
     void invalidSelectorRejected() {
-        assertThrows(Selector.SelectorParseException.class, () -> SpanExpandTransform.of("tr[["));
+        assertThrows(IllegalArgumentException.class, () -> SpanExpandTransform.of("tr[["));
+    }
+
+    @Test
+    @DisplayName("A wire row selector that does not parse fails the load")
+    void invalidWireSelectorFailsLoad() {
+        String json = "[{\"kind\": \"SOURCE_LITERAL\", \"outputType\": \"RAW_HTML\", \"value\": \"<table></table>\"},"
+            + " {\"kind\": \"PARSE_HTML\"},"
+            + " {\"kind\": \"TRANSFORM_CSS_SELECT\", \"selector\": \"table\"},"
+            + " {\"kind\": \"COLLECT_FIRST\", \"elementType\": \"DOM_NODE\"},"
+            + " {\"kind\": \"TRANSFORM_DOM_SPAN_EXPAND\", \"rowSelector\": \"tr[[\"}]";
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> PipelineGson.fromJson(json));
+        assertThat(causeMessages(thrown), hasItem(containsString("SpanExpandTransform rowSelector 'tr[[' is not a valid CSS selector")));
+    }
+
+    private static @NotNull List<String> causeMessages(@NotNull Throwable thrown) {
+        List<String> messages = new ArrayList<>();
+
+        for (Throwable cause = thrown; cause != null && messages.size() < 16; cause = cause.getCause())
+            messages.add(String.valueOf(cause.getMessage()));
+
+        return messages;
     }
 
     @Test

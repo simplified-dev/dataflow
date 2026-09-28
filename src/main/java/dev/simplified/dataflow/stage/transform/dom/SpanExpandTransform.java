@@ -96,13 +96,23 @@ public final class SpanExpandTransform implements TransformStage<Element, List<L
      * @param rowSelector the CSS selector choosing the rows within the table, or {@code null} for
      *                    the table's own rows
      * @return the stage
-     * @throws Selector.SelectorParseException when {@code rowSelector} is not a valid selector
+     * @throws IllegalArgumentException when {@code rowSelector} is not a valid CSS selector
      */
     public static @NotNull SpanExpandTransform of(
         @Configurable(label = "Row selector (optional)", placeholder = "tr", optional = true)
         @Nullable String rowSelector
     ) {
-        return new SpanExpandTransform(rowSelector, rowSelector == null ? null : QueryParser.parse(rowSelector));
+        return new SpanExpandTransform(rowSelector, rowSelector == null ? null : compile(rowSelector));
+    }
+
+    private static @NotNull Evaluator compile(@NotNull String rowSelector) {
+        try {
+            return QueryParser.parse(rowSelector);
+        } catch (Selector.SelectorParseException ex) {
+            throw new IllegalArgumentException(
+                String.format("SpanExpandTransform rowSelector '%s' is not a valid CSS selector", rowSelector), ex
+            );
+        }
     }
 
     /** {@inheritDoc} */
