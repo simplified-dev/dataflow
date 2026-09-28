@@ -104,7 +104,7 @@ public final class ReplaceMatchTransform implements TransformStage<String, Strin
         ValidationReport report = Chain.validate(DataTypes.STRING, body, DataTypes.STRING);
 
         if (!report.isValid())
-            throw new IllegalArgumentException("Invalid replaceMatch body: " + report.issues());
+            throw new IllegalArgumentException("Invalid ReplaceMatchTransform body: " + report.issues());
 
         return new ReplaceMatchTransform(regex, group, Chain.of(body), pattern);
     }

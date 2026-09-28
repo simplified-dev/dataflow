@@ -113,6 +113,12 @@ class ReplaceMatchTransformTest {
     }
 
     @Test
+    @DisplayName("A group inside a lookbehind is rewritten where it sits, before its match")
+    void lookbehindGroupIsRewritten() {
+        assertThat(ReplaceMatchTransform.of("(?<=(\\w))x", 1, upper()).execute(this.ctx, "axbx"), is(equalTo("AxBx")));
+    }
+
+    @Test
     @DisplayName("Only the group is replaced; the rest of the match is kept")
     void restOfMatchIsKept() {
         assertThat(ReplaceMatchTransform.of("key=(\\w+);", 1, upper()).execute(this.ctx, "key=abc;"), is(equalTo("key=ABC;")));
@@ -189,7 +195,7 @@ class ReplaceMatchTransformTest {
         String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"STRING\",\"value\":\"a1\"},"
             + "{\"kind\":\"TRANSFORM_REPLACE_MATCH\",\"regex\":\"\\\\d+\",\"body\":[{\"kind\":\"TRANSFORM_PARSE_INT\"}]}]";
         Throwable thrown = assertThrows(RuntimeException.class, () -> PipelineGson.fromJson(json));
-        assertThat(rootCause(thrown).getMessage(), startsWith("Invalid replaceMatch body"));
+        assertThat(rootCause(thrown).getMessage(), startsWith("Invalid ReplaceMatchTransform body"));
     }
 
     @Test
