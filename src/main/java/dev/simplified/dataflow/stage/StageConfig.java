@@ -4,6 +4,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.NamedChains;
@@ -122,6 +123,19 @@ public final class StageConfig {
          */
         public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedChain<?>> value) {
             this.values.put(name, value);
+            return this;
+        }
+
+        /**
+         * Stores a whole sourced {@link DataPipeline} under {@code name}. Used by stages whose
+         * configuration carries a pipeline operand that reads a second document.
+         *
+         * @param name the field name
+         * @param pipeline the operand pipeline
+         * @return this builder
+         */
+        public @NotNull Builder pipeline(@NotNull String name, @NotNull DataPipeline<?> pipeline) {
+            this.values.put(name, pipeline);
             return this;
         }
 
@@ -247,6 +261,17 @@ public final class StageConfig {
      */
     public @NotNull Chain<?, ?> getSubPipeline(@NotNull String name) {
         return (Chain<?, ?>) this.values.get(name);
+    }
+
+    /**
+     * Returns the operand {@link DataPipeline} stored under {@code name}.
+     *
+     * @param name the field name
+     * @return the operand pipeline
+     * @throws ClassCastException when the field is present but not a {@link DataPipeline}
+     */
+    public @NotNull DataPipeline<?> getPipeline(@NotNull String name) {
+        return (DataPipeline<?>) this.values.get(name);
     }
 
     /**

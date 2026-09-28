@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
@@ -28,8 +30,10 @@ import java.util.function.BiConsumer;
  * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link Logger}, a
  * {@link DataPipelineResolver}, and an opaque key/value bag that the host application can
  * use to attach whatever extra context it needs without invading the pipeline core. The
- * mutable {@code activeIds} set guards against {@link EmbedSource} cycles. An optional
- * tracing hook fires after every stage's {@code execute} for debugging / instrumentation.
+ * mutable {@code activeIds} set guards against {@link EmbedSource} cycles, and a per-context
+ * operand memo lets {@link #evaluateOperand(DataPipeline)} run each pipeline operand at most
+ * once. An optional tracing hook fires after every stage's {@code execute} for debugging /
+ * instrumentation.
  */
 @Getter(style = NamingStyle.FLUENT)
 @ClassBuilder(
@@ -42,6 +46,8 @@ public final class PipelineContext {
     private static final @NotNull UrlFetcher DEFAULT_FETCHER = UrlFetcher.create(
         UrlFetcherConfig.builder(new Gson()).build()
     );
+    private static final @NotNull Object OPERAND_NULL = new Object();
+    private static final @NotNull Object OPERAND_IN_FLIGHT = new Object();
 
     private final @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
     private final @NotNull Logger log = DEFAULT_LOG;
@@ -52,6 +58,16 @@ public final class PipelineContext {
 
     @BuilderIgnore
     private final @NotNull ConcurrentSet<String> activeIds = Concurrent.newSet();
+
+    /**
+     * Results of the pipeline operands evaluated in this context, keyed by operand identity and
+     * guarded by the map's own monitor. An operand that produced {@code null} holds
+     * {@link #OPERAND_NULL}, and one whose evaluation is under way holds
+     * {@link #OPERAND_IN_FLIGHT}.
+     */
+    @BuilderIgnore
+    @Getter(AccessLevel.NONE)
+    private final @NotNull Map<DataPipeline<?>, Object> operands = new IdentityHashMap<>();
 
     /**
      * Per-stage callback fired after every stage's {@code execute}, in both top-level
@@ -107,6 +123,58 @@ public final class PipelineContext {
      */
     public void exitPipeline(@NotNull String id) {
         this.activeIds.remove(id);
+    }
+
+    /**
+     * Evaluates a pipeline operand against this context, at most once per context.
+     * <p>
+     * The first call for an operand runs it through {@link DataPipeline#execute(PipelineContext)}
+     * against this context - the same fetcher, resolver, bag, tracer and {@link EmbedSource}
+     * cycle guard - and holds its result, {@code null} included. Every later call for the same
+     * operand answers the held result without running it again. Operands are keyed by identity,
+     * so two separately built pipelines with the same stages are two operands.
+     * <p>
+     * An operand whose own evaluation reads another operand evaluates that one the same way. An
+     * operand whose evaluation reaches itself again is a cycle and throws. An evaluation that
+     * throws holds nothing, so the next call for the operand runs it again. Evaluations on one
+     * context are serialised: a call from a second thread waits for the one in progress.
+     *
+     * @param operand the operand pipeline
+     * @return the operand's output, or {@code null} when one of its stages rejected
+     * @param <T> the operand's output type
+     * @throws IllegalStateException when {@code operand} is already being evaluated in this
+     *         context, indicating a cycle
+     */
+    @SuppressWarnings("unchecked")
+    public <T> @Nullable T evaluateOperand(@NotNull DataPipeline<T> operand) {
+        synchronized (this.operands) {
+            Object held = this.operands.get(operand);
+
+            if (held == OPERAND_IN_FLIGHT)
+                throw new IllegalStateException(
+                    "Pipeline operand cycle detected; operand " + describe(operand) + " is already being evaluated"
+                );
+
+            if (held != null)
+                return held == OPERAND_NULL ? null : (T) held;
+
+            this.operands.put(operand, OPERAND_IN_FLIGHT);
+            boolean evaluated = false;
+
+            try {
+                T result = operand.execute(this);
+                this.operands.put(operand, result == null ? OPERAND_NULL : result);
+                evaluated = true;
+                return result;
+            } finally {
+                if (!evaluated) this.operands.remove(operand);
+            }
+        }
+    }
+
+    private static @NotNull String describe(@NotNull DataPipeline<?> operand) {
+        if (operand.stages().isEmpty()) return "'<empty>'";
+        return "'" + operand.stages().getFirst().summary() + "' (" + operand.stages().size() + " stages)";
     }
 
 }

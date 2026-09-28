@@ -3,8 +3,10 @@ package dev.simplified.dataflow.stage;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.ChainSerde;
 import dev.simplified.dataflow.chain.NamedChains;
@@ -60,6 +62,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINE             -> cfg.getSubPipeline(this.name);
             case SUB_PIPELINES_MAP        -> cfg.getSubPipelines(this.name);
             case TYPED_SUB_PIPELINES_MAP  -> cfg.getTypedSubPipelines(this.name);
+            case PIPELINE                 -> cfg.getPipeline(this.name);
         };
     }
 
@@ -83,6 +86,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINE            -> b.subPipeline(this.name, (Chain<?, ?>) value);
             case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, (NamedChains<?>) value);
             case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, (Map<String, TypedChain<?>>) value);
+            case PIPELINE                -> b.pipeline(this.name, (DataPipeline<?>) value);
         };
     }
 
@@ -133,6 +137,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINE            -> ChainSerde.writeChain((Chain<?, ?>) value, stageWriter);
             case SUB_PIPELINES_MAP       -> ChainSerde.writeNamedChains((NamedChains<?>) value, stageWriter);
             case TYPED_SUB_PIPELINES_MAP -> ChainSerde.writeTypedNamedChains((Map<String, TypedChain<?>>) value, stageWriter);
+            case PIPELINE                -> ChainSerde.writePipeline((DataPipeline<?>) value, stageWriter);
         };
     }
 
@@ -145,6 +150,7 @@ public record FieldSpec<T>(
      * @param stageReader recursive callback used by sub-pipeline types to deserialise nested stages
      * @return {@code b} for chaining
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
+     * @throws IllegalStateException when a {@code PIPELINE} slot's stage array does not form a valid pipeline
      */
     public @NotNull StageConfig.Builder readJson(
         @NotNull JsonElement raw,
@@ -167,6 +173,7 @@ public record FieldSpec<T>(
             case SUB_PIPELINE            -> b.subPipeline(this.name, ChainSerde.readChain(raw.getAsJsonArray(), stageReader));
             case SUB_PIPELINES_MAP       -> b.subPipelines(this.name, ChainSerde.readNamedChains(raw.getAsJsonObject(), stageReader));
             case TYPED_SUB_PIPELINES_MAP -> b.typedSubPipelines(this.name, ChainSerde.readTypedNamedChains(raw.getAsJsonObject(), stageReader));
+            case PIPELINE                -> b.pipeline(this.name, ChainSerde.readPipeline(raw.getAsJsonArray(), stageReader));
         }
         return b;
     }
@@ -226,6 +233,15 @@ public record FieldSpec<T>(
          * object builder.
          */
         TYPED_SUB_PIPELINES_MAP,
+
+        /**
+         * Whole sourced pipeline carried as an operand, storage value {@link DataPipeline}. Its
+         * stage 0 is a source, so the stage that owns it reads a second document beside its
+         * input. Serialised as a stage array in the shape of a pipeline file and validated as one
+         * when read; the owning stage evaluates it through
+         * {@link PipelineContext#evaluateOperand(DataPipeline)}.
+         */
+        PIPELINE,
 
     }
 

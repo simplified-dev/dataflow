@@ -5,8 +5,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.ValidationReport;
 import dev.simplified.dataflow.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,9 +19,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Wire-format helpers for the three chain shapes carried by {@code StageConfig}. The host
- * serialiser supplies callbacks that handle per-stage JSON conversion; this class owns only
- * the chain-shape iteration.
+ * Wire-format helpers for the three chain shapes and the sourced pipeline carried by
+ * {@code StageConfig}. The host serialiser supplies callbacks that handle per-stage JSON
+ * conversion; this class owns only the shape iteration, and the validation of a sourced
+ * pipeline read back from its stage array.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ChainSerde {
@@ -57,6 +60,53 @@ public final class ChainSerde {
         for (JsonElement el : arr)
             stages.add(stageReader.apply(el.getAsJsonObject()));
         return Chain.unchecked(stages);
+    }
+
+    /**
+     * Serialises a sourced {@link DataPipeline} as a JSON array of stage objects, the shape of a
+     * pipeline file.
+     *
+     * @param pipeline the pipeline to serialise
+     * @param stageWriter callback that converts a single stage to its JSON form
+     * @return the resulting JSON array
+     */
+    public static @NotNull JsonArray writePipeline(
+        @NotNull DataPipeline<?> pipeline,
+        @NotNull Function<Stage<?, ?>, JsonObject> stageWriter
+    ) {
+        JsonArray arr = new JsonArray();
+        for (Stage<?, ?> stage : pipeline.stages())
+            arr.add(stageWriter.apply(stage));
+        return arr;
+    }
+
+    /**
+     * Deserialises a JSON array in the shape of a pipeline file into a validated
+     * {@link DataPipeline}. An empty array reads as {@link DataPipeline#empty()}.
+     * <p>
+     * The wire format carries no static type, so the last stage's runtime
+     * {@link Stage#outputType()} becomes the pipeline's output type, and
+     * {@link DataPipeline#validate()} checks the type chain - stage 0 a source, every later
+     * stage consuming the output of the one before it.
+     *
+     * @param arr the JSON array
+     * @param stageReader callback that rebuilds a single stage from its JSON form
+     * @return the rebuilt pipeline
+     * @throws IllegalStateException when the stages do not form a valid pipeline
+     */
+    public static @NotNull DataPipeline<?> readPipeline(
+        @NotNull JsonArray arr,
+        @NotNull Function<JsonObject, Stage<?, ?>> stageReader
+    ) {
+        if (arr.isEmpty()) return DataPipeline.empty();
+        List<Stage<?, ?>> stages = readStages(arr, stageReader);
+        DataPipeline<?> pipeline = DataPipeline.unchecked(stages, stages.getLast().outputType());
+        ValidationReport report = pipeline.validate();
+
+        if (!report.isValid())
+            throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
+
+        return pipeline;
     }
 
     /**

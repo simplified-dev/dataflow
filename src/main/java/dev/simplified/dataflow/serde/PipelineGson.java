@@ -10,7 +10,7 @@ import dev.simplified.annotations.UtilityClass;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
-import dev.simplified.dataflow.ValidationReport;
+import dev.simplified.dataflow.chain.ChainSerde;
 import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageConfig;
@@ -22,9 +22,6 @@ import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Gson-based serialiser for {@link DataPipeline} definitions.
  * <p>
@@ -35,7 +32,8 @@ import java.util.List;
  * <p>
  * Per-slot JSON read/write dispatch lives on {@link FieldSpec#writeJson} / {@link FieldSpec#readJson};
  * this class just iterates the {@link StageMetadata#schema()} of the resolved class and threads
- * the recursive stage callbacks for nested sub-pipelines.
+ * the recursive stage callbacks for nested sub-pipelines. A pipeline operand is a nested stage
+ * array read and validated by {@link ChainSerde#readPipeline} exactly as the top-level file is.
  * <p>
  * The internal {@link Gson} instance is configured with the {@code gson-extras}
  * {@link CaseInsensitiveEnumTypeAdapterFactory} and {@link PostInitTypeAdapterFactory} so
@@ -80,6 +78,8 @@ public final class PipelineGson {
      * @return the rebuilt pipeline
      * @throws IllegalArgumentException if the JSON references an unknown stage id or
      *         a {@link DataType} label that this build does not recognise
+     * @throws IllegalStateException if the stages, or the stages of a pipeline operand, do not
+     *         form a valid pipeline
      */
     public static @NotNull DataPipeline<?> fromJson(@NotNull String json) {
         JsonElement el = JsonParser.parseString(json);
@@ -93,37 +93,11 @@ public final class PipelineGson {
     /* ====================  internals  ==================== */
 
     private static @NotNull JsonArray toJsonArray(@NotNull DataPipeline<?> pipeline) {
-        JsonArray arr = new JsonArray();
-
-        for (Stage<?, ?> stage : pipeline.stages())
-            arr.add(stageToJson(stage));
-
-        return arr;
+        return ChainSerde.writePipeline(pipeline, PipelineGson::stageToJson);
     }
 
     private static @NotNull DataPipeline<?> fromJsonArray(@NotNull JsonArray arr) {
-        if (arr.isEmpty()) return DataPipeline.empty();
-        List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
-        for (JsonElement el : arr)
-            stages.add(stageFromJson(el.getAsJsonObject()));
-        return buildPipeline(stages);
-    }
-
-    /**
-     * Builder boundary on the deserialisation path. The wire format does not carry static
-     * type information; the last stage's runtime {@link Stage#outputType()} populates the
-     * pipeline's output type witness, and {@link DataPipeline#validate()} enforces the
-     * type-chain contract dynamically.
-     *
-     * @param stages the deserialised stage list
-     * @return the constructed pipeline
-     */
-    private static @NotNull DataPipeline<?> buildPipeline(@NotNull List<Stage<?, ?>> stages) {
-        DataPipeline<?> pipeline = DataPipeline.unchecked(stages, stages.getLast().outputType());
-        ValidationReport report = pipeline.validate();
-        if (!report.isValid())
-            throw new IllegalStateException("Cannot build invalid pipeline: " + report.issues());
-        return pipeline;
+        return ChainSerde.readPipeline(arr, PipelineGson::stageFromJson);
     }
 
     @SuppressWarnings("unchecked")

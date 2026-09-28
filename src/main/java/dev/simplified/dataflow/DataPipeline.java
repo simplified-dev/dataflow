@@ -118,6 +118,30 @@ public final class DataPipeline<O> {
     }
 
     /**
+     * Walks the stage chain as {@link #validate()} does, and also reports a pipeline-level issue
+     * when the last stage does not produce {@code expectedOutputType}.
+     * <p>
+     * Used by a stage that carries this pipeline as an operand, to check it against the type the
+     * stage consumes when the stage is built.
+     *
+     * @param expectedOutputType the type the last stage must produce
+     * @return the validation report
+     */
+    public @NotNull ValidationReport validate(@NotNull DataType<?> expectedOutputType) {
+        ValidationReport report = this.validate();
+        if (this.stages.isEmpty()) return report;
+
+        DataType<?> produced = this.stages.getLast().outputType();
+        if (produced.equals(expectedOutputType)) return report;
+
+        List<ValidationReport.Issue> issues = new ArrayList<>(report.issues());
+        issues.add(ValidationReport.Issue.pipelineLevel(
+            "Pipeline produces " + produced + " but caller expected " + expectedOutputType
+        ));
+        return new ValidationReport(List.copyOf(issues));
+    }
+
+    /**
      * Executes the pipeline against {@link PipelineContext#defaults()}.
      * <p>
      * Validation runs once at build time (see {@link Builder#build()}) so this method does
