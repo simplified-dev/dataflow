@@ -7,6 +7,7 @@ import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.SourceStage;
 import dev.simplified.dataflow.stage.Stage;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public final class DataPipeline<O> {
      * Serde-only entry that bypasses the typed builder. The caller asserts that
      * {@code stages} forms a well-typed chain whose final stage produces {@code outputType};
      * the contract is checked dynamically via {@link #validate()} on the
-     * {@link dev.simplified.dataflow.serde.PipelineGson} path. Not intended for general use -
+     * {@link PipelineGson} path. Not intended for general use -
      * the {@link Builder} path enforces the same contract at compile time.
      *
      * @param stages the assembled stages in execution order
@@ -179,7 +180,7 @@ public final class DataPipeline<O> {
      * Narrows this pipeline to one whose static output type is {@code type}, verifying the
      * runtime output type matches. Used by callers of the deserialisation path to recover a
      * typed handle from the wildcard pipeline returned by
-     * {@link dev.simplified.dataflow.serde.PipelineGson#fromJson(String)}.
+     * {@link PipelineGson#fromJson(String)}.
      *
      * @param type the expected output type
      * @return this pipeline, narrowed to produce {@code T}
