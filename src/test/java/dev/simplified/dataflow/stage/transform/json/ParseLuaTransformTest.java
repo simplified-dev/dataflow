@@ -182,6 +182,18 @@ class ParseLuaTransformTest {
     }
 
     @Test
+    @DisplayName("A decimal escape byte that starts no UTF-8 character throws")
+    void strayUtf8ByteThrows() {
+        assertRejects("return { 'a\\200b' }");
+    }
+
+    @Test
+    @DisplayName("Decimal escapes that stop partway through a UTF-8 character throw")
+    void truncatedUtf8SequenceThrows() {
+        assertRejects("return { '\\226\\156' }");
+    }
+
+    @Test
     @DisplayName("A backslash before any other character stands for that character, as in Lua 5.1")
     void unknownEscapeIsLiteral() {
         assertThat(parse("return { '\\(x\\) \\u003d' }").getAsJsonArray().get(0).getAsString(), is(equalTo("(x) u003d")));
@@ -449,6 +461,57 @@ class ParseLuaTransformTest {
     void deepestAllowedParses() {
         String lua = "return " + "{".repeat(ParseLuaTransform.MAX_DEPTH) + "}".repeat(ParseLuaTransform.MAX_DEPTH);
         assertThat(parse(lua).isJsonArray(), is(true));
+    }
+
+    @Test
+    @DisplayName("A local table named inside a table counts toward the nesting limit")
+    void localNestedPastLimitThrows() {
+        String deepest = "{".repeat(ParseLuaTransform.MAX_DEPTH) + "}".repeat(ParseLuaTransform.MAX_DEPTH);
+        assertRejects("local deep = " + deepest + " return { deep }");
+    }
+
+    @Test
+    @DisplayName("A local table named inside a table parses when the whole tree stays within the limit")
+    void localNestedToLimitParses() {
+        String deep = "{".repeat(ParseLuaTransform.MAX_DEPTH - 1) + "}".repeat(ParseLuaTransform.MAX_DEPTH - 1);
+        assertThat(parse("local deep = " + deep + " return { deep }").isJsonArray(), is(true));
+    }
+
+    @Test
+    @DisplayName("Locals that each name the one before twice throw rather than doubling the tree at every step")
+    void localAmplificationThrows() {
+        StringBuilder lua = new StringBuilder("local a0 = { 1 }\n");
+
+        for (int level = 1; level <= 20; level++)
+            lua.append("local a").append(level).append(" = { a").append(level - 1).append(", a").append(level - 1).append(" }\n");
+
+        assertRejects(lua.append("return a20").toString());
+    }
+
+    @Test
+    @DisplayName("A long chain of locals, each named once by the next, parses")
+    void singleUseLocalChainParses() {
+        int links = ParseLuaTransform.MAX_DEPTH - 1;
+        StringBuilder lua = new StringBuilder("local t0 = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' }\n");
+
+        for (int link = 1; link <= links; link++)
+            lua.append("local t").append(link).append(" = { t").append(link - 1).append(" }\n");
+
+        JsonElement tree = parse(lua.append("return t").append(links).toString());
+
+        for (int link = 0; link < links; link++)
+            tree = tree.getAsJsonArray().get(0);
+
+        assertThat(tree.getAsJsonArray().size(), is(equalTo(8)));
+    }
+
+    @Test
+    @DisplayName("A local may be named several times when its copies stay small beside the module")
+    void repeatedSmallLocalParses() {
+        assertThat(
+            parse("local rarities = { 'COMMON', 'RARE' }\nreturn { a = rarities, b = rarities, c = rarities }"),
+            is(equalTo(json("{\"a\":[\"COMMON\",\"RARE\"],\"b\":[\"COMMON\",\"RARE\"],\"c\":[\"COMMON\",\"RARE\"]}")))
+        );
     }
 
     @Test

@@ -17,10 +17,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -43,7 +46,9 @@ import java.util.regex.Pattern;
  *   <li><b>booleans</b> and <b>nil</b></li>
  *   <li><b>locals</b> - {@code local name = value} statements before the {@code return}, each
  *       value a literal or a table, and a name in value position, the {@code return} included,
- *       reading the value of the latest local of that name declared before it</li>
+ *       reading the value of the latest local of that name declared before it; the first read of
+ *       a local takes its value and every later read a copy, so the tree returned never holds one
+ *       element in two places</li>
  *   <li><b>comments</b> - line comments and long-bracket block comments, anywhere whitespace may
  *       stand</li>
  * </ul>
@@ -60,10 +65,13 @@ import java.util.regex.Pattern;
  * fails instead of yielding half a table: a function call, a concatenation, a field access, a
  * name no earlier local declares, a statement other than {@code local} before the {@code return},
  * anything after the returned table, a {@code return} of something other than a table, a
- * hexadecimal float, a number JSON cannot hold, a float key that is not an integer, a key assigned
- * twice in one table, two keys that would share one JSON name, and tables nested deeper than
- * {@value #MAX_DEPTH} levels. A module transcluded through {@code msgnw} arrives HTML-escaped and
- * needs {@link HtmlDecodeTransform} first.
+ * hexadecimal float, a number JSON cannot hold, decimal escapes whose bytes are not UTF-8, a float
+ * key that is not an integer, a key assigned twice in one table, two keys that would share one
+ * JSON name, and tables nested deeper than {@value #MAX_DEPTH} levels, the levels of every local a
+ * table names counted in. Reads of locals also throw once their copies together hold more values
+ * than the module has characters, so a few lines that each name the local before them twice
+ * cannot double the tree once per line. A module transcluded through {@code msgnw} arrives
+ * HTML-escaped and needs {@link HtmlDecodeTransform} first.
  */
 @StageSpec(
     id = "PARSE_LUA",
@@ -128,14 +136,23 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         private final @NotNull String source;
 
         /**
-         * Values of the locals declared so far, by name; a local bound to {@code nil} maps to
-         * {@code null}.
+         * Locals declared so far, by name.
          */
-        private final @NotNull Map<String, JsonElement> locals = new HashMap<>();
+        private final @NotNull Map<String, Local> locals = new HashMap<>();
 
         private int position;
 
         private int depth;
+
+        /**
+         * Values the repeated reads of locals have copied so far.
+         */
+        private long copied;
+
+        /**
+         * Position of the first decimal escape whose byte is still pending.
+         */
+        private int bytesAt;
 
         LuaReader(@NotNull String source) {
             this.source = source;
@@ -326,7 +343,7 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 throw error(this.position, "expected '=' after 'local %s' but found %s", name, describe(this.position));
 
             this.position++;
-            this.locals.put(name, readValue());
+            this.locals.put(name, new Local(readValue()));
             skipTrivia();
 
             if (peek() == ';') {
@@ -336,19 +353,36 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         }
 
         /**
-         * Reads the value of the latest local named {@code name}. A table is copied, so the tree
-         * returned never holds one element in two places.
+         * Reads the value of the latest local named {@code name}. The first read takes the value
+         * and every later read a copy of it, so the tree returned never holds one element in two
+         * places, and the copies together hold no more values than the module has characters.
          *
          * @param name the name read
          * @param at the name's position, for the error message
          * @return the local's value, or {@code null} when it is {@code nil}
          */
         private @Nullable JsonElement readLocalValue(@NotNull String name, int at) {
-            if (!this.locals.containsKey(name))
+            Local local = this.locals.get(name);
+
+            if (local == null)
                 throw error(at, "found the name '%s', which no local before it declares", name);
 
-            JsonElement value = this.locals.get(name);
-            return value == null ? null : value.deepCopy();
+            if (local.value == null) return null;
+
+            if (this.depth + local.height > MAX_DEPTH)
+                throw error(at, "tables nest deeper than %s levels", MAX_DEPTH);
+
+            if (!local.taken) {
+                local.taken = true;
+                return local.value;
+            }
+
+            this.copied += local.size;
+
+            if (this.copied > this.source.length())
+                throw error(at, "the local '%s' is read so often that its copies outgrow the module", name);
+
+            return local.value.deepCopy();
         }
 
         /**
@@ -413,9 +447,12 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 if (value > 255)
                     throw error(escapeAt, "decimal escape '%s' is above 255", this.source.substring(escapeAt, this.position));
 
-                if (value > 127)
+                if (value > 127) {
+                    if (bytes.size() == 0)
+                        this.bytesAt = escapeAt;
+
                     bytes.write(value);
-                else
+                } else
                     flush(text, bytes).append((char) value);
 
                 return;
@@ -599,9 +636,22 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 : new JsonPrimitive(-number.getAsDouble());
         }
 
+        /**
+         * Appends the pending bytes of decimal escapes to {@code text} as the UTF-8 they spell.
+         *
+         * @param text the decoded string so far
+         * @param bytes the pending bytes, emptied here
+         * @return {@code text}
+         * @throws IllegalArgumentException when the bytes are not UTF-8
+         */
         private @NotNull StringBuilder flush(@NotNull StringBuilder text, @NotNull ByteArrayOutputStream bytes) {
             if (bytes.size() > 0) {
-                text.append(bytes.toString(StandardCharsets.UTF_8));
+                try {
+                    text.append(StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes.toByteArray())));
+                } catch (CharacterCodingException ex) {
+                    throw error(this.bytesAt, "decimal escapes spell bytes that are not UTF-8");
+                }
+
                 bytes.reset();
             }
 
@@ -779,6 +829,64 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
 
         private static boolean isNumeralPart(int c) {
             return isNamePart(c) || c == '.';
+        }
+
+        /**
+         * A declared local, with the measures each read of it is checked against.
+         */
+        private static final class Local {
+
+            /**
+             * Value of the local, or {@code null} when it is {@code nil}.
+             */
+            private final @Nullable JsonElement value;
+
+            /**
+             * Levels of tables in the value, {@code 0} when it holds no table.
+             */
+            private final int height;
+
+            /**
+             * Number of values in the value, itself included.
+             */
+            private final long size;
+
+            /**
+             * Whether a read has taken the value itself, so every later read copies it.
+             */
+            private boolean taken;
+
+            Local(@Nullable JsonElement value) {
+                this.value = value;
+                this.height = value == null ? 0 : height(value);
+                this.size = value == null ? 0 : size(value);
+            }
+
+            private static int height(@NotNull JsonElement element) {
+                if (!element.isJsonArray() && !element.isJsonObject()) return 0;
+                int deepest = 0;
+
+                for (JsonElement child : children(element))
+                    deepest = Math.max(deepest, height(child));
+
+                return deepest + 1;
+            }
+
+            private static long size(@NotNull JsonElement element) {
+                long size = 1;
+
+                for (JsonElement child : children(element))
+                    size += size(child);
+
+                return size;
+            }
+
+            private static @NotNull Iterable<JsonElement> children(@NotNull JsonElement element) {
+                if (element.isJsonArray()) return element.getAsJsonArray();
+                if (element.isJsonObject()) return element.getAsJsonObject().asMap().values();
+                return List.of();
+            }
+
         }
 
     }
