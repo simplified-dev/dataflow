@@ -132,7 +132,9 @@ public final class PipelineContext {
      * against this context - the same fetcher, resolver, bag, tracer and {@link EmbedSource}
      * cycle guard - and holds its result, {@code null} included. Every later call for the same
      * operand answers the held result without running it again. Operands are keyed by identity,
-     * so two separately built pipelines with the same stages are two operands.
+     * so two separately built pipelines with the same stages are two operands. The results are
+     * held for the life of the context, so a context serves one run: a context reused for a
+     * later run answers it with the operand values the first run read.
      * <p>
      * An operand whose own evaluation reads another operand evaluates that one the same way. An
      * operand whose evaluation reaches itself again is a cycle and throws. An evaluation that

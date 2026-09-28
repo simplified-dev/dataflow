@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -22,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Covers {@link PipelineContext#evaluateOperand(DataPipeline)}: at most one evaluation per
  * context, keyed by operand identity, with a {@code null} result held like any other, nested
- * operands, and both the operand and the embed cycle guards.
+ * operands, a read from a second thread, and both the operand and the embed cycle guards.
  */
 class PipelineContextOperandTest {
 
@@ -256,6 +258,77 @@ class PipelineContextOperandTest {
         AtomicInteger runs = new AtomicInteger();
         counting(source, runs).evaluateOperand(operand);
         assertThat(runs.get(), is(1));
+    }
+
+    @Test
+    @DisplayName("A read from a second thread during an evaluation waits for it rather than running the operand again")
+    void concurrentReadDoesNotRunAgain() throws InterruptedException {
+        ConcurrentReads reads = concurrentReads();
+        assertThat(reads.runs(), is(1));
+    }
+
+    @Test
+    @DisplayName("A read from a second thread during an evaluation answers the value that evaluation held")
+    void concurrentReadAnswersHeldValue() throws InterruptedException {
+        ConcurrentReads reads = concurrentReads();
+        assertThat(reads.second(), is(sameInstance(reads.first())));
+    }
+
+    /**
+     * What two threads read from one operand on one context.
+     *
+     * @param runs the number of times the operand's source ran
+     * @param first the value the evaluating thread read
+     * @param second the value the thread that read during the evaluation received
+     */
+    private record ConcurrentReads(int runs, @Nullable Object first, @Nullable Object second) {}
+
+    /**
+     * Evaluates an operand on one thread and, while its source is running, reads it on a second
+     * thread, holding the evaluation until the second thread is waiting on it.
+     *
+     * @return the source's run count and the value each thread read
+     * @throws InterruptedException when interrupted while waiting for the second thread
+     */
+    private static @NotNull ConcurrentReads concurrentReads() throws InterruptedException {
+        LiteralSource<String> source = LiteralSource.text("x");
+        DataPipeline<String> operand = DataPipeline.builder().source(source).build();
+        AtomicInteger runs = new AtomicInteger();
+        AtomicReference<PipelineContext> context = new AtomicReference<>();
+        AtomicReference<Thread> reader = new AtomicReference<>();
+        AtomicReference<Object> second = new AtomicReference<>();
+
+        PipelineContext ctx = PipelineContext.builder()
+            .withTrace((stage, output) -> {
+                if (stage != source || runs.incrementAndGet() != 1) return;
+                Thread thread = new Thread(() -> second.set(context.get().evaluateOperand(operand)));
+                reader.set(thread);
+                thread.start();
+                awaitBlocked(thread);
+            })
+            .build();
+        context.set(ctx);
+
+        Object first = ctx.evaluateOperand(operand);
+        reader.get().join(TimeUnit.SECONDS.toMillis(10));
+        return new ConcurrentReads(runs.get(), first, second.get());
+    }
+
+    /**
+     * Waits until {@code thread} is blocked entering a monitor.
+     *
+     * @param thread the thread to watch
+     * @throws AssertionError when it is not blocked within ten seconds
+     */
+    private static void awaitBlocked(@NotNull Thread thread) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+
+        while (thread.getState() != Thread.State.BLOCKED) {
+            if (System.nanoTime() > deadline)
+                throw new AssertionError("The second reader never waited on the evaluation under way");
+
+            Thread.onSpinWait();
+        }
     }
 
 }
