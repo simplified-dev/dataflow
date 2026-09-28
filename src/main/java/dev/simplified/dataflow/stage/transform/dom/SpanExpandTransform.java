@@ -22,7 +22,9 @@ import org.jsoup.select.QueryParser;
 import org.jsoup.select.Selector;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,10 +46,12 @@ import java.util.Set;
  * Spans are read as HTML reads them. A missing, malformed or zero {@code colspan} counts as 1 and
  * one above {@value #MAX_COLSPAN} as {@value #MAX_COLSPAN}; a missing or malformed {@code rowspan}
  * counts as 1, one above {@value #MAX_ROWSPAN} as {@value #MAX_ROWSPAN}, and {@code rowspan="0"}
- * covers the rest of its row group. A span is cut at the end of its row group - the run of rows
- * sharing one parent element - and at the last row. A row is not padded to the width of the grid:
- * it ends at the first position no cell covers, so a short row stays short and no entry is
- * {@code null}. Where two cells claim one position, the one placed first keeps it.
+ * covers the rest of its row group. A span covers rows of its own row group only - the rows
+ * sharing its row's parent element - so rows of another group laid out between them, such as a
+ * nested table's rows a selector reaches, neither take nor end it, and it is cut at the last row
+ * of its group. A row is not padded to the width of the grid: it ends at the first position no
+ * cell covers, so a short row stays short and no entry is {@code null}. Where two cells claim one
+ * position, the one placed first keeps it.
  * <p>
  * Returns {@code null} when the input is not a {@code table} element.
  */
@@ -107,17 +111,10 @@ public final class SpanExpandTransform implements TransformStage<Element, List<L
         if (input == null || !"table".equals(input.normalName())) return null;
         List<Element> rows = this.rowEvaluator == null ? ownRows(input) : input.select(this.rowEvaluator);
         List<List<Element>> grid = new ArrayList<>(rows.size());
-        List<Span> spans = new ArrayList<>();
-        Element group = null;
+        Map<Element, List<Span>> spansByGroup = new IdentityHashMap<>();
 
-        for (Element row : rows) {
-            if (row.parent() != group) {
-                spans.clear();
-                group = row.parent();
-            }
-
-            grid.add(layOut(row, spans));
-        }
+        for (Element row : rows)
+            grid.add(layOut(row, spansByGroup.computeIfAbsent(row.parent(), group -> new ArrayList<>())));
 
         return Concurrent.newUnmodifiableList(grid);
     }

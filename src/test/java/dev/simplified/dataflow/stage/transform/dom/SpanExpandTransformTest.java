@@ -243,6 +243,20 @@ class SpanExpandTransformTest {
     }
 
     @Test
+    @DisplayName("A row selector reaching a nested table's rows keeps the outer table's spans across them")
+    void selectorKeepsSpansAcrossNestedRows() {
+        Element outer = table("<table><tr><td rowspan='2'>a</td><td><table><tr><td>inner</td></tr></table></td></tr><tr><td>b</td></tr></table>");
+        assertThat(texts("tr", outer).getLast(), is(equalTo(List.of("a", "b"))));
+    }
+
+    @Test
+    @DisplayName("A row selector reaching a nested table's rows lays them out apart from the outer table's spans")
+    void selectorLaysNestedRowsApart() {
+        Element outer = table("<table><tr><td rowspan='2'>a</td><td><table><tr><td>inner</td></tr></table></td></tr><tr><td>b</td></tr></table>");
+        assertThat(texts("tr", outer).get(1), is(equalTo(List.of("inner"))));
+    }
+
+    @Test
     @DisplayName("An empty table yields an empty grid")
     void emptyTable() {
         assertThat(texts("<table></table>"), is(empty()));
