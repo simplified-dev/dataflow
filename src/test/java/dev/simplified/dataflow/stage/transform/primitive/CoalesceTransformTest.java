@@ -89,6 +89,14 @@ class CoalesceTransformTest {
             .build();
     }
 
+    private static @NotNull DataPipeline<List<String>> defaultOnly() {
+        return DataPipeline.builder()
+            .source(LiteralSource.text("ab,7"))
+            .stage(SplitTransform.of(","))
+            .stage(MapTransform.of(DataTypes.STRING, DataTypes.STRING, List.of(coalesce(null, "none", null))))
+            .build();
+    }
+
     @Test
     @DisplayName("A null input stays null, whatever the default")
     void nullInNullOut() {
@@ -244,6 +252,14 @@ class CoalesceTransformTest {
     }
 
     @Test
+    @DisplayName("of refuses a DOUBLE default that is not finite")
+    void refusesNonFiniteDefault() {
+        assertThrows(IllegalArgumentException.class, () -> CoalesceTransform.of(
+            DataTypes.STRING, DataTypes.DOUBLE, List.of(RegexExtractTransform.of("\\d+"), ParseDoubleTransform.of()), null, "Infinity", null
+        ));
+    }
+
+    @Test
     @DisplayName("A structured output type builds with a fallback alone")
     void structuredOutputWithFallback() {
         CoalesceTransform<String, JsonElement> stage = CoalesceTransform.of(
@@ -287,6 +303,20 @@ class CoalesceTransformTest {
     void wireRoundTripExecutes() {
         DataPipeline<?> rebuilt = PipelineGson.fromJson(PipelineGson.toJson(everySlot()));
         assertThat(rebuilt.execute(this.ctx), is(equalTo(everySlot().execute(this.ctx))));
+    }
+
+    @Test
+    @DisplayName("A pipeline with only a default round-trips to the same JSON")
+    void defaultOnlyWireRoundTripIsStable() {
+        String first = PipelineGson.toJson(defaultOnly());
+        assertThat(PipelineGson.toJson(PipelineGson.fromJson(first)), is(equalTo(first)));
+    }
+
+    @Test
+    @DisplayName("A pipeline with only a default round-trips to the same output")
+    void defaultOnlyWireRoundTripExecutes() {
+        DataPipeline<?> rebuilt = PipelineGson.fromJson(PipelineGson.toJson(defaultOnly()));
+        assertThat(rebuilt.execute(this.ctx), is(equalTo(defaultOnly().execute(this.ctx))));
     }
 
     @Test
