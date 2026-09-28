@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,10 +36,15 @@ import java.util.Set;
  * into one new row.
  * <p>
  * Groups appear in the order their key first occurs. A row with no key field, or whose key is
- * JSON {@code null}, is dropped; keys compare by {@link JsonElement#equals(Object)}. A folded row
- * carries every field its group's rows carry, in the order the fields first appear, then each
- * field the aggregates table names that no row carries, in the table's order. A field the table
- * does not name keeps its first non-null value; a named field is folded by its
+ * JSON {@code null}, is dropped. Keys compare as JSON values: a number by its exact value, so
+ * {@code 1}, {@code 1.0} and {@code 1e0} are one key while {@code "1"} is another and two integers
+ * past double precision stay two, and an object by its members whatever their order. The folds
+ * that look for equal values, {@link Aggregate#UNION} and {@link Aggregate#MODE}, compare values
+ * the same way.
+ * <p>
+ * A folded row carries every field its group's rows carry, in the order the fields first appear,
+ * then each field the aggregates table names that no row carries, in the table's order. A field
+ * the table does not name keeps its first non-null value; a named field is folded by its
  * {@link Aggregate}. A fold with nothing to produce omits its field, as an
  * {@link ObjectBuildTransform} output omits a {@code null}. A JSON {@code null} is never a value:
  * every fold skips it.
@@ -74,7 +80,8 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
     private final @NotNull Map<String, Aggregate> aggregates;
 
     /**
-     * How the values one field takes across a group's rows fold into the folded row's value.
+     * Fold that turns the values one field takes across a group's rows into the folded row's
+     * value.
      * <p>
      * Every fold reads the field's non-null values in row order and skips a row that lacks the
      * field or carries JSON {@code null} there.
@@ -149,7 +156,7 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
                 case FIRST -> values.isEmpty() ? null : values.getFirst().deepCopy();
                 case LAST -> values.isEmpty() ? null : values.getLast().deepCopy();
                 case LIST -> array(values);
-                case UNION -> array(new LinkedHashSet<>(flatten(values)));
+                case UNION -> array(distinct(flatten(values)));
                 case CONCAT -> array(flatten(values));
                 case MAX -> extreme(values, 1);
                 case MIN -> extreme(values, -1);
@@ -182,6 +189,15 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
             }
 
             return flat;
+        }
+
+        private static @NotNull List<JsonElement> distinct(@NotNull List<JsonElement> values) {
+            Map<Object, JsonElement> firsts = new LinkedHashMap<>();
+
+            for (JsonElement value : values)
+                firsts.putIfAbsent(identity(value), value);
+
+            return new ArrayList<>(firsts.values());
         }
 
         private static @NotNull JsonArray array(@NotNull Collection<JsonElement> values) {
@@ -217,24 +233,72 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
         }
 
         private static @Nullable JsonElement mode(@NotNull List<JsonElement> values) {
-            Map<JsonElement, Integer> counts = new LinkedHashMap<>();
+            Map<Object, JsonElement> firsts = new LinkedHashMap<>();
+            Map<Object, Integer> counts = new HashMap<>();
 
-            for (JsonElement value : values)
-                counts.merge(value, 1, Integer::sum);
+            for (JsonElement value : values) {
+                Object identity = identity(value);
+                firsts.putIfAbsent(identity, value);
+                counts.merge(identity, 1, Integer::sum);
+            }
 
             JsonElement best = null;
             int bestCount = 0;
 
-            for (Map.Entry<JsonElement, Integer> entry : counts.entrySet()) {
-                if (entry.getValue() > bestCount) {
-                    best = entry.getKey();
-                    bestCount = entry.getValue();
+            for (Map.Entry<Object, JsonElement> entry : firsts.entrySet()) {
+                int count = counts.get(entry.getKey());
+
+                if (count > bestCount) {
+                    best = entry.getValue();
+                    bestCount = count;
                 }
             }
 
             return best == null ? null : best.deepCopy();
         }
 
+    }
+
+    /**
+     * Reduces a JSON value to a hash key that two equal values share.
+     * <p>
+     * A number becomes its exact {@link BigDecimal} value without trailing zeros, an object the
+     * map of its members' keys, and an array the list of its elements' keys; any other value is
+     * its own key. Gson's own number equality goes through {@code double}, and its hash disagrees
+     * with it across number representations, so neither keys a hash map soundly.
+     *
+     * @param value the value
+     * @return the key
+     */
+    private static @NotNull Object identity(@NotNull JsonElement value) {
+        return switch (value) {
+            case JsonObject object -> {
+                Map<String, Object> members = new HashMap<>();
+
+                for (Map.Entry<String, JsonElement> member : object.entrySet())
+                    members.put(member.getKey(), identity(member.getValue()));
+
+                yield members;
+            }
+            case JsonArray array -> {
+                List<Object> elements = new ArrayList<>(array.size());
+
+                for (JsonElement element : array)
+                    elements.add(identity(element));
+
+                yield elements;
+            }
+            case JsonPrimitive primitive when primitive.isNumber() -> exact(primitive);
+            default -> value;
+        };
+    }
+
+    private static @NotNull Object exact(@NotNull JsonPrimitive number) {
+        try {
+            return number.getAsBigDecimal().stripTrailingZeros();
+        } catch (NumberFormatException ex) {
+            return number;
+        }
     }
 
     /**
@@ -257,10 +321,11 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
 
         if (rawAggregates != null) {
             for (Map.Entry<String, String> entry : rawAggregates.entrySet()) {
-                if (entry.getKey().equals(keyField))
+                if (entry.getKey().equals(keyField)) {
                     throw new IllegalArgumentException(String.format(
                         "Invalid GroupByTransform aggregates: the key field '%s' cannot be aggregated", keyField
                     ));
+                }
 
                 folds.put(entry.getKey(), Aggregate.parse(entry.getKey(), entry.getValue()));
             }
@@ -277,13 +342,13 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
     @Override
     public @Nullable ConcurrentList<JsonObject> execute(@NotNull PipelineContext ctx, @Nullable List<JsonObject> input) {
         if (input == null) return null;
-        Map<JsonElement, List<JsonObject>> groups = new LinkedHashMap<>();
+        Map<Object, List<JsonObject>> groups = new LinkedHashMap<>();
 
         for (JsonObject row : input) {
             if (row == null) continue;
             JsonElement key = row.get(this.keyField);
             if (key == null || key.isJsonNull()) continue;
-            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
+            groups.computeIfAbsent(identity(key), k -> new ArrayList<>()).add(row);
         }
 
         List<JsonObject> result = new ArrayList<>(groups.size());

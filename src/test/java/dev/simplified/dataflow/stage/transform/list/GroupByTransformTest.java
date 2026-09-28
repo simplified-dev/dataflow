@@ -254,6 +254,42 @@ class GroupByTransformTest {
     }
 
     @Test
+    @DisplayName("Integer keys that differ past double precision are different groups")
+    void largeIntegerKeysStayApart() {
+        assertThat(this.group(null, "[{\"id\":12345678901234567},{\"id\":12345678901234568}]"), hasSize(2));
+    }
+
+    @Test
+    @DisplayName("Number keys of equal value are one group whatever their written form")
+    void numberKeysGroupByValue() {
+        assertThat(this.group(null, "[{\"id\":1},{\"id\":1.0},{\"id\":1e0}]"), hasSize(1));
+    }
+
+    @Test
+    @DisplayName("A built integer key and a parsed decimal key of equal value are one group")
+    void builtAndParsedNumberKeysGroupTogether() {
+        JsonObject built = new JsonObject();
+        built.addProperty("id", 1);
+        List<JsonObject> input = rows("[{\"id\":1.0}]");
+        input.add(built);
+        assertThat(GroupByTransform.of("id", null).execute(this.ctx, input), hasSize(1));
+    }
+
+    @Test
+    @DisplayName("UNION keeps integers that differ past double precision apart")
+    void unionKeepsLargeIntegersApart() {
+        JsonObject row = this.only(table("v", "UNION"), "[{\"id\":1,\"v\":[12345678901234567,12345678901234568]}]");
+        assertThat(row.get("v").toString(), is(equalTo("[12345678901234567,12345678901234568]")));
+    }
+
+    @Test
+    @DisplayName("MODE counts integers that differ past double precision apart")
+    void modeCountsLargeIntegersApart() {
+        JsonObject row = this.only(table("v", "MODE"), "[{\"id\":1,\"v\":12345678901234567},{\"id\":1,\"v\":12345678901234568},{\"id\":1,\"v\":12345678901234568}]");
+        assertThat(row.get("v").toString(), is(equalTo("12345678901234568")));
+    }
+
+    @Test
     @DisplayName("Fields keep their first-appearance order, then fields only the table names")
     void fieldOrder() {
         JsonObject row = this.only(table("n", "COUNT", "b", "LAST"), "[{\"id\":1,\"b\":1},{\"a\":2,\"id\":1,\"b\":3}]");
@@ -315,10 +351,10 @@ class GroupByTransformTest {
     }
 
     @Test
-    @DisplayName("The parsed aggregates keep the table's order")
+    @DisplayName("Fields only the table names appear in the table's order")
     void aggregatesKeepOrder() {
-        GroupByTransform stage = GroupByTransform.of("id", table("z", "LIST", "a", "MAX", "m", "COUNT"));
-        assertThat(List.copyOf(stage.aggregates().keySet()), contains("z", "a", "m"));
+        JsonObject row = this.only(table("z", "LIST", "a", "COUNT", "m", "CONCAT"), "[{\"id\":1}]");
+        assertThat(List.copyOf(row.keySet()), contains("id", "z", "a", "m"));
     }
 
     @Test
