@@ -44,28 +44,34 @@ public final class LiteralSource<T> implements SourceStage<T> {
 
     private final @NotNull DataType<T> outputType;
 
+    /**
+     * Configured string exactly as given, carried on the wire under {@code value}.
+     */
     private final @NotNull String rawValue;
 
+    /**
+     * Configured string parsed under {@link #outputType}, emitted on every execution.
+     */
     private final @NotNull T value;
 
     /**
-     * Constructs an {@code LiteralSource} that emits {@code value} parsed under {@code outputType}.
+     * Constructs an {@code LiteralSource} that emits {@code rawValue} parsed under {@code outputType}.
      *
      * @param outputType the type to emit
-     * @param value the value's serialized form
+     * @param rawValue the value's serialized form, carried on the wire as {@code value}
      * @return the stage
      * @param <T> the value type
-     * @throws IllegalArgumentException when {@code outputType} is unsupported or {@code value} cannot be parsed
+     * @throws IllegalArgumentException when {@code outputType} is unsupported or {@code rawValue} cannot be parsed
      */
     @SuppressWarnings("unchecked")
     public static <T> @NotNull LiteralSource<T> of(
         @Configurable(label = "Output type", placeholder = "STRING")
         @NotNull DataType<T> outputType,
-        @Configurable(label = "Value", placeholder = "literal")
-        @NotNull String value
+        @Configurable(name = "value", label = "Value", placeholder = "literal")
+        @NotNull String rawValue
     ) {
-        T parsed = (T) parse(outputType, value);
-        return new LiteralSource<>(outputType, value, parsed);
+        T parsed = (T) parse(outputType, rawValue);
+        return new LiteralSource<>(outputType, rawValue, parsed);
     }
 
     /**
