@@ -125,6 +125,12 @@ class JoinByKeyTransformTest {
     }
 
     @Test
+    @DisplayName("An empty left cell no right value populates keeps its empty value")
+    void unfilledEmptyLeftCellKept() {
+        assertThat(join("LEFT", null, "[{'id':'a','n':''}]", "[{'id':'a'}]"), is(equalTo(q("[{'id':'a','n':''}]"))));
+    }
+
+    @Test
     @DisplayName("A zero or false right value fills a cell")
     void zeroAndFalseFill() {
         assertThat(join("LEFT", null, "[{'id':'a'}]", "[{'id':'a','n':0,'b':false}]"),

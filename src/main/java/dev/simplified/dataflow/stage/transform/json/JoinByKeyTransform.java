@@ -43,8 +43,9 @@ import java.util.Set;
  * {@link Mode#FULL} keeps every left row and then appends, in right order, each right row whose
  * key no left row carries, as a row holding its key under {@code leftKey} plus the cells the
  * same fill rule takes from it. Left rows keep their order. {@code FULL} joins chained over
- * inputs whose keys are unique give the rows of a merge by key that fills each cell from the
- * first input populating it.
+ * inputs in which every row carries a key, unique within its input, give the rows of a merge by
+ * key that fills each cell from the first input populating it; a left row with no key is kept
+ * as it is, and a cell no input populates keeps the empty value the left row gave it.
  * <p>
  * Output rows are deep copies; neither the input rows nor the operand's rows are mutated, since
  * the operand is evaluated at most once per context and shared by every stage that reads it.
@@ -96,22 +97,22 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
     private final @NotNull DataPipeline<Map<String, JsonObject>> rightIndex;
 
     /**
-     * Which rows a join keeps.
+     * Rule for which rows a join keeps.
      */
     public enum Mode {
 
         /**
-         * Keeps the left rows that match a right row.
+         * Only the left rows that match a right row.
          */
         INNER,
 
         /**
-         * Keeps every left row, matched or not.
+         * Every left row, matched or not.
          */
         LEFT,
 
         /**
-         * Keeps every left row, then appends the right rows no left row matches.
+         * Every left row, followed by the right rows no left row matches.
          */
         FULL
 
