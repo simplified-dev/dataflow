@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Node;
 
 /**
- * Writes the elements of a list stage into the JSON objects it builds.
+ * Helpers that write the elements of a list stage into the JSON objects it builds.
  * <p>
  * A value is written the way an {@link ObjectBuildTransform} output is, through
  * {@link PipelineGson#gson()}, except that a {@link JsonElement} is copied rather than shared, so a
@@ -33,10 +33,11 @@ final class JsonValues {
     static void requireWritable(@NotNull DataType<?> type, @NotNull String stage, @NotNull String slot) {
         Class<?> leaf = leafType(type);
 
-        if (Node.class.isAssignableFrom(leaf) || leaf == Void.class)
+        if (Node.class.isAssignableFrom(leaf) || leaf == Void.class) {
             throw new IllegalArgumentException(String.format(
                 "Invalid %s %s: '%s' cannot be written as JSON", stage, slot, type.label()
             ));
+        }
     }
 
     /**

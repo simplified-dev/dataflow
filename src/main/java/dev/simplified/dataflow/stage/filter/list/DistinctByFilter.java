@@ -88,10 +88,11 @@ public final class DistinctByFilter<T, K> implements FilterStage<T> {
         @Configurable(name = "keepLast", label = "Keep last (optional)", placeholder = "false", optional = true)
         @Nullable Boolean rawKeepLast
     ) {
-        if (!DataTypes.COMPARABLE_KEYS.contains(keyType))
+        if (!DataTypes.COMPARABLE_KEYS.contains(keyType)) {
             throw new IllegalArgumentException(String.format(
                 "DistinctByFilter supports key types %s but got '%s'", DataTypes.COMPARABLE_KEYS, keyType
             ));
+        }
 
         ValidationReport report = Chain.validate(elementType, body, keyType);
 

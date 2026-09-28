@@ -111,10 +111,11 @@ public final class BroadcastTransform<I, P, C> implements TransformStage<I, List
         JsonValues.requireWritable(parentType, "BroadcastTransform", "parentType");
         JsonValues.requireWritable(childType, "BroadcastTransform", "childType");
 
-        if (parentKey.equals(childKey))
+        if (parentKey.equals(childKey)) {
             throw new IllegalArgumentException(String.format(
                 "Invalid BroadcastTransform keys: the parent and the children are both keyed '%s'", parentKey
             ));
+        }
 
         return new BroadcastTransform<>(
             inputType,

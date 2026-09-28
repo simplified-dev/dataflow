@@ -112,10 +112,11 @@ public final class EnumerateTransform<T> implements TransformStage<List<T>, List
         String indexKey = rawIndexKey == null ? "index" : rawIndexKey;
         String valueKey = rawValueKey == null ? "value" : rawValueKey;
 
-        if (indexKey.equals(valueKey))
+        if (indexKey.equals(valueKey)) {
             throw new IllegalArgumentException(String.format(
                 "Invalid EnumerateTransform keys: the index and the value are both keyed '%s'", indexKey
             ));
+        }
 
         return new EnumerateTransform<>(
             elementType,
