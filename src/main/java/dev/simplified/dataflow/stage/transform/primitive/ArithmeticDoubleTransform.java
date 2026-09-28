@@ -64,7 +64,7 @@ public final class ArithmeticDoubleTransform implements TransformStage<Double, D
         ArithmeticOperator operator = ArithmeticOperator.of(rawOperator);
 
         if (!Double.isFinite(operand))
-            throw new IllegalArgumentException("ArithmeticDoubleTransform operand must be finite but was " + operand);
+            throw new IllegalArgumentException("ArithmeticDoubleTransform operand '" + operand + "' is not finite");
 
         return new ArithmeticDoubleTransform(rawOperator, operator, operand);
     }

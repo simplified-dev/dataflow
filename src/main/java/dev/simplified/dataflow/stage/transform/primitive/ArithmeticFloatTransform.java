@@ -59,7 +59,8 @@ public final class ArithmeticFloatTransform implements TransformStage<Float, Flo
      * @param rawOperand the right-hand operand, narrowed to {@code float} and carried on the wire as {@code operand}
      * @return the stage
      * @throws IllegalArgumentException when {@code rawOperator} names no {@link ArithmeticOperator}, or
-     *         {@code rawOperand} is {@code NaN}, infinite or outside the {@code float} range
+     *         {@code rawOperand} is {@code NaN}, infinite, above the {@code float} range, or non-zero
+     *         and so small it narrows to zero
      */
     public static @NotNull ArithmeticFloatTransform of(
         @Configurable(name = "operator", label = "Operator", placeholder = "ADD")
@@ -71,7 +72,10 @@ public final class ArithmeticFloatTransform implements TransformStage<Float, Flo
         float operand = (float) rawOperand;
 
         if (!Float.isFinite(operand))
-            throw new IllegalArgumentException("ArithmeticFloatTransform operand must be a finite float but was " + rawOperand);
+            throw new IllegalArgumentException("ArithmeticFloatTransform operand '" + rawOperand + "' is not a finite float");
+
+        if (operand == 0 && rawOperand != 0)
+            throw new IllegalArgumentException("ArithmeticFloatTransform operand '" + rawOperand + "' narrows to a float zero");
 
         return new ArithmeticFloatTransform(rawOperator, operator, rawOperand, operand);
     }

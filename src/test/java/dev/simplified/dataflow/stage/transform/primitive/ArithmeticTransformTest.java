@@ -156,9 +156,21 @@ class ArithmeticTransformTest {
     }
 
     @Test
-    @DisplayName("float arithmetic runs in float precision on the narrowed operand")
+    @DisplayName("float arithmetic runs on the operand narrowed to float, not on the configured double")
     void floatUsesNarrowedOperand() {
-        assertThat(ArithmeticFloatTransform.of("ADD", 0.1).execute(this.ctx, 0.2f), is(equalTo(0.2f + 0.1f)));
+        assertThat(ArithmeticFloatTransform.of("SUBTRACT", 16_777_217.0).execute(this.ctx, 16_777_216f), is(equalTo(0f)));
+    }
+
+    @Test
+    @DisplayName("float of refuses a non-zero operand that narrows to a float zero")
+    void floatRefusesOperandNarrowingToZero() {
+        assertThrows(IllegalArgumentException.class, () -> ArithmeticFloatTransform.of("MULTIPLY", 1e-50));
+    }
+
+    @Test
+    @DisplayName("float of accepts a zero operand")
+    void floatAcceptsZeroOperand() {
+        assertThat(ArithmeticFloatTransform.of("ADD", 0.0).execute(this.ctx, 1.5f), is(equalTo(1.5f)));
     }
 
     @Test
