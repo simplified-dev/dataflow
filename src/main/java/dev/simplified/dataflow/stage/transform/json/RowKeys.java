@@ -79,7 +79,7 @@ final class RowKeys {
         @NotNull String keyField,
         @NotNull String kindId
     ) {
-        return DataPipeline.unchecked(List.of(new IndexSource(rows, keyField, kindId)), INDEX);
+        return DataPipeline.builder().source(new IndexSource(rows, keyField, kindId)).build();
     }
 
     /**
