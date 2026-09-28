@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer;
 import dev.simplified.client.exception.UrlFetchException;
 import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.client.fetch.UrlFetcherConfig;
+import dev.simplified.client.ratelimit.RateLimit;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
@@ -24,6 +25,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Covers {@link FetchTransform} against a loopback server whose {@code /wiki/<name>} answers
  * {@code 200} with {@code page:<name>}, except {@code Missing} ({@code 404}), {@code Gone}
- * ({@code 410}) and {@code Broken} ({@code 500}).
+ * ({@code 410}), {@code Busy} ({@code 429}) and {@code Broken} ({@code 500}).
  */
 class FetchTransformTest {
 
@@ -50,6 +52,7 @@ class FetchTransformTest {
             switch (name) {
                 case "Missing" -> respond(exchange, 404, "no such page");
                 case "Gone" -> respond(exchange, 410, "deleted");
+                case "Busy" -> respond(exchange, 429, "slow down");
                 case "Broken" -> respond(exchange, 500, "down");
                 default -> respond(exchange, 200, "page:" + name);
             }
@@ -82,12 +85,26 @@ class FetchTransformTest {
         return context(UrlFetcherConfig.DEFAULT_MAX_BODY_BYTES);
     }
 
+    private static @NotNull PipelineContext oneRequestPerHour() {
+        UrlFetcher fetcher = UrlFetcher.create(
+            UrlFetcherConfig.builder(new Gson()).withDefaultRateLimit(new RateLimit(1, 1, ChronoUnit.HOURS)).build()
+        );
+        return PipelineContext.builder().withFetcher(fetcher).build();
+    }
+
     private @NotNull String template() {
         return this.baseUrl + "/wiki/{}";
     }
 
     private @NotNull FetchTransform wiki() {
         return FetchTransform.of(DataTypes.RAW_HTML, template());
+    }
+
+    private @NotNull DataPipeline<String> cappedPage() {
+        return DataPipeline.builder()
+            .source(LiteralSource.text(this.baseUrl + "/wiki/Alpha"))
+            .stage(FetchTransform.of(DataTypes.RAW_HTML, null, 1024L))
+            .build();
     }
 
     private @NotNull DataPipeline<List<String>> pages(@NotNull String names) {
@@ -139,6 +156,39 @@ class FetchTransformTest {
     @DisplayName("A 410 rejects with null")
     void goneRejects() {
         assertThat(wiki().execute(context(), "Gone"), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("An origin 429 rejects with null like every other 4xx")
+    void originTooManyRequestsRejects() {
+        assertThat(wiki().execute(context(), "Busy"), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("A request the local rate limit refuses throws rather than dropping the element")
+    void localRateLimitThrows() {
+        PipelineContext limited = oneRequestPerHour();
+        wiki().execute(limited, "Alpha");
+        assertThrows(UrlFetchException.RateLimited.class, () -> wiki().execute(limited, "Beta"));
+    }
+
+    @Test
+    @DisplayName("An empty input throws rather than fetching the template with nothing in place of {}")
+    void emptyInputThrows() {
+        assertThrows(IllegalArgumentException.class, () -> wiki().execute(context(), ""));
+    }
+
+    @Test
+    @DisplayName("A blank input throws")
+    void blankInputThrows() {
+        assertThrows(IllegalArgumentException.class, () -> wiki().execute(context(), "   "));
+    }
+
+    @Test
+    @DisplayName("As a map body an empty element fails the run rather than fetching the template alone")
+    void mapBodyFailsOnEmptyElement() {
+        DataPipeline<List<String>> pipeline = pages("Alpha,,Beta");
+        assertThrows(IllegalArgumentException.class, () -> pipeline.execute(context()));
     }
 
     @Test
@@ -276,6 +326,20 @@ class FetchTransformTest {
     void wireRoundTripExecutes() {
         DataPipeline<?> rebuilt = PipelineGson.fromJson(PipelineGson.toJson(pages("Alpha,Missing,Beta")));
         assertThat(rebuilt.execute(context()), is(equalTo(pages("Alpha,Missing,Beta").execute(context()))));
+    }
+
+    @Test
+    @DisplayName("A stage fetching its input under a cap round-trips to the same JSON")
+    void cappedWireRoundTripIsStable() {
+        String first = PipelineGson.toJson(cappedPage());
+        assertThat(PipelineGson.toJson(PipelineGson.fromJson(first)), is(equalTo(first)));
+    }
+
+    @Test
+    @DisplayName("A stage fetching its input under a cap round-trips to the same output")
+    void cappedWireRoundTripExecutes() {
+        DataPipeline<?> rebuilt = PipelineGson.fromJson(PipelineGson.toJson(cappedPage()));
+        assertThat(rebuilt.execute(context(4)), is(equalTo(cappedPage().execute(context(4)))));
     }
 
     @Test
