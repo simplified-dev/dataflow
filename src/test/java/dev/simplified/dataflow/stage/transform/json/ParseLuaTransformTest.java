@@ -414,6 +414,24 @@ class ParseLuaTransformTest {
     }
 
     @Test
+    @DisplayName("A table key throws")
+    void tableKeyThrows() {
+        assertRejects("return { [{}] = 'a' }");
+    }
+
+    @Test
+    @DisplayName("A key naming a local table throws")
+    void localTableKeyThrows() {
+        assertRejects("local t = {} return { [t] = 'a' }");
+    }
+
+    @Test
+    @DisplayName("A bracketed key can name a local string")
+    void localStringKey() {
+        assertThat(parse("local k = 'ruby' return { [k] = 1 }"), is(equalTo(json("{\"ruby\":1}"))));
+    }
+
+    @Test
     @DisplayName("A reserved word cannot name a field")
     void reservedFieldNameThrows() {
         assertRejects("return { end = 1 }");

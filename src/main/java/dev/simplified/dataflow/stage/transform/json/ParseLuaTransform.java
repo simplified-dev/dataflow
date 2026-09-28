@@ -236,14 +236,13 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
             this.position++;
             skipTrivia();
             int keyAt = this.position;
-
-            if (peek() == '{')
-                throw error(keyAt, "a table key must be a string, a number or a boolean, not a table");
-
             JsonElement key = readValue();
 
             if (key == null)
                 throw error(keyAt, "a table key cannot be nil");
+
+            if (!key.isJsonPrimitive())
+                throw error(keyAt, "a table key must be a string, a number or a boolean, not a table");
 
             skipTrivia();
             expect(']');
