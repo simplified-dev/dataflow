@@ -254,6 +254,18 @@ class KeyLookupTransformTest {
     }
 
     @Test
+    @DisplayName("A table of the wrong output type fails the load with the factory's message")
+    void wrongTableTypeRejectedAtLoad() {
+        String json = q("[{'kind':'SOURCE_LITERAL','outputType':'STRING','value':'Gem'},"
+            + "{'kind':'TRANSFORM_KEY_LOOKUP','keyField':'name','valueField':'id',"
+            + "'table':[{'kind':'SOURCE_LITERAL_LIST','elementType':'STRING','value':'[\\'Gem\\']'}]}]");
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> PipelineGson.fromJson(json));
+        Throwable root = thrown;
+        while (root.getCause() != null && root.getCause() != root) root = root.getCause();
+        assertThat(root.getMessage(), startsWith("Invalid KeyLookupTransform operand"));
+    }
+
+    @Test
     @DisplayName("A table served over HTTP is fetched once for a Map body over three keys")
     void httpTableFetchedOnce() throws IOException {
         AtomicInteger hits = new AtomicInteger();
