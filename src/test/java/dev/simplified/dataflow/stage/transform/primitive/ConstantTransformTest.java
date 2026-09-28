@@ -118,6 +118,24 @@ class ConstantTransformTest {
     }
 
     @Test
+    @DisplayName("of refuses a FLOAT value that overflows to infinity")
+    void floatRefusesOverflow() {
+        assertThrows(IllegalArgumentException.class, () -> ConstantTransform.of(DataTypes.STRING, DataTypes.FLOAT, "1e40"));
+    }
+
+    @Test
+    @DisplayName("of refuses NaN as a DOUBLE value")
+    void doubleRefusesNaN() {
+        assertThrows(IllegalArgumentException.class, () -> ConstantTransform.of(DataTypes.STRING, DataTypes.DOUBLE, "NaN"));
+    }
+
+    @Test
+    @DisplayName("of refuses an infinite DOUBLE value")
+    void doubleRefusesInfinity() {
+        assertThrows(IllegalArgumentException.class, () -> ConstantTransform.of(DataTypes.STRING, DataTypes.DOUBLE, "-Infinity"));
+    }
+
+    @Test
     @DisplayName("of refuses an output type SOURCE_LITERAL does not admit")
     void refusesStructuredType() {
         assertThrows(IllegalArgumentException.class, () -> ConstantTransform.of(DataTypes.STRING, DataTypes.JSON_OBJECT, "{}"));

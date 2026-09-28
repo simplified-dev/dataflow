@@ -25,7 +25,10 @@ import java.util.Set;
  * only. The constant is parsed from its configured string once, when the stage is built, under
  * the same types {@link LiteralSource} admits: {@code STRING}, {@code RAW_HTML}, {@code RAW_XML}
  * and {@code RAW_JSON} verbatim, {@code INT}, {@code LONG}, {@code FLOAT} and {@code DOUBLE}
- * after trimming, and {@code BOOLEAN} from {@code true} or {@code false} in any case.
+ * after trimming, and {@code BOOLEAN} from {@code true} or {@code false} in any case. A number
+ * has to fit its type: an {@code INT} or {@code LONG} past its range is refused, and so is a
+ * {@code FLOAT} or {@code DOUBLE} that is {@code NaN}, an infinity, or a value that overflows to
+ * one.
  *
  * @param <I> input type
  * @param <T> constant type
@@ -102,18 +105,19 @@ public final class ConstantTransform<I, T> implements TransformStage<I, T> {
     static @NotNull Object parse(@NotNull String stage, @NotNull String slot, @NotNull DataType<?> type, @NotNull String raw) {
         if (STRING_LIKE.contains(type)) return raw;
 
-        if (!SUPPORTED_TYPES.contains(type))
+        if (!SUPPORTED_TYPES.contains(type)) {
             throw new IllegalArgumentException(
                 stage + " cannot parse " + slot + " as " + type.label() + "; it parses " + labels()
             );
+        }
 
         String trimmed = raw.trim();
 
         try {
             if (type.equals(DataTypes.INT)) return Integer.valueOf(trimmed);
             if (type.equals(DataTypes.LONG)) return Long.valueOf(trimmed);
-            if (type.equals(DataTypes.FLOAT)) return Float.valueOf(trimmed);
-            if (type.equals(DataTypes.DOUBLE)) return Double.valueOf(trimmed);
+            if (type.equals(DataTypes.FLOAT)) return requireFinite(stage, slot, type, raw, Float.valueOf(trimmed));
+            if (type.equals(DataTypes.DOUBLE)) return requireFinite(stage, slot, type, raw, Double.valueOf(trimmed));
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException(
                 stage + " " + slot + " '" + raw + "' does not parse as " + type.label(), ex
@@ -126,6 +130,17 @@ public final class ConstantTransform<I, T> implements TransformStage<I, T> {
         throw new IllegalArgumentException(
             stage + " " + slot + " '" + raw + "' does not parse as " + type.label()
         );
+    }
+
+    private static <N extends Number> @NotNull N requireFinite(
+        @NotNull String stage,
+        @NotNull String slot,
+        @NotNull DataType<?> type,
+        @NotNull String raw,
+        @NotNull N parsed
+    ) {
+        if (Double.isFinite(parsed.doubleValue())) return parsed;
+        throw new IllegalArgumentException(stage + " " + slot + " '" + raw + "' is not a finite " + type.label());
     }
 
     private static @NotNull List<String> labels() {
