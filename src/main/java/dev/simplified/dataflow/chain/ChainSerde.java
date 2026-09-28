@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
+import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
@@ -127,7 +128,8 @@ public final class ChainSerde {
     }
 
     /**
-     * Deserialises a JSON object of named stage arrays into a {@link NamedChains}.
+     * Deserialises a JSON object of named stage arrays into a {@link NamedChains}, keeping the
+     * document order of the names.
      *
      * @param obj the JSON object
      * @param stageReader callback that rebuilds a single stage from its JSON form
@@ -140,7 +142,7 @@ public final class ChainSerde {
         LinkedHashMap<String, Chain<Object, ?>> map = new LinkedHashMap<>();
         for (Map.Entry<String, JsonElement> entry : obj.entrySet())
             map.put(entry.getKey(), Chain.of(readStages(entry.getValue().getAsJsonArray(), stageReader)));
-        return new NamedChains<>(Map.copyOf(map));
+        return new NamedChains<>(map);
     }
 
     /**
@@ -166,7 +168,8 @@ public final class ChainSerde {
     }
 
     /**
-     * Deserialises a typed named-chains JSON object into a {@code Map<String, TypedChain<?>>}.
+     * Deserialises a typed named-chains JSON object into an unmodifiable
+     * {@code Map<String, TypedChain<?>>} that keeps the document order of the names.
      *
      * @param obj the JSON object
      * @param stageReader callback that rebuilds a single stage from its JSON form
@@ -187,7 +190,7 @@ public final class ChainSerde {
             List<Stage<?, ?>> stages = readStages(typed.get("chain").getAsJsonArray(), stageReader);
             map.put(entry.getKey(), typedChainOf(outputType, stages));
         }
-        return Map.copyOf(map);
+        return Concurrent.newUnmodifiableLinkedMap(map);
     }
 
     private static @NotNull List<Stage<?, ?>> readStages(

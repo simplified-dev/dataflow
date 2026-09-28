@@ -6,6 +6,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.Getter;
 import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
+import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -32,8 +33,8 @@ import java.util.function.Consumer;
  * validated against {@code (inputType, branchOutputType)} when the stage is built, on the
  * typed builder path and the wire path alike. At execute time,
  * each branch's final value is coerced to a {@link JsonElement} via
- * {@link PipelineGson#gson() gson.toJsonTree(...)} and stored under its name. Null branch
- * results omit the field.
+ * {@link PipelineGson#gson() gson.toJsonTree(...)} and stored under its name, in the order the
+ * outputs were declared. Null branch results omit the field.
  *
  * @param <I> input type, shared by every named sub-pipeline
  */
@@ -139,7 +140,7 @@ public final class ObjectBuildTransform<I> implements TransformStage<I, JsonObje
                 throw new IllegalArgumentException("Invalid ObjectBuildTransform output '" + entry.getKey() + "': " + report.issues());
         }
 
-        return new ObjectBuildTransform<>(inputType, Map.copyOf(outputs));
+        return new ObjectBuildTransform<>(inputType, Concurrent.newUnmodifiableLinkedMap(outputs));
     }
 
     /** {@inheritDoc} */

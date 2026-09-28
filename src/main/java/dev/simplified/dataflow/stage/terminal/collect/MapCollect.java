@@ -4,6 +4,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.Getter;
 import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
+import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -30,8 +31,9 @@ import java.util.function.Consumer;
  * Sub-chains are flat lists of {@link Stage} instances - they share the collect's input
  * type but otherwise have no source, and each is validated against that input type when the
  * stage is built. Each sub-chain runs to completion (or until a stage returns {@code null}),
- * and its final value lands in the returned map under its name; a sub-chain that yields
- * {@code null} leaves its name out of the map, as an ObjectBuild output omits its field.
+ * and its final value lands in the returned unmodifiable map under its name, in the order the
+ * sub-chains were declared. A sub-chain that yields {@code null} leaves its name out of the
+ * map, as an ObjectBuild output omits its field.
  *
  * @param <I> input type, shared by every sub-chain
  */
@@ -83,7 +85,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
          * @return the built collect
          */
         public @NotNull MapCollect<I> build() {
-            return of(this.inputType, new NamedChains<>(Map.copyOf(this.outputs)));
+            return of(this.inputType, new NamedChains<>(this.outputs));
         }
     }
 
@@ -139,7 +141,7 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
             if (value != null) result.put(entry.getKey(), value);
         }
 
-        return Map.copyOf(result);
+        return Concurrent.newUnmodifiableLinkedMap(result);
     }
     /** {@inheritDoc} */
     @Override
