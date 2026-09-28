@@ -51,10 +51,12 @@ public final class ToRawTransform implements TransformStage<String, String> {
         @Configurable(label = "Output type (RAW_HTML / RAW_XML / RAW_JSON)", placeholder = "RAW_HTML")
         @NotNull DataType<String> outputType
     ) {
-        if (!SUPPORTED_OUTPUT_TYPES.contains(outputType))
+        if (!SUPPORTED_OUTPUT_TYPES.contains(outputType)) {
             throw new IllegalArgumentException(
                 "ToRawTransform supports " + SUPPORTED_OUTPUT_TYPES + " but got " + outputType.label()
             );
+        }
+
         return new ToRawTransform(outputType);
     }
 
