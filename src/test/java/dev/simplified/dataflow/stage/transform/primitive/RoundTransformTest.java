@@ -220,6 +220,14 @@ class RoundTransformTest {
     }
 
     @Test
+    @DisplayName("A wire scale with a fraction fails at load rather than truncating")
+    void wireFractionalScaleFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"DOUBLE\",\"value\":\"7.25\"},"
+            + "{\"kind\":\"TRANSFORM_ROUND_DOUBLE\",\"scale\":1.5}]";
+        assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
+    }
+
+    @Test
     @DisplayName("A wire stage with no mode rounds half up")
     void wireAbsentModeRoundsHalfUp() {
         String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"DOUBLE\",\"value\":\"2.5\"},"

@@ -15,6 +15,7 @@ import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageReflection;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -153,6 +154,7 @@ public record FieldSpec<T>(
      * @param b the builder to populate
      * @param stageReader recursive callback used by sub-pipeline types to deserialise nested stages
      * @return {@code b} for chaining
+     * @throws IllegalArgumentException when an {@code INT} or {@code LONG} slot's number is not integral or does not fit the type
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
      * @throws IllegalArgumentException when a {@code STRING_MAP} slot maps a key to a JSON null, object or array
      * @throws IllegalStateException when a {@code PIPELINE} slot's stage array does not form a valid pipeline
@@ -164,8 +166,8 @@ public record FieldSpec<T>(
     ) {
         switch (this.type) {
             case STRING    -> b.string(this.name, raw.getAsString());
-            case INT       -> b.integer(this.name, raw.getAsInt());
-            case LONG      -> b.longVal(this.name, raw.getAsLong());
+            case INT       -> b.integer(this.name, (int) this.readIntegral(raw));
+            case LONG      -> b.longVal(this.name, this.readIntegral(raw));
             case DOUBLE    -> b.doubleVal(this.name, raw.getAsDouble());
             case BOOLEAN   -> b.bool(this.name, raw.getAsBoolean());
             case DATA_TYPE -> {
@@ -182,6 +184,26 @@ public record FieldSpec<T>(
             case STRING_MAP              -> b.stringMap(this.name, this.readStringMap(raw.getAsJsonObject()));
         }
         return b;
+    }
+
+    /**
+     * Reads an {@code INT} or {@code LONG} slot's number exactly, so a fraction or a value past
+     * the slot's range is refused rather than truncated or wrapped.
+     *
+     * @param raw the JSON form, a number or a numeric string
+     * @return the value, within the {@code int} range for an {@code INT} slot
+     * @throws IllegalArgumentException when the number is not integral or does not fit the slot's type
+     */
+    private long readIntegral(@NotNull JsonElement raw) {
+        BigDecimal value = raw.getAsBigDecimal();
+
+        try {
+            return this.type == Type.INT ? value.intValueExact() : value.longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException(
+                "Field '" + this.name + "' holds '" + raw + "' but an integral " + this.type + " was expected", ex
+            );
+        }
     }
 
     private static @NotNull JsonObject writeStringMap(@NotNull Map<String, String> value) {

@@ -18,6 +18,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -239,6 +240,47 @@ class ArithmeticTransformTest {
             + "{\"kind\":\"TRANSFORM_ARITHMETIC_INT\",\"operator\":\"POWER\",\"operand\":2}]";
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> PipelineGson.fromJson(json));
         assertThat(rootCause(thrown), is(instanceOf(IllegalArgumentException.class)));
+    }
+
+    @Test
+    @DisplayName("A wire INT operand with a fraction fails at load rather than truncating")
+    void wireFractionalIntOperandFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"INT\",\"value\":\"7\"},"
+            + "{\"kind\":\"TRANSFORM_ARITHMETIC_INT\",\"operator\":\"MULTIPLY\",\"operand\":2.5}]";
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
+        assertThat(thrown.getMessage(), startsWith("Field 'operand' holds '2.5'"));
+    }
+
+    @Test
+    @DisplayName("A wire INT operand past the int range fails at load rather than wrapping")
+    void wireOutOfRangeIntOperandFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"INT\",\"value\":\"7\"},"
+            + "{\"kind\":\"TRANSFORM_ARITHMETIC_INT\",\"operator\":\"ADD\",\"operand\":3000000000}]";
+        assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
+    }
+
+    @Test
+    @DisplayName("A wire INT operand written with a zero fraction loads as its integer")
+    void wireIntegralDecimalIntOperandLoads() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"INT\",\"value\":\"7\"},"
+            + "{\"kind\":\"TRANSFORM_ARITHMETIC_INT\",\"operator\":\"MULTIPLY\",\"operand\":2.0}]";
+        assertThat(PipelineGson.fromJson(json).execute(), is(equalTo(14)));
+    }
+
+    @Test
+    @DisplayName("A wire LONG operand with a fraction fails at load rather than truncating")
+    void wireFractionalLongOperandFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"LONG\",\"value\":\"7\"},"
+            + "{\"kind\":\"TRANSFORM_ARITHMETIC_LONG\",\"operator\":\"ADD\",\"operand\":9.5}]";
+        assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
+    }
+
+    @Test
+    @DisplayName("A wire LONG operand past the long range fails at load rather than wrapping")
+    void wireOutOfRangeLongOperandFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"LONG\",\"value\":\"7\"},"
+            + "{\"kind\":\"TRANSFORM_ARITHMETIC_LONG\",\"operator\":\"ADD\",\"operand\":10000000000000000000}]";
+        assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
     }
 
     @Test
