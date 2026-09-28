@@ -30,7 +30,8 @@ import java.util.function.Consumer;
  * Sub-chains are flat lists of {@link Stage} instances - they share the collect's input
  * type but otherwise have no source, and each is validated against that input type when the
  * stage is built. Each sub-chain runs to completion (or until a stage returns {@code null}),
- * and its final value lands in the returned map under its name.
+ * and its final value lands in the returned map under its name; a sub-chain that yields
+ * {@code null} leaves its name out of the map, as an ObjectBuild output omits its field.
  *
  * @param <I> input type, shared by every sub-chain
  */
@@ -132,8 +133,12 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
     @Override
     public @NotNull Map<String, Object> execute(@NotNull PipelineContext ctx, @Nullable I input) {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<String, Chain<I, ?>> entry : this.outputs.chains().entrySet())
-            result.put(entry.getKey(), entry.getValue().execute(ctx, input));
+
+        for (Map.Entry<String, Chain<I, ?>> entry : this.outputs.chains().entrySet()) {
+            Object value = entry.getValue().execute(ctx, input);
+            if (value != null) result.put(entry.getKey(), value);
+        }
+
         return Map.copyOf(result);
     }
     /** {@inheritDoc} */
