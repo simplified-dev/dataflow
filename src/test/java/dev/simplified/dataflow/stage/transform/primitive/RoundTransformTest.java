@@ -116,6 +116,24 @@ class RoundTransformTest {
     }
 
     @Test
+    @DisplayName("double at the lowest int scale rounds a half-mode value to zero")
+    void doubleLowestScaleRoundsToZero() {
+        assertThat(RoundDoubleTransform.of(Integer.MIN_VALUE, "HALF_UP").execute(this.ctx, 1.5), is(equalTo(0.0)));
+    }
+
+    @Test
+    @DisplayName("double at the lowest int scale rounding UP leaves the double range and rejects with null")
+    void doubleLowestScaleUpRejects() {
+        assertThat(RoundDoubleTransform.of(Integer.MIN_VALUE, "UP").execute(this.ctx, 1.5), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("double at a scale below every double's magnitude rounds the largest double to zero")
+    void doubleScaleBelowRangeRoundsMaxToZero() {
+        assertThat(RoundDoubleTransform.of(-1_000_000, "HALF_UP").execute(this.ctx, Double.MAX_VALUE), is(equalTo(0.0)));
+    }
+
+    @Test
     @DisplayName("double UNNECESSARY throws for a value that needs rounding")
     void doubleUnnecessaryThrows() {
         RoundDoubleTransform stage = RoundDoubleTransform.of(1, "UNNECESSARY");
@@ -202,6 +220,18 @@ class RoundTransformTest {
     @DisplayName("float result too large for a float rejects with null")
     void floatOverflowingResult() {
         assertThat(RoundFloatTransform.of(-38, "UP").execute(this.ctx, Float.MAX_VALUE), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("float at the lowest int scale rounds a half-mode value to zero")
+    void floatLowestScaleRoundsToZero() {
+        assertThat(RoundFloatTransform.of(Integer.MIN_VALUE, null).execute(this.ctx, 1.5f), is(equalTo(0.0f)));
+    }
+
+    @Test
+    @DisplayName("float at a scale below every float's magnitude rounding UP rejects the largest float with null")
+    void floatScaleBelowRangeUpRejects() {
+        assertThat(RoundFloatTransform.of(-40, "UP").execute(this.ctx, Float.MAX_VALUE), is(nullValue()));
     }
 
     @Test

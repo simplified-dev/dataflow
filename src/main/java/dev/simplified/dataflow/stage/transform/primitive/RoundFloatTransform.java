@@ -40,6 +40,13 @@ import java.util.Arrays;
 public final class RoundFloatTransform implements TransformStage<Float, Float> {
 
     /**
+     * Lowest scale rounding is carried out at. Every finite {@code float} is below half of
+     * {@code 10^39}, so a lower scale rounds each value exactly as this one does, without
+     * building its power of ten or leaving the range {@link BigDecimal} can scale to.
+     */
+    private static final int MIN_EFFECTIVE_SCALE = -39;
+
+    /**
      * Number of decimal places kept; negative to round left of the decimal point.
      */
     private final int scale;
@@ -92,9 +99,10 @@ public final class RoundFloatTransform implements TransformStage<Float, Float> {
         if (input == null || !Float.isFinite(input)) return null;
 
         BigDecimal decimal = new BigDecimal(Float.toString(input));
+        int scale = Math.max(this.scale, MIN_EFFECTIVE_SCALE);
 
-        if (decimal.scale() > this.scale)
-            decimal = decimal.setScale(this.scale, this.mode);
+        if (decimal.scale() > scale)
+            decimal = decimal.setScale(scale, this.mode);
 
         float rounded = decimal.floatValue();
         return Float.isFinite(rounded) ? rounded : null;

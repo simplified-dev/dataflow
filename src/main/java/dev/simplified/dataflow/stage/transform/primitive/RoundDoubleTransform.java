@@ -40,6 +40,13 @@ import java.util.Arrays;
 public final class RoundDoubleTransform implements TransformStage<Double, Double> {
 
     /**
+     * Lowest scale rounding is carried out at. Every finite {@code double} is below half of
+     * {@code 10^309}, so a lower scale rounds each value exactly as this one does, without
+     * building its power of ten or leaving the range {@link BigDecimal} can scale to.
+     */
+    private static final int MIN_EFFECTIVE_SCALE = -309;
+
+    /**
      * Number of decimal places kept; negative to round left of the decimal point.
      */
     private final int scale;
@@ -92,9 +99,10 @@ public final class RoundDoubleTransform implements TransformStage<Double, Double
         if (input == null || !Double.isFinite(input)) return null;
 
         BigDecimal decimal = BigDecimal.valueOf(input);
+        int scale = Math.max(this.scale, MIN_EFFECTIVE_SCALE);
 
-        if (decimal.scale() > this.scale)
-            decimal = decimal.setScale(this.scale, this.mode);
+        if (decimal.scale() > scale)
+            decimal = decimal.setScale(scale, this.mode);
 
         double rounded = decimal.doubleValue();
         return Double.isFinite(rounded) ? rounded : null;
