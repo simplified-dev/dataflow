@@ -447,7 +447,9 @@ DataPipeline<List<JsonObject>> items = DataPipeline.builder()
   `PipelineContext.evaluateOperand`, which runs it against the same context - fetcher, resolver,
   bag, tracer - the first time and holds the result, a `null` included. A lookup inside a
   `TRANSFORM_MAP` body over a thousand elements reads its table once. The memo is keyed by the
-  operand instance, belongs to the context, and starts empty in every new `PipelineContext`.
+  operand instance, belongs to the context, and starts empty in every new `PipelineContext`, so
+  build one context per run: a context reused for a later run answers it with the operand values
+  the first run read.
 - **Shared, so never mutated.** Every read in the run sees the same value; the stages that take
   an operand copy rows before changing them.
 - **Cycles throw.** An operand whose evaluation reaches itself throws
@@ -474,7 +476,9 @@ its headers, rate limit and response cache.
 Both take an optional `maxBodyBytes` (`LONG`): the largest body the fetch accepts. Absent, the
 fetch is held to the fetcher's configured cap (`UrlFetcherConfig`, 5 MiB by default); negative,
 the load fails. A body past the cap throws `UrlFetchException.BodyCapExceeded`, a cached body
-included. One page per id, capped at 256 KiB:
+included. An error status raises its own exception whatever the size of its body, so a `404`
+page larger than the cap still drops its `TRANSFORM_FETCH` element. One page per id, capped at
+256 KiB:
 
 ```json
 [

@@ -45,7 +45,7 @@ The factory parameter's type picks the `FieldSpec.Type`:
 
 A `PIPELINE` slot carries a whole sourced pipeline that reads a second document (`JoinByKeyTransform.right`, `KeyLookupTransform.table`, `ConcatTransform.other`).
 - In `of`: `DataPipeline.validate(expectedOutputType)`; on failure throw `IllegalArgumentException("Invalid <Class> operand: " + report.issues())`. Store it under the parameter's name (a narrowed generic is fine).
-- In `execute`: `ctx.evaluateOperand(operand)` - runs it against the same context at most once per context, keyed by instance identity, `null` held too, reentrant for nested operands, a self-reaching operand throws `Pipeline operand cycle detected`, a throwing evaluation holds nothing, and every new `PipelineContext` starts with an empty memo.
+- In `execute`: `ctx.evaluateOperand(operand)` - runs it against the same context at most once per context, keyed by instance identity, `null` held too, reentrant for nested operands, a self-reaching operand throws `Pipeline operand cycle detected`, a throwing evaluation holds nothing, a read from a second thread waits for the evaluation under way, and every new `PipelineContext` starts with an empty memo - so a host builds one context per run.
 - The value is shared by every read in the run: **never mutate it** - copy rows before changing them.
 - A value derived from an operand once per run (an index, say) is itself a small `DataPipeline` over the operand, evaluated through the same memo (`RowKeys.index`).
 
@@ -86,7 +86,7 @@ Sort/Min/Max key types restricted to `INT, LONG, FLOAT, DOUBLE, STRING`; others 
 
 ## Fetching
 
-Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of their own. An optional `maxBodyBytes` (`@Nullable Long`) calls the capped overload only when set, so the fetcher's configured cap still applies otherwise. Every error status raises: catch `UrlFetchException.ClientError` (400-451) by type to tell a 4xx apart - `RateLimited` carries a synthetic `429` and is not one.
+Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of their own. An optional `maxBodyBytes` (`@Nullable Long`) calls the capped overload only when set, so the fetcher's configured cap still applies otherwise. Every error status raises: catch `UrlFetchException.ClientError` (400-451) by type to tell a 4xx apart - `RateLimited` carries a synthetic `429` and is not one. An error status raises its own type whatever the size of its body; only a success body past the cap raises `BodyCapExceeded`.
 
 ## Serde / test
 
