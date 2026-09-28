@@ -87,9 +87,9 @@ class ZipTransformTest {
     }
 
     @Test
-    @DisplayName("An absent mode is SHORTEST")
+    @DisplayName("An absent mode stops at the shorter list")
     void absentModeIsShortest() {
-        assertThat(pets(null).mode(), is(ZipTransform.Mode.SHORTEST));
+        assertThat(pets(null).execute(this.ctx, object(PET)), hasSize(2));
     }
 
     @Test
@@ -114,10 +114,10 @@ class ZipTransformTest {
     }
 
     @Test
-    @DisplayName("A position where both elements are null is dropped")
-    void bothNullDropped() {
+    @DisplayName("A position where both elements are null keeps an empty object, so later pairs keep their positions")
+    void bothNullKeepsPosition() {
         List<JsonObject> result = mirrored().execute(this.ctx, Arrays.asList("a", null, "b"));
-        assertThat(json(result), is(equalTo("[{\"l\":\"a\",\"r\":\"b\"},{\"l\":\"b\",\"r\":\"a\"}]")));
+        assertThat(json(result), is(equalTo("[{\"l\":\"a\",\"r\":\"b\"},{},{\"l\":\"b\",\"r\":\"a\"}]")));
     }
 
     @Test

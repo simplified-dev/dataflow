@@ -36,8 +36,9 @@ import java.util.List;
  * {@link Mode#SHORTEST} stops at the end of the shorter list; {@link Mode#LONGEST} runs to the end
  * of the longer one and omits the key of the side that has run out. A {@code null} element omits
  * its key the same way, as an {@link ObjectBuildTransform} output omits a {@code null}, and a
- * position where both sides are absent is dropped. An element is written as an
- * {@link ObjectBuildTransform} output is, and a {@link JsonElement} element is copied.
+ * position where both sides are absent is an empty object, so every output stays at its position.
+ * An element is written as an {@link ObjectBuildTransform} output is, and a {@link JsonElement}
+ * element is copied.
  *
  * @param <I> input type, shared by both bodies
  * @param <L> left element type
@@ -81,7 +82,7 @@ public final class ZipTransform<I, L, R> implements TransformStage<I, List<JsonO
     private final @NotNull Mode mode;
 
     /**
-     * Where a {@link ZipTransform} stops when its lists differ in length.
+     * Stopping point of a {@link ZipTransform} whose lists differ in length.
      */
     public enum Mode {
 
@@ -148,10 +149,11 @@ public final class ZipTransform<I, L, R> implements TransformStage<I, List<JsonO
         JsonValues.requireWritable(leftType, "ZipTransform", "leftType");
         JsonValues.requireWritable(rightType, "ZipTransform", "rightType");
 
-        if (leftKey.equals(rightKey))
+        if (leftKey.equals(rightKey)) {
             throw new IllegalArgumentException(String.format(
                 "Invalid ZipTransform keys: both sides are keyed '%s'", leftKey
             ));
+        }
 
         return new ZipTransform<>(
             inputType,
@@ -197,7 +199,7 @@ public final class ZipTransform<I, L, R> implements TransformStage<I, List<JsonO
             JsonObject pair = new JsonObject();
             put(pair, this.leftKey, leftIterator.hasNext() ? leftIterator.next() : null);
             put(pair, this.rightKey, rightIterator.hasNext() ? rightIterator.next() : null);
-            if (!pair.isEmpty()) result.add(pair);
+            result.add(pair);
         }
 
         return Concurrent.newUnmodifiableList(result);
