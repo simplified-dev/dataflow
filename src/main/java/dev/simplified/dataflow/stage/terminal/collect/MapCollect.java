@@ -7,6 +7,7 @@ import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.ValidationReport;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.ChainBuilder;
 import dev.simplified.dataflow.chain.NamedChains;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -26,8 +28,9 @@ import java.util.function.Consumer;
  * value and returns the per-output results as an opaque {@code Map<String, Object>}.
  * <p>
  * Sub-chains are flat lists of {@link Stage} instances - they share the collect's input
- * type but otherwise have no source. Each sub-chain runs to completion (or until a stage
- * returns {@code null}), and its final value lands in the returned map under its name.
+ * type but otherwise have no source, and each is validated against that input type when the
+ * stage is built. Each sub-chain runs to completion (or until a stage returns {@code null}),
+ * and its final value lands in the returned map under its name.
  *
  * @param <I> input type, shared by every sub-chain
  */
@@ -96,12 +99,16 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
 
     /**
      * Canonical flat factory matching the wire shape. Constructs a {@link MapCollect} from
-     * its shared input type and a map of named sub-chains.
+     * its shared input type and a map of named sub-chains, validating every sub-chain against
+     * {@code inputType}. A sub-chain may produce any type, so only its first stage's input
+     * and the links between its stages are checked.
      *
      * @param inputType the shared input type
      * @param outputs named sub-chains whose results become entries in the output map
      * @return the built collect
      * @param <I> input type
+     * @throws IllegalArgumentException when a sub-chain is empty, does not consume
+     *         {@code inputType}, or breaks its type chain
      */
     public static <I> @NotNull MapCollect<I> of(
         @Configurable(label = "Input type", placeholder = "STRING")
@@ -109,6 +116,15 @@ public final class MapCollect<I> implements CollectStage<I, Map<String, Object>>
         @Configurable(label = "Outputs", placeholder = "")
         @NotNull NamedChains<I> outputs
     ) {
+        for (Map.Entry<String, Chain<I, ?>> entry : outputs.chains().entrySet()) {
+            List<Stage<?, ?>> body = entry.getValue().stages();
+            DataType<?> produced = body.isEmpty() ? inputType : body.getLast().outputType();
+            ValidationReport report = Chain.validate(inputType, body, produced);
+
+            if (!report.isValid())
+                throw new IllegalArgumentException("Invalid MapCollect output '" + entry.getKey() + "': " + report.issues());
+        }
+
         return new MapCollect<>(inputType, outputs);
     }
 
