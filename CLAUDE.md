@@ -39,7 +39,7 @@ The factory parameter's type picks the `FieldSpec.Type`:
 - **The field named after a parameter holds that slot's config value** - `config()` reads it back. A stage that parses a string into another type stores the parsed value under a different name, or renames the parameter and keeps the wire key with `@Configurable(name = "...")`. `StageFieldConventionTest` enforces this for every registered stage.
 - Optional slot: `@Configurable(optional = true)` on a `@Nullable` parameter; absent or JSON `null` on the wire means `null`.
 - `placeholder` must be a value `of` accepts: `PipelineSerdeTest.everyNonChainKindFactoryRoundTrips` builds each stage's default config from it (a `STRING_MAP` placeholder is a JSON object literal; `PIPELINE` stages are skipped).
-- Adding a `FieldSpec.Type` breaks every exhaustive `switch` over it (`FieldSpec`'s own). The Discord UI's `StageFields` collects only the types it lists and leaves any other out of its form, so a new type a form should collect needs a case there.
+- Adding a `FieldSpec.Type` breaks every exhaustive `switch` over it (`FieldSpec`'s own). The Discord UI's `StageFields` gives native inputs to the types it lists and a JSON text input, read through `FieldSpec.readJson`, to every other type, so a new type is collectable there without a case.
 
 ## Pipeline operands
 
