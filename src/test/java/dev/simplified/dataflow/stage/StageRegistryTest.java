@@ -78,6 +78,7 @@ class StageRegistryTest {
     }
 
     @TestFactory
+    @DisplayName("Each condition stage resolves by its id to its class")
     Stream<DynamicTest> conditionStageResolvesById() {
         return CONDITION_STAGES.stream().map(stage -> DynamicTest.dynamicTest(
             stage.id(),
@@ -86,6 +87,7 @@ class StageRegistryTest {
     }
 
     @TestFactory
+    @DisplayName("Each condition stage declares its category")
     Stream<DynamicTest> conditionStageDeclaresItsCategory() {
         return CONDITION_STAGES.stream().map(stage -> DynamicTest.dynamicTest(
             stage.id(),
@@ -94,6 +96,7 @@ class StageRegistryTest {
     }
 
     @TestFactory
+    @DisplayName("Each condition stage sits in the package its category names")
     Stream<DynamicTest> conditionStageSitsInItsCategoryPackage() {
         return CONDITION_STAGES.stream().map(stage -> DynamicTest.dynamicTest(
             stage.id(),
@@ -105,6 +108,7 @@ class StageRegistryTest {
     }
 
     @TestFactory
+    @DisplayName("Each condition stage is ordered among the stages of its category")
     Stream<DynamicTest> conditionStageIsOrderedWithinItsCategory() {
         return CONDITION_STAGES.stream().map(stage -> DynamicTest.dynamicTest(
             stage.id(),
