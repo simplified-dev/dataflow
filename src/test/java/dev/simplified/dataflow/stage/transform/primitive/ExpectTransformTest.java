@@ -1,14 +1,19 @@
 package dev.simplified.dataflow.stage.transform.primitive;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.exception.ExpectationFailedException;
 import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.fixture.AppendOperandTransform;
+import dev.simplified.dataflow.stage.predicate.common.NotNullPredicate;
 import dev.simplified.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
 import dev.simplified.dataflow.stage.predicate.string.StartsWithPredicate;
 import dev.simplified.dataflow.stage.source.LiteralListSource;
 import dev.simplified.dataflow.stage.source.LiteralSource;
+import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import dev.simplified.dataflow.stage.transform.string.LengthTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
@@ -22,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -145,6 +151,54 @@ class ExpectTransformTest {
         DataPipeline<?> pipeline = DataPipeline.builder()
             .source(LiteralListSource.strings("item_1", "mob_2", "item_3"))
             .stage(MapTransform.of(DataTypes.STRING, DataTypes.STRING, List.of(itemId())))
+            .build();
+        assertThrows(ExpectationFailedException.class, pipeline::execute);
+    }
+
+    @Test
+    @DisplayName("A body reading a field the row lacks yields null, which fails the expectation")
+    void missingFieldFailsExpectation() {
+        ExpectTransform<JsonElement> stage = ExpectTransform.of(
+            DataTypes.JSON_ELEMENT, "every row carries an id", List.of(PathTransform.of("id"), NotNullPredicate.of(DataTypes.JSON_ELEMENT))
+        );
+        JsonElement row = JsonParser.parseString("{\"name\":\"apple\"}");
+        ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, row));
+        assertThat(thrown.getMessage(), containsString("body yielded 'null'"));
+    }
+
+    @Test
+    @DisplayName("An expectation whose body tests presence passes a null input through without failing")
+    void presenceBodyPassesNullInput() {
+        ExpectTransform<String> stage = ExpectTransform.of(DataTypes.STRING, "the id is present", List.of(NotNullPredicate.of(DataTypes.STRING)));
+        assertThat(stage.execute(this.ctx, null), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("The failure message names the input type")
+    void failureNamesInputType() {
+        ExpectTransform<String> stage = itemId();
+        ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, "mob_1"));
+        assertThat(thrown.getMessage(), endsWith("of type 'STRING'"));
+    }
+
+    @Test
+    @DisplayName("An expectation carrying format characters is named verbatim")
+    void formatCharactersKeptVerbatim() {
+        ExpectTransform<String> stage = ExpectTransform.of(DataTypes.STRING, "100% of ids %s start with item_", List.of(StartsWithPredicate.of("item_")));
+        ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, "mob_1"));
+        assertThat(thrown.getMessage(), startsWith("Expectation '100% of ids %s start with item_' failed"));
+    }
+
+    @Test
+    @DisplayName("A failing expectation inside a pipeline operand fails the consuming run with its own exception")
+    void failureInOperandPropagates() {
+        DataPipeline<String> suffix = DataPipeline.builder()
+            .source(LiteralSource.text("_x"))
+            .stage(itemId())
+            .build();
+        DataPipeline<String> pipeline = DataPipeline.builder()
+            .source(LiteralSource.text("item"))
+            .stage(AppendOperandTransform.of(suffix))
             .build();
         assertThrows(ExpectationFailedException.class, pipeline::execute);
     }

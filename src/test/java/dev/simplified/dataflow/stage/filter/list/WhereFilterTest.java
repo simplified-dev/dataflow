@@ -77,6 +77,23 @@ class WhereFilterTest {
     }
 
     @Test
+    @DisplayName("A null element does not run the body")
+    void nullElementSkipsBody() {
+        StartsWithPredicate watched = StartsWithPredicate.of("b");
+        WhereFilter<String> stage = WhereFilter.of(DataTypes.STRING, List.of(watched));
+        AtomicInteger runs = new AtomicInteger();
+        PipelineContext counting = PipelineContext.builder()
+            .withTrace((ran, output) -> {
+                if (ran == watched) runs.incrementAndGet();
+            })
+            .build();
+
+        stage.execute(counting, Arrays.asList("bee", null));
+
+        assertThat(runs.get(), is(1));
+    }
+
+    @Test
     @DisplayName("The body runs once per element")
     void bodyRunsOncePerElement() {
         StartsWithPredicate watched = StartsWithPredicate.of("b");

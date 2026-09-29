@@ -30,6 +30,11 @@ import java.util.List;
  * written against fails loudly rather than producing wrong rows. A {@code null} input is
  * passed through as {@code null} without running the body.
  * <p>
+ * A value that is absent therefore never reaches the body, and an expect stage over it cannot
+ * require it. Presence is stated on the value that holds it instead: a body that reads a missing
+ * part out of its input yields {@code null}, and that verdict fails, so an expectation over each
+ * row whose body reads its {@code id} fails on a row that has none.
+ * <p>
  * The expectation is known before any run: {@link DataPipeline#validate()} lists it in
  * {@link ValidationReport#expectations()} with the path of the stage, wherever the stage sits -
  * at the top level, in a body, or in a pipeline operand. Stating one never makes a pipeline
@@ -79,7 +84,7 @@ public final class ExpectTransform<T> implements TransformStage<T, T> {
     public static <T> @NotNull ExpectTransform<T> of(
         @Configurable(label = "Input type", placeholder = "STRING")
         @NotNull DataType<T> inputType,
-        @Configurable(label = "Expectation", placeholder = "the value is present")
+        @Configurable(label = "Expectation", placeholder = "the id starts with item_")
         @NotNull String expectation,
         @Configurable(label = "Predicate body")
         @NotNull List<? extends Stage<?, ?>> body
