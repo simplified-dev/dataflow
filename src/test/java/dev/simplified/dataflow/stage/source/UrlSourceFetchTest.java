@@ -8,6 +8,7 @@ import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.client.fetch.UrlFetcherConfig;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.FetchGuard;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.meta.StageReflection;
@@ -21,14 +22,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Covers the optional body cap of a {@link UrlSource} and how it reports an error status, against
- * a loopback server.
+ * Covers the optional body cap of a {@link UrlSource}, how it reports an error status, and the
+ * fetch guard it passes each body through, against a loopback server.
  */
 class UrlSourceFetchTest {
 
@@ -43,6 +46,7 @@ class UrlSourceFetchTest {
         this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         this.server.createContext("/page", exchange -> respond(exchange, 200, BODY));
         this.server.createContext("/missing", exchange -> respond(exchange, 404, "not here"));
+        this.server.createContext("/busy", exchange -> respond(exchange, 429, "slow down"));
         this.server.createContext("/broken", exchange -> respond(exchange, 500, "down"));
         this.server.start();
         this.baseUrl = "http://127.0.0.1:" + this.server.getAddress().getPort();
@@ -70,6 +74,11 @@ class UrlSourceFetchTest {
 
     private static @NotNull PipelineContext context() {
         return context(UrlFetcherConfig.DEFAULT_MAX_BODY_BYTES);
+    }
+
+    private static @NotNull PipelineContext guarded(@NotNull FetchGuard guard) {
+        UrlFetcher fetcher = UrlFetcher.create(UrlFetcherConfig.builder(new Gson()).build());
+        return PipelineContext.builder().withFetcher(fetcher).withFetchGuard(guard).build();
     }
 
     private @NotNull String url(@NotNull String path) {
@@ -124,11 +133,52 @@ class UrlSourceFetchTest {
     }
 
     @Test
+    @DisplayName("A 429 fails the run with a ClientError carrying the code")
+    void tooManyRequestsThrows() {
+        UrlSource source = UrlSource.rawHtml(url("/busy"));
+        UrlFetchException.ClientError thrown = assertThrows(UrlFetchException.ClientError.class, () -> source.execute(context(), null));
+        assertThat(thrown.getStatusCode(), is(429));
+    }
+
+    @Test
     @DisplayName("A 5xx fails the run with a UrlFetchException that is not a ClientError")
     void serverErrorThrows() {
         UrlSource source = UrlSource.rawHtml(url("/broken"));
         UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> source.execute(context(), null));
         assertThat(thrown, is(not(instanceOf(UrlFetchException.ClientError.class))));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees the fetched URL and body")
+    void guardSeesUrlAndBody() {
+        List<String> seen = new ArrayList<>();
+        UrlSource.rawHtml(url("/page")).execute(guarded((uri, body) -> seen.add(uri + " -> " + body)), null);
+        assertThat(seen, contains(url("/page") + " -> " + BODY));
+    }
+
+    @Test
+    @DisplayName("The fetch guard does not see an error status")
+    void guardSkipsErrorStatus() {
+        List<String> seen = new ArrayList<>();
+        PipelineContext ctx = guarded((uri, body) -> seen.add(body));
+
+        assertThrows(UrlFetchException.ClientError.class, () -> UrlSource.rawHtml(url("/missing")).execute(ctx, null));
+
+        assertThat(seen, is(empty()));
+    }
+
+    @Test
+    @DisplayName("A guard that throws fails the run with its exception")
+    void guardThrowFails() {
+        IllegalStateException refusal = new IllegalStateException("refused");
+        DataPipeline<String> pipeline = DataPipeline.builder().source(UrlSource.rawHtml(url("/page"))).build();
+
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> pipeline.execute(guarded((uri, body) -> { throw refusal; }))
+        );
+
+        assertThat(thrown, is(sameInstance(refusal)));
     }
 
     @Test

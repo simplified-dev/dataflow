@@ -6,6 +6,7 @@ import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.client.exception.UrlFetchException;
 import dev.simplified.client.fetch.UrlFetcher;
+import dev.simplified.client.response.HttpStatus;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -30,12 +31,15 @@ import java.util.Set;
  * that {@link UrlFetcher}'s headers, rate limit and response cache, and it is held to
  * {@code maxBodyBytes} when one is configured and to the fetcher's configured cap otherwise.
  * <p>
- * A {@code 2xx} body is emitted. Every {@code 4xx} the origin answers rejects with {@code null},
- * whatever the size of its body, so a map body drops a page that does not exist - and drops a
- * page the origin refused with a {@code 408} or a {@code 429} the same way. Every other failure
- * throws - a {@code 5xx}, a transport failure, a {@code 2xx} body past the cap, a request the
- * local rate limit refuses, a blank input, or an input that does not form a URI - so a collection
- * is never silently short a page because the server or the network failed.
+ * A {@code 2xx} body passes through the context's
+ * {@link PipelineContext#fetchGuard() fetch guard} and is emitted. A {@code 4xx} the origin
+ * answers - a {@link UrlFetchException.ClientError}, whatever the size of its body - rejects with
+ * {@code null}, so a map body drops a page that does not exist, except a {@code 408} or a
+ * {@code 429}: a timeout or throttling says nothing about whether the page exists, so it throws.
+ * Every other failure throws too - a {@code 5xx}, a transport failure, a {@code 2xx} body past the
+ * cap, a request the local rate limit refuses, a guard that refuses the body, a blank input, or
+ * an input that does not form a URI - so a collection is never silently short a page because the
+ * server, the network or the body failed.
  */
 @StageSpec(
     id = "TRANSFORM_FETCH",
@@ -51,6 +55,15 @@ public final class FetchTransform implements TransformStage<String, String> {
 
     private static final @NotNull Set<DataType<?>> SUPPORTED_OUTPUT_TYPES = Set.of(
         DataTypes.STRING, DataTypes.RAW_HTML, DataTypes.RAW_XML, DataTypes.RAW_JSON
+    );
+
+    /**
+     * Client error codes that throw rather than reject - a timeout and throttling, neither of
+     * which says the page is absent.
+     */
+    private static final @NotNull Set<Integer> THROWN_CLIENT_ERRORS = Set.of(
+        HttpStatus.REQUEST_TIMEOUT.getCode(),
+        HttpStatus.TOO_MANY_REQUESTS.getCode()
     );
 
     private final @NotNull DataType<String> outputType;
@@ -141,15 +154,21 @@ public final class FetchTransform implements TransformStage<String, String> {
             throw new IllegalArgumentException("FetchTransform input is blank, so it names no URL");
 
         URI uri = URI.create(this.urlTemplate == null ? input : this.urlTemplate.replace(INPUT_MARKER, input));
+        String body;
 
         try {
-            if (this.maxBodyBytes == null)
-                return ctx.fetcher().get(uri).getBody();
+            body = this.maxBodyBytes == null
+                ? ctx.fetcher().get(uri).getBody()
+                : ctx.fetcher().get(uri, this.maxBodyBytes).getBody();
+        } catch (UrlFetchException.ClientError ex) {
+            if (THROWN_CLIENT_ERRORS.contains(ex.getStatusCode()))
+                throw ex;
 
-            return ctx.fetcher().get(uri, this.maxBodyBytes).getBody();
-        } catch (UrlFetchException.ClientError ignored) {
             return null;
         }
+
+        ctx.fetchGuard().check(uri, body);
+        return body;
     }
 
     /** {@inheritDoc} */

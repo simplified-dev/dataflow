@@ -107,7 +107,7 @@ never mutate the rows they are given: what they emit is copied.
 
 | Kind                  | Input | Output                   | Notes                                                                 |
 |-----------------------|-------|--------------------------|-----------------------------------------------------------------------|
-| `SOURCE_URL`          | NONE  | `RAW_*` / `STRING`       | `ctx.fetcher()`; optional `maxBodyBytes`; any 4xx or 5xx fails the run (see [Fetching](#fetching)) |
+| `SOURCE_URL`          | NONE  | `RAW_*` / `STRING`       | `ctx.fetcher()`; optional `maxBodyBytes`; any 4xx or 5xx, or a `ctx.fetchGuard()` refusal, fails the run (see [Fetching](#fetching)) |
 | `SOURCE_LITERAL`      | NONE  | `T`                      | literal value parsed from config                                      |
 | `SOURCE_LITERAL_LIST` | NONE  | `List<T>`                | literal list from JSON array                                          |
 | `SOURCE_EMBED`        | NONE  | declared at construction | resolves saved pipeline by id                                         |
@@ -170,7 +170,7 @@ never mutate the rows they are given: what they emit is copied.
 | `TRANSFORM_SUFFIX`         | `STRING` | `STRING`           |                                                                          |
 | `TRANSFORM_VALUE_MAP`      | `STRING` | `STRING`           | exact lookup in a `STRING_MAP` `table`; a miss takes `defaultValue`, rejects under `strict`, or passes through |
 | `TRANSFORM_RANGE_EXPAND`   | `STRING` | `List<INT>`        | `"1-15"` to `[1, ..., 15]`; optional `regex`, `step`, `maxSize` (1000)   |
-| `TRANSFORM_FETCH`          | `STRING` | `RAW_*` / `STRING` | fetches the URL the input names, or `urlTemplate` with `{}` replaced by it; a 4xx rejects, any other failure throws; optional `maxBodyBytes` (see [Fetching](#fetching)) |
+| `TRANSFORM_FETCH`          | `STRING` | `RAW_*` / `STRING` | fetches the URL the input names, or `urlTemplate` with `{}` replaced by it; a 4xx other than 408 and 429 rejects, any other failure throws; optional `maxBodyBytes` (see [Fetching](#fetching)) |
 
 ### List transforms
 
@@ -466,12 +466,30 @@ its headers, rate limit and response cache.
   `UrlFetchException` and fails the run.
 - **`TRANSFORM_FETCH`** fetches the URL its input names: the input itself, or `urlTemplate` with
   every `{}` replaced by the input, which is substituted as given (a page name that needs escaping
-  passes through an encoding stage first). A client error the origin answers (`400` to `451`,
-  raised as `UrlFetchException.ClientError`) rejects the element with `null`, so a
-  `TRANSFORM_MAP` drops a page that does not exist - and a page refused with a `408` or `429` the
-  same way. Any other error status (a `5xx`), a transport failure, a body past the cap, a local
-  rate-limit refusal, a blank input or an input that does not form a URI throws, so a collection
-  is never silently short a page because the server or the network failed.
+  passes through an encoding stage first). A client error the origin answers (`400` to `451`, or
+  a `4xx` the client's `HttpStatus` has no constant for, raised as
+  `UrlFetchException.ClientError`) rejects the element with `null`, so a `TRANSFORM_MAP` drops a
+  page that does not exist. A `408` or `429` is the exception: a timeout or throttling says
+  nothing about whether the page exists, so it throws its `ClientError` and fails the run rather
+  than silently shortening the collection. Any other error status (a `5xx`), a transport failure,
+  a body past the cap, a local rate-limit refusal, a blank input or an input that does not form a
+  URI throws too, so a collection is never silently short a page because the server or the
+  network failed.
+
+Every body either stage fetches passes through the context's `FetchGuard` before the stage hands
+it on - a body the response cache replays included. A host installs one once and every pipeline
+run against the context gets its checks, so a check specific to a source (an error page an origin
+answers with a `200`, say) is not repeated in each pipeline file. A guard refuses a body by
+throwing, and the throw fails the run: `TRANSFORM_FETCH` never turns a refusal into a dropped
+element, whatever the exception. A context built without one carries `FetchGuard.NOOP`, which
+accepts every body.
+
+```java
+PipelineContext ctx = PipelineContext.builder()
+    .withFetcher(fetcher)
+    .withFetchGuard(MyWikiGuard::check)   // host-supplied: void check(URI uri, String body)
+    .build();
+```
 
 Both take an optional `maxBodyBytes` (`LONG`): the largest body the fetch accepts. Absent, the
 fetch is held to the fetcher's configured cap (`UrlFetcherConfig`, 5 MiB by default); negative,
@@ -580,7 +598,3 @@ Open:
   commit - is the host's job.
 - **Async / reactive `Stage` execution** remains deferred. An operand or a per-element fetch runs
   on the calling thread.
-- **Unlisted status codes.** An origin status the client's `HttpStatus` has no constant for (a
-  `460`, say) raises `IllegalArgumentException` out of the fetcher rather than a
-  `UrlFetchException`, so `TRANSFORM_FETCH` neither drops that element nor reports it as a fetch
-  failure; the run fails with the raw exception.

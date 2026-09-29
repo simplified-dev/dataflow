@@ -3,13 +3,18 @@ package dev.simplified.dataflow.stage.transform.string;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.simplified.client.exception.ErrorContext;
 import dev.simplified.client.exception.UrlFetchException;
 import dev.simplified.client.fetch.UrlFetcher;
 import dev.simplified.client.fetch.UrlFetcherConfig;
 import dev.simplified.client.ratelimit.RateLimit;
+import dev.simplified.client.request.HttpMethod;
+import dev.simplified.client.response.HttpStatus;
+import dev.simplified.client.response.NetworkDetails;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
+import dev.simplified.dataflow.FetchGuard;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.source.LiteralSource;
@@ -26,7 +31,9 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -35,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Covers {@link FetchTransform} against a loopback server whose {@code /wiki/<name>} answers
  * {@code 200} with {@code page:<name>}, except {@code Missing} ({@code 404}), {@code Gone}
- * ({@code 410}), {@code Busy} ({@code 429}) and {@code Broken} ({@code 500}).
+ * ({@code 410}), {@code Slow} ({@code 408}), {@code Busy} ({@code 429}), {@code Odd}
+ * ({@code 460}, a code the client has no constant for) and {@code Broken} ({@code 500}).
  */
 class FetchTransformTest {
 
@@ -52,7 +60,9 @@ class FetchTransformTest {
             switch (name) {
                 case "Missing" -> respond(exchange, 404, "no such page");
                 case "Gone" -> respond(exchange, 410, "deleted");
+                case "Slow" -> respond(exchange, 408, "timed out");
                 case "Busy" -> respond(exchange, 429, "slow down");
+                case "Odd" -> respond(exchange, 460, "refused");
                 case "Broken" -> respond(exchange, 500, "down");
                 default -> respond(exchange, 200, "page:" + name);
             }
@@ -90,6 +100,11 @@ class FetchTransformTest {
             UrlFetcherConfig.builder(new Gson()).withDefaultRateLimit(new RateLimit(1, 1, ChronoUnit.HOURS)).build()
         );
         return PipelineContext.builder().withFetcher(fetcher).build();
+    }
+
+    private static @NotNull PipelineContext guarded(@NotNull FetchGuard guard) {
+        UrlFetcher fetcher = UrlFetcher.create(UrlFetcherConfig.builder(new Gson()).build());
+        return PipelineContext.builder().withFetcher(fetcher).withFetchGuard(guard).build();
     }
 
     private @NotNull String template() {
@@ -159,9 +174,100 @@ class FetchTransformTest {
     }
 
     @Test
-    @DisplayName("An origin 429 rejects with null like every other 4xx")
-    void originTooManyRequestsRejects() {
-        assertThat(wiki().execute(context(), "Busy"), is(nullValue()));
+    @DisplayName("A 4xx the client has no constant for rejects with null")
+    void unknownClientErrorRejects() {
+        assertThat(wiki().execute(context(), "Odd"), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("An origin 408 throws its ClientError rather than dropping the element")
+    void originRequestTimeoutThrows() {
+        UrlFetchException.ClientError thrown = assertThrows(UrlFetchException.ClientError.class, () -> wiki().execute(context(), "Slow"));
+        assertThat(thrown.getStatusCode(), is(408));
+    }
+
+    @Test
+    @DisplayName("An origin 429 throws its ClientError rather than dropping the element")
+    void originTooManyRequestsThrows() {
+        UrlFetchException.ClientError thrown = assertThrows(UrlFetchException.ClientError.class, () -> wiki().execute(context(), "Busy"));
+        assertThat(thrown.getStatusCode(), is(429));
+    }
+
+    @Test
+    @DisplayName("As a map body an origin 429 fails the run rather than shortening the list")
+    void mapBodyFailsOnTooManyRequests() {
+        DataPipeline<List<String>> pipeline = pages("Alpha,Busy,Beta");
+        assertThrows(UrlFetchException.ClientError.class, () -> pipeline.execute(context()));
+    }
+
+    @Test
+    @DisplayName("As a map body an origin 408 fails the run rather than shortening the list")
+    void mapBodyFailsOnRequestTimeout() {
+        DataPipeline<List<String>> pipeline = pages("Alpha,Slow,Beta");
+        assertThrows(UrlFetchException.ClientError.class, () -> pipeline.execute(context()));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees the fetched URL and body")
+    void guardSeesUrlAndBody() {
+        List<String> seen = new ArrayList<>();
+        PipelineContext ctx = guarded((uri, body) -> seen.add(uri + " -> " + body));
+
+        wiki().execute(ctx, "Alpha");
+
+        assertThat(seen, contains(this.baseUrl + "/wiki/Alpha -> page:Alpha"));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees each element a map body fetches, in list order")
+    void guardSeesEachElement() {
+        List<String> seen = new ArrayList<>();
+        pages("Gamma,Alpha").execute(guarded((uri, body) -> seen.add(body)));
+        assertThat(seen, contains("page:Gamma", "page:Alpha"));
+    }
+
+    @Test
+    @DisplayName("The fetch guard does not see a 4xx that rejects")
+    void guardSkipsRejectedPage() {
+        List<String> seen = new ArrayList<>();
+        wiki().execute(guarded((uri, body) -> seen.add(body)), "Missing");
+        assertThat(seen, is(empty()));
+    }
+
+    @Test
+    @DisplayName("A guard that throws fails the fetch with its exception")
+    void guardThrowFails() {
+        IllegalStateException refusal = new IllegalStateException("refused");
+        PipelineContext ctx = guarded((uri, body) -> { throw refusal; });
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> wiki().execute(ctx, "Alpha"));
+
+        assertThat(thrown, is(sameInstance(refusal)));
+    }
+
+    @Test
+    @DisplayName("A guard that throws a ClientError fails the fetch rather than dropping the element")
+    void guardClientErrorFails() {
+        UrlFetchException.ClientError refusal = new UrlFetchException.ClientError(
+            new ErrorContext(HttpStatus.NOT_FOUND, HttpMethod.GET, this.baseUrl, Map.of(), Map.of(), new byte[0]),
+            NetworkDetails.EMPTY
+        );
+        PipelineContext ctx = guarded((uri, body) -> { throw refusal; });
+
+        UrlFetchException.ClientError thrown = assertThrows(UrlFetchException.ClientError.class, () -> wiki().execute(ctx, "Alpha"));
+
+        assertThat(thrown, is(sameInstance(refusal)));
+    }
+
+    @Test
+    @DisplayName("As a map body a guard that throws fails the run rather than shortening the list")
+    void mapBodyFailsOnGuardThrow() {
+        PipelineContext ctx = guarded((uri, body) -> {
+            if (body.equals("page:Beta"))
+                throw new IllegalStateException("refused");
+        });
+
+        assertThrows(IllegalStateException.class, () -> pages("Alpha,Beta,Gamma").execute(ctx));
     }
 
     @Test

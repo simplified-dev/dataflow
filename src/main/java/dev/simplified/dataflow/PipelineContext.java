@@ -27,12 +27,12 @@ import java.util.function.BiConsumer;
 /**
  * Per-execution state and dependencies threaded through a {@link DataPipeline}.
  * <p>
- * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link Logger}, a
- * {@link DataPipelineResolver}, and an opaque key/value bag that the host application can
- * use to attach whatever extra context it needs without invading the pipeline core. The
- * mutable {@code activeIds} set guards against {@link EmbedSource} cycles, and a per-context
- * operand memo lets {@link #evaluateOperand(DataPipeline)} run each pipeline operand at most
- * once. An optional tracing hook fires after every stage's {@code execute} for debugging /
+ * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link FetchGuard} over what it
+ * fetches, a {@link Logger}, a {@link DataPipelineResolver}, and an opaque key/value bag that the
+ * host application can use to attach whatever extra context it needs without invading the
+ * pipeline core. The mutable {@code activeIds} set guards against {@link EmbedSource} cycles, and
+ * a per-context operand memo lets {@link #evaluateOperand(DataPipeline)} run each pipeline operand
+ * at most once. An optional tracing hook fires after every stage's {@code execute} for debugging /
  * instrumentation.
  */
 @Getter(style = NamingStyle.FLUENT)
@@ -52,6 +52,12 @@ public final class PipelineContext {
     private final @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
     private final @NotNull Logger log = DEFAULT_LOG;
     private final @NotNull DataPipelineResolver resolver = DataPipelineResolver.NOOP;
+
+    /**
+     * Check every fetching stage runs over each body it fetches before handing it on - a throw
+     * fails the run. {@link FetchGuard#NOOP} accepts every body.
+     */
+    private final @NotNull FetchGuard fetchGuard = FetchGuard.NOOP;
 
     @Collector(singular = true, singularMethodName = "BagEntry")
     private final @NotNull ConcurrentMap<String, Object> bag = Concurrent.newMap();
@@ -81,8 +87,9 @@ public final class PipelineContext {
     private final @Nullable BiConsumer<Stage<?, ?>, Object> trace = null;
 
     /**
-     * Convenience factory returning a fully defaulted context: default fetcher, default
-     * logger, {@link DataPipelineResolver#NOOP NOOP} resolver, empty bag, no tracer.
+     * Convenience factory returning a fully defaulted context: default fetcher,
+     * {@link FetchGuard#NOOP NOOP} fetch guard, default logger,
+     * {@link DataPipelineResolver#NOOP NOOP} resolver, empty bag, no tracer.
      * Suitable for tests and ad-hoc usage where no host-supplied wiring is needed.
      *
      * @return a context with all dependencies set to their defaults

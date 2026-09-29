@@ -22,9 +22,13 @@ import java.net.URI;
  * tagged as one of the {@code RAW_*} types.
  * <p>
  * The body is held to {@code maxBodyBytes} when one is configured and to the fetcher's
- * configured cap otherwise. The fetch throws a {@link UrlFetchException}, failing the run, on an
- * error status ({@code 4xx} or {@code 5xx}), a transport failure, a body past the cap, or a
- * request the local rate limit refuses.
+ * configured cap otherwise. The fetch throws a {@link UrlFetchException}, failing the run, on
+ * every error status - each {@code 4xx}, {@code 408} and {@code 429} among them, and each
+ * {@code 5xx} - on a transport failure, a body past the cap, or a request the local rate limit
+ * refuses.
+ * <p>
+ * A fetched body passes through the context's {@link PipelineContext#fetchGuard() fetch guard}
+ * before it is emitted, and a guard that throws fails the run.
  */
 @StageSpec(
     id = "SOURCE_URL",
@@ -141,12 +145,13 @@ public final class UrlSource implements SourceStage<String> {
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Void input) {
         URI uri = URI.create(this.url);
-
-        if (this.maxBodyBytes == null)
-            return ctx.fetcher().get(uri).getBody();
-
-        return ctx.fetcher().get(uri, this.maxBodyBytes).getBody();
+        String body = this.maxBodyBytes == null
+            ? ctx.fetcher().get(uri).getBody()
+            : ctx.fetcher().get(uri, this.maxBodyBytes).getBody();
+        ctx.fetchGuard().check(uri, body);
+        return body;
     }
+
     /** {@inheritDoc} */
     @Override
     public @NotNull String summary() {

@@ -88,7 +88,10 @@ Sort/Min/Max key types restricted to `INT, LONG, FLOAT, DOUBLE, STRING`; others 
 
 ## Fetching
 
-Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of their own. An optional `maxBodyBytes` (`@Nullable Long`) calls the capped overload only when set, so the fetcher's configured cap still applies otherwise. Every error status raises: catch `UrlFetchException.ClientError` (400-451) by type to tell a 4xx apart - `RateLimited` carries a synthetic `429` and is not one. An error status raises its own type whatever the size of its body; only a success body past the cap raises `BodyCapExceeded`.
+Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of their own. An optional `maxBodyBytes` (`@Nullable Long`) calls the capped overload only when set, so the fetcher's configured cap still applies otherwise. Every error status raises: catch `UrlFetchException.ClientError` (400-451, plus any 400-499 code `HttpStatus` has no constant for) by type to tell a 4xx apart, and read its code with `getStatusCode()` - `RateLimited` carries a synthetic `429` and is not one. An error status raises its own type whatever the size of its body; only a success body past the cap raises `BodyCapExceeded`.
+
+- `TRANSFORM_FETCH` rejects on a `ClientError` except `408` and `429`, which rethrow: a timeout or throttling must not shorten a collection. `SOURCE_URL` fails on every 4xx.
+- Every successful body goes through `ctx.fetchGuard().check(uri, body)` before the stage returns it, outside any `ClientError` catch, so a guard throw fails the run and is never a dropped element. A new fetching stage does the same.
 
 ## Serde / test
 
