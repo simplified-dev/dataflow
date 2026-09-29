@@ -160,7 +160,9 @@ public record FieldSpec<T>(
      * @throws IllegalArgumentException when the JSON form is not the shape the slot's type is written
      *         as - a primitive for a scalar or {@code DATA_TYPE}, a stage array for a
      *         {@code SUB_PIPELINE} or {@code PIPELINE}, an object for a map
-     * @throws IllegalArgumentException when an {@code INT} or {@code LONG} slot's number is not integral or does not fit the type
+     * @throws IllegalArgumentException when an {@code INT} or {@code LONG} slot's value is not a number, is not integral or does not fit the type
+     * @throws IllegalArgumentException when a {@code DOUBLE} slot's value is not a number
+     * @throws IllegalArgumentException when a {@code BOOLEAN} slot's value is neither a JSON boolean nor the text {@code true} or {@code false}
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
      * @throws IllegalArgumentException when a {@code STRING_MAP} slot maps a key to a JSON null, object or array
      * @throws IllegalStateException when a {@code PIPELINE} slot's stage array does not form a valid pipeline
@@ -177,8 +179,8 @@ public record FieldSpec<T>(
             case STRING    -> b.string(this.name, raw.getAsString());
             case INT       -> b.integer(this.name, (int) this.readIntegral(raw));
             case LONG      -> b.longVal(this.name, this.readIntegral(raw));
-            case DOUBLE    -> b.doubleVal(this.name, raw.getAsDouble());
-            case BOOLEAN   -> b.bool(this.name, raw.getAsBoolean());
+            case DOUBLE    -> b.doubleVal(this.name, this.readDouble(raw));
+            case BOOLEAN   -> b.bool(this.name, this.readBoolean(raw));
             case DATA_TYPE -> {
                 String label = raw.getAsString();
                 DataType<?> resolved = DataTypes.byLabel(label);
@@ -202,6 +204,11 @@ public record FieldSpec<T>(
      * @throws IllegalArgumentException when the form is not the shape of this slot's type
      */
     private void requireShape(@NotNull JsonElement raw) {
+        String shape = switch (this.type) {
+            case STRING, INT, LONG, DOUBLE, BOOLEAN, DATA_TYPE          -> "a JSON primitive";
+            case SUB_PIPELINE, PIPELINE                                 -> "a stage array";
+            case SUB_PIPELINES_MAP, TYPED_SUB_PIPELINES_MAP, STRING_MAP -> "a JSON object";
+        };
         boolean fits = switch (this.type) {
             case STRING, INT, LONG, DOUBLE, BOOLEAN, DATA_TYPE          -> raw.isJsonPrimitive();
             case SUB_PIPELINE, PIPELINE                                 -> raw.isJsonArray();
@@ -210,7 +217,7 @@ public record FieldSpec<T>(
 
         if (!fits)
             throw new IllegalArgumentException(String.format(
-                "Field '%s' holds %s but a %s was expected", this.name, ChainSerde.shapeOf(raw), this.type
+                "Field '%s' holds %s but its type %s takes %s", this.name, ChainSerde.shapeOf(raw), this.type, shape
             ));
     }
 
@@ -220,18 +227,60 @@ public record FieldSpec<T>(
      *
      * @param raw the JSON form, a number or a numeric string
      * @return the value, within the {@code int} range for an {@code INT} slot
-     * @throws IllegalArgumentException when the number is not integral or does not fit the slot's type
+     * @throws IllegalArgumentException when the value is not a number, is not integral or does not fit the slot's type
      */
     private long readIntegral(@NotNull JsonElement raw) {
-        BigDecimal value = raw.getAsBigDecimal();
-
         try {
+            BigDecimal value = raw.getAsBigDecimal();
             return this.type == Type.INT ? value.intValueExact() : value.longValueExact();
-        } catch (ArithmeticException ex) {
+        } catch (NumberFormatException | ArithmeticException ex) {
             throw new IllegalArgumentException(
                 "Field '" + this.name + "' holds '" + raw + "' but an integral " + this.type + " was expected", ex
             );
         }
+    }
+
+    /**
+     * Reads a {@code DOUBLE} slot's number, so a value that is not one is refused under this
+     * slot's name.
+     *
+     * @param raw the JSON form, a number or a numeric string
+     * @return the value
+     * @throws IllegalArgumentException when the value is not a number
+     */
+    private double readDouble(@NotNull JsonElement raw) {
+        try {
+            return raw.getAsDouble();
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(String.format(
+                "Field '%s' holds '%s' but a number was expected", this.name, raw
+            ), ex);
+        }
+    }
+
+    /**
+     * Reads a {@code BOOLEAN} slot's value, so anything but a boolean is refused rather than read
+     * as {@code false}.
+     *
+     * @param raw the JSON form, a JSON boolean or the text {@code true} or {@code false} in any case
+     * @return the value
+     * @throws IllegalArgumentException when the value is neither a JSON boolean nor the text
+     *         {@code true} or {@code false}
+     */
+    private boolean readBoolean(@NotNull JsonElement raw) {
+        JsonPrimitive primitive = raw.getAsJsonPrimitive();
+
+        if (primitive.isBoolean())
+            return primitive.getAsBoolean();
+
+        String text = primitive.getAsString();
+
+        if (primitive.isString() && (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false")))
+            return Boolean.parseBoolean(text);
+
+        throw new IllegalArgumentException(String.format(
+            "Field '%s' holds '%s' but a boolean was expected", this.name, raw
+        ));
     }
 
     private static @NotNull JsonObject writeStringMap(@NotNull Map<String, String> value) {

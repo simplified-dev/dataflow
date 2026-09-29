@@ -38,6 +38,9 @@ public final class ChainSerde {
      */
     private static final @NotNull String CHAIN = "chain";
 
+    /**
+     * Every key a typed sub-pipeline entry may hold, in the order a load error lists them.
+     */
     private static final @NotNull List<String> TYPED_KEYS = List.of(OUTPUT_TYPE, CHAIN);
 
     /**

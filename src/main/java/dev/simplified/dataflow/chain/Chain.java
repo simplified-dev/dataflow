@@ -96,18 +96,20 @@ public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
         for (int i = 0; i < chain.size(); i++) {
             Stage<?, ?> stage = chain.get(i);
             DataType<?> expected = stage.inputType();
-            if (!previousOutput.isAssignableTo(expected))
+            if (!previousOutput.isAssignableTo(expected)) {
                 issues.add(new ValidationReport.Issue(i,
                     "Sub-pipeline stage #" + i + " (" + stage.kindId() + ") expects input " + expected
                         + " but previous stage produced " + previousOutput
                 ));
+            }
             previousOutput = stage.outputType();
         }
 
-        if (!previousOutput.isAssignableTo(expectedOutputType))
+        if (!previousOutput.isAssignableTo(expectedOutputType)) {
             issues.add(ValidationReport.Issue.pipelineLevel(
                 "Sub-pipeline produces " + previousOutput + " but caller expected " + expectedOutputType
             ));
+        }
 
         return new ValidationReport(List.copyOf(issues));
     }

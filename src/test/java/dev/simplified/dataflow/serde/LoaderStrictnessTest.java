@@ -6,6 +6,7 @@ import dev.simplified.dataflow.stage.StageConfig;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
 import dev.simplified.dataflow.stage.meta.StageReflection;
 import dev.simplified.dataflow.stage.source.UrlSource;
+import dev.simplified.dataflow.stage.transform.json.EntriesTransform;
 import dev.simplified.dataflow.stage.transform.primitive.CoalesceTransform;
 import dev.simplified.dataflow.stage.transform.string.SplitTransform;
 import org.jetbrains.annotations.NotNull;
@@ -19,9 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Covers how strictly {@link PipelineGson#fromJson} and {@link StageMetadata#fromConfig}
- * read a stage: a required key that is absent, a key the stage does not declare and a JSON
- * {@code null} each fail the load or read as absent by rule, and a factory's own refusal reaches the
- * caller as the {@link IllegalArgumentException} it threw.
+ * read a stage: a required key that is absent, a key the stage does not declare, a scalar that
+ * does not read as its slot's type and a JSON {@code null} each fail the load or read as absent by
+ * rule, and a factory's own refusal reaches the caller as the {@link IllegalArgumentException} it
+ * threw.
  */
 class LoaderStrictnessTest {
 
@@ -270,7 +272,14 @@ class LoaderStrictnessTest {
         @DisplayName("on a scalar slot fails the load naming the key")
         void scalarHoldingObjectFails() {
             IllegalArgumentException thrown = loadFails("[" + SOURCE + ",{'kind':'TRANSFORM_SPLIT','regex':{}}]");
-            assertThat(thrown.getMessage(), is(equalTo("Field 'regex' holds a JSON object but a STRING was expected")));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'regex' holds a JSON object but its type STRING takes a JSON primitive")));
+        }
+
+        @Test
+        @DisplayName("on an INT slot fails the load naming the key and the shape it takes")
+        void intHoldingArrayFails() {
+            IllegalArgumentException thrown = loadFails("[" + LIST_SOURCE + ",{'kind':'FILTER_TAKE','elementType':'STRING','count':[1]}]");
+            assertThat(thrown.getMessage(), is(equalTo("Field 'count' holds a JSON array but its type INT takes a JSON primitive")));
         }
 
         @Test
@@ -278,7 +287,7 @@ class LoaderStrictnessTest {
         void subPipelineHoldingObjectFails() {
             IllegalArgumentException thrown = loadFails("[" + LIST_SOURCE + ",{'kind':'TRANSFORM_MAP','elementInputType':'STRING',"
                 + "'elementOutputType':'STRING','body':{}}]");
-            assertThat(thrown.getMessage(), is(equalTo("Field 'body' holds a JSON object but a SUB_PIPELINE was expected")));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'body' holds a JSON object but its type SUB_PIPELINE takes a stage array")));
         }
 
         @Test
@@ -287,6 +296,75 @@ class LoaderStrictnessTest {
             IllegalArgumentException thrown = loadFails("[" + SOURCE + ",{'kind':'COLLECT_MAP','inputType':'STRING',"
                 + "'outputs':{'n':{}}}]");
             assertThat(thrown.getMessage(), is(equalTo("Sub-pipeline 'n' must be a stage array but was a JSON object")));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("A scalar slot value of the wrong kind")
+    class ScalarKind {
+
+        private static @NotNull String entries(@NotNull String inline) {
+            return "[{'kind':'SOURCE_LITERAL','outputType':'RAW_JSON','value':'{}'},{'kind':'PARSE_JSON'},"
+                + "{'kind':'TRANSFORM_JSON_DESERIALIZE','inputType':'JSON_ELEMENT','outputType':'JSON_OBJECT'},"
+                + "{'kind':'TRANSFORM_JSON_ENTRIES','inline':" + inline + "}]";
+        }
+
+        private static @NotNull String threshold(@NotNull String value) {
+            return "[{'kind':'SOURCE_LITERAL','outputType':'DOUBLE','value':'1'},{'kind':'PREDICATE_DOUBLE_GREATER_THAN','threshold':" + value + "}]";
+        }
+
+        private static @NotNull String count(@NotNull String value) {
+            return "[" + LIST_SOURCE + ",{'kind':'FILTER_TAKE','elementType':'STRING','count':" + value + "}]";
+        }
+
+        @Test
+        @DisplayName("on a BOOLEAN slot holding text other than true or false fails the load rather than reading false")
+        void booleanHoldingWordFails() {
+            IllegalArgumentException thrown = loadFails(entries("'yes'"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'inline' holds '\"yes\"' but a boolean was expected")));
+        }
+
+        @Test
+        @DisplayName("on a BOOLEAN slot holding a number fails the load rather than reading false")
+        void booleanHoldingNumberFails() {
+            IllegalArgumentException thrown = loadFails(entries("1"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'inline' holds '1' but a boolean was expected")));
+        }
+
+        @Test
+        @DisplayName("on a BOOLEAN slot holding the text true in any case loads as true")
+        void booleanHoldingTrueTextLoads() {
+            DataPipeline<?> pipeline = PipelineGson.fromJson(q(entries("'TRUE'")));
+            assertThat(((EntriesTransform) pipeline.stages().getLast()).inline(), is(true));
+        }
+
+        @Test
+        @DisplayName("on an INT slot holding a boolean fails the load naming the key")
+        void intHoldingBooleanFails() {
+            IllegalArgumentException thrown = loadFails(count("true"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'count' holds 'true' but an integral INT was expected")));
+        }
+
+        @Test
+        @DisplayName("on an INT slot holding non-numeric text fails the load naming the key")
+        void intHoldingWordFails() {
+            IllegalArgumentException thrown = loadFails(count("'ten'"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'count' holds '\"ten\"' but an integral INT was expected")));
+        }
+
+        @Test
+        @DisplayName("on a DOUBLE slot holding non-numeric text fails the load naming the key")
+        void doubleHoldingWordFails() {
+            IllegalArgumentException thrown = loadFails(threshold("'half'"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'threshold' holds '\"half\"' but a number was expected")));
+        }
+
+        @Test
+        @DisplayName("on a DOUBLE slot holding a boolean fails the load naming the key")
+        void doubleHoldingBooleanFails() {
+            IllegalArgumentException thrown = loadFails(threshold("false"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'threshold' holds 'false' but a number was expected")));
         }
 
     }

@@ -556,6 +556,10 @@ and each refusal is an `IllegalArgumentException`:
   anything but a stage array for a body - and so does a stage entry that is not an object or has no
   `kind`, and a `TRANSFORM_JSON_OBJECT_BUILD` output holding a key besides `outputType` and
   `chain`.
+- **A scalar that does not read as its slot's type fails the load** rather than reading as
+  something else: a boolean slot takes a JSON boolean or the text `true` / `false`, so `"yes"` or
+  `1` is refused instead of read as `false`, and a number slot takes a number or numeric text:
+  `Field 'inline' holds '"yes"' but a boolean was expected`.
 - **A stage factory's refusal reaches the caller as the exception the factory threw**, with its own
   message: `UrlSource maxBodyBytes must not be negative but got '-1'`.
 

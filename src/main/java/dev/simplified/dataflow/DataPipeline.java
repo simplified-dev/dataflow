@@ -21,10 +21,11 @@ import java.util.List;
  * value through a chain of filters / transforms / collectors to a final result of type
  * {@code O}.
  * <p>
- * A pipeline always begins with a {@link SourceStage}. The previous stage's
+ * A pipeline always begins with a {@link SourceStage}. Each stage's
  * {@link Stage#outputType() output type} must be {@linkplain DataType#isAssignableTo(DataType)
- * assignable to} every subsequent stage's {@link Stage#inputType() input type}; this is enforced
- * by {@link #validate()} and checked at compile time on the typed builder path.
+ * assignable to} the {@link Stage#inputType() input type} of the stage after it; this is enforced
+ * by {@link #validate()}. The typed builder path also checks it at compile time, where Java's
+ * invariant generics refuse a list or set of a narrower element that {@link #validate()} accepts.
  *
  * @param <O> output type of the pipeline's last stage
  */
@@ -126,7 +127,7 @@ public final class DataPipeline<O> {
      * Used by a stage that carries this pipeline as an operand, to check it against the type the
      * stage consumes when the stage is built.
      *
-     * @param expectedOutputType the type the last stage must produce
+     * @param expectedOutputType the type the caller expects of the last stage
      * @return the validation report
      */
     public @NotNull ValidationReport validate(@NotNull DataType<?> expectedOutputType) {

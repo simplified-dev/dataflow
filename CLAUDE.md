@@ -28,7 +28,7 @@ The factory parameter's type picks the `FieldSpec.Type`:
 
 | Parameter | Type | Wire |
 |---|---|---|
-| `String` / `int` / `long` / `double` / `boolean` (boxed too) | `STRING` / `INT` / `LONG` / `DOUBLE` / `BOOLEAN` | JSON primitive; `INT` / `LONG` read exactly (a fraction or out-of-range value fails the load) |
+| `String` / `int` / `long` / `double` / `boolean` (boxed too) | `STRING` / `INT` / `LONG` / `DOUBLE` / `BOOLEAN` | JSON primitive; `INT` / `LONG` read exactly (a fraction or out-of-range value fails the load); a number slot takes a number or numeric text, `BOOLEAN` a JSON boolean or the text `true` / `false` - anything else fails the load |
 | `DataType<?>` | `DATA_TYPE` | label |
 | `List<? extends Stage<?, ?>>` / `Chain` | `SUB_PIPELINE` | stage array, no source |
 | `Map<String, List<...>>` / `NamedChains` | `SUB_PIPELINES_MAP` | object of stage arrays |
@@ -93,7 +93,7 @@ Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of th
 ## Serde / test
 
 - Wire format: `{"kind":"X", ...config}` via `serde/PipelineGson`. Round-tripped by `PipelineSerdeTest`.
-- The loader is strict at every depth (`LoaderStrictnessTest`), each refusal an `IllegalArgumentException`: a key besides `kind` that the stage does not declare (`Stage 'X' does not declare key 'k' (declared keys: [...])`), so a misspelt optional key never reads as absent; a required slot absent or JSON `null` (`Stage 'X' is missing required key 'k'`); a slot value of the wrong JSON shape; a typed output entry with a key besides `outputType` / `chain`. JSON `null` on an optional slot reads as absent. `StageMetadata.fromConfig` applies the same declared and required checks to a `StageConfig`.
+- The loader is strict at every depth (`LoaderStrictnessTest`), each refusal an `IllegalArgumentException`: a key besides `kind` that the stage does not declare (`Stage 'X' does not declare key 'k' (declared keys: [...])`), so a misspelt optional key never reads as absent; a required slot absent or JSON `null` (`Stage 'X' is missing required key 'k'`); a slot value of the wrong JSON shape (`Field 'k' holds a JSON object but its type STRING takes a JSON primitive`) or a scalar that does not read as its slot's type; a typed output entry with a key besides `outputType` / `chain`. JSON `null` on an optional slot reads as absent. `StageMetadata.fromConfig` applies the same declared and required checks to a `StageConfig`.
 - Tests: JUnit 5 + Hamcrest, one assertion per behavior, in the test package matching the stage's. Every stage gets a wire round trip (build -> `toJson` -> `fromJson` -> equal config and output). `PipelineContext.defaults()` for default fetcher / NOOP resolver.
 - `StageCatalogTest` pins id, class and category; add a row for a new stage.
 - Fixture stages for framework tests live in `src/test/.../stage/fixture` and register on the test classpath.
