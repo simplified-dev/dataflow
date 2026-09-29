@@ -158,10 +158,11 @@ public final class ChainSerde {
         LinkedHashMap<String, Chain<Object, ?>> map = new LinkedHashMap<>();
 
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            if (!entry.getValue().isJsonArray())
+            if (!entry.getValue().isJsonArray()) {
                 throw new IllegalArgumentException(String.format(
                     "Sub-pipeline '%s' must be a stage array but was %s", entry.getKey(), shapeOf(entry.getValue())
                 ));
+            }
 
             map.put(entry.getKey(), Chain.of(readStages(entry.getValue().getAsJsonArray(), stageReader)));
         }
@@ -214,32 +215,36 @@ public final class ChainSerde {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             String name = entry.getKey();
 
-            if (!entry.getValue().isJsonObject())
+            if (!entry.getValue().isJsonObject()) {
                 throw new IllegalArgumentException(String.format(
                     "Typed sub-pipeline '%s' must be a JSON object but was %s", name, shapeOf(entry.getValue())
                 ));
+            }
 
             JsonObject typed = entry.getValue().getAsJsonObject();
 
             for (String key : typed.keySet()) {
-                if (!TYPED_KEYS.contains(key))
+                if (!TYPED_KEYS.contains(key)) {
                     throw new IllegalArgumentException(String.format(
                         "Typed sub-pipeline '%s' does not declare key '%s' (declared keys: %s)", name, key, TYPED_KEYS
                     ));
+                }
             }
 
             JsonElement rawLabel = typedEntry(name, typed, OUTPUT_TYPE);
             JsonElement rawChain = typedEntry(name, typed, CHAIN);
 
-            if (!rawLabel.isJsonPrimitive())
+            if (!rawLabel.isJsonPrimitive()) {
                 throw new IllegalArgumentException(String.format(
                     "Typed sub-pipeline '%s' holds %s under '%s' but a type label was expected", name, shapeOf(rawLabel), OUTPUT_TYPE
                 ));
+            }
 
-            if (!rawChain.isJsonArray())
+            if (!rawChain.isJsonArray()) {
                 throw new IllegalArgumentException(String.format(
                     "Typed sub-pipeline '%s' holds %s under '%s' but a stage array was expected", name, shapeOf(rawChain), CHAIN
                 ));
+            }
 
             String label = rawLabel.getAsString();
             DataType<?> outputType = DataTypes.byLabel(label);
@@ -269,10 +274,11 @@ public final class ChainSerde {
     private static @NotNull JsonElement typedEntry(@NotNull String name, @NotNull JsonObject typed, @NotNull String key) {
         JsonElement value = typed.get(key);
 
-        if (value == null || value.isJsonNull())
+        if (value == null || value.isJsonNull()) {
             throw new IllegalArgumentException(String.format(
                 "Typed sub-pipeline '%s' is missing required key '%s'", name, key
             ));
+        }
 
         return value;
     }
@@ -284,10 +290,11 @@ public final class ChainSerde {
         List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
 
         for (JsonElement el : arr) {
-            if (!el.isJsonObject())
+            if (!el.isJsonObject()) {
                 throw new IllegalArgumentException(String.format(
                     "Stage entry must be a JSON object but was %s", shapeOf(el)
                 ));
+            }
 
             stages.add(stageReader.apply(el.getAsJsonObject()));
         }

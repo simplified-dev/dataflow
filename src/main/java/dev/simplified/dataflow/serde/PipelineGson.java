@@ -145,10 +145,11 @@ public final class PipelineGson {
                     case NAME -> {
                         String name = reader.nextName();
 
-                        if (!objects.getFirst().add(name))
+                        if (!objects.getFirst().add(name)) {
                             throw new IllegalArgumentException(String.format(
                                 "Pipeline JSON repeats key '%s' at '%s'", name, reader.getPath()
                             ));
+                        }
                     }
                     case END_DOCUMENT -> {
                         return;
@@ -189,10 +190,11 @@ public final class PipelineGson {
         if (kind == null || kind.isJsonNull())
             throw new IllegalArgumentException(String.format("Stage entry is missing required key '%s'", KIND));
 
-        if (!kind.isJsonPrimitive())
+        if (!kind.isJsonPrimitive()) {
             throw new IllegalArgumentException(String.format(
                 "Stage entry holds %s under '%s' but a stage id was expected", ChainSerde.shapeOf(kind), KIND
             ));
+        }
 
         Class<? extends Stage<?, ?>> cls = StageRegistry.byId(kind.getAsString());
         StageMetadata metadata = StageReflection.of(cls);

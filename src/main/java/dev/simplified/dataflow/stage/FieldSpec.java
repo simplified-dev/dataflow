@@ -215,10 +215,11 @@ public record FieldSpec<T>(
             case SUB_PIPELINES_MAP, TYPED_SUB_PIPELINES_MAP, STRING_MAP -> raw.isJsonObject();
         };
 
-        if (!fits)
+        if (!fits) {
             throw new IllegalArgumentException(String.format(
                 "Field '%s' holds %s but its type %s takes %s", this.name, ChainSerde.shapeOf(raw), this.type, shape
             ));
+        }
     }
 
     /**
