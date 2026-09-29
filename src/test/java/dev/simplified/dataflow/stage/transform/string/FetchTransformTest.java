@@ -34,6 +34,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -43,13 +44,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers {@link FetchTransform} against a loopback server whose {@code /wiki/<name>} answers
  * {@code 200} with {@code page:<name>}, except {@code Missing} ({@code 404}), {@code Gone}
  * ({@code 410}), {@code Slow} ({@code 408}), {@code Busy} ({@code 429}), {@code Odd}
- * ({@code 460}, a code the client has no constant for) and {@code Broken} ({@code 500}).
+ * ({@code 460}, a code the client has no constant for), {@code Token} ({@code 498}, one in the
+ * Nginx range the client has no constant for), {@code Closed} ({@code 499}, an Nginx code),
+ * {@code Broken} ({@code 500}) and {@code Moved} ({@code 302} to {@code Alpha}), and whose
+ * {@code /cached/<name>} answers {@code 200} with {@code cached}, fresh for a minute.
  */
 class FetchTransformTest {
 
     private HttpServer server;
 
     private String baseUrl;
+
+    /**
+     * The requests {@code /cached/} has answered.
+     */
+    private final AtomicInteger cachedHits = new AtomicInteger();
 
     @BeforeEach
     void startServer() throws IOException {
@@ -63,9 +72,21 @@ class FetchTransformTest {
                 case "Slow" -> respond(exchange, 408, "timed out");
                 case "Busy" -> respond(exchange, 429, "slow down");
                 case "Odd" -> respond(exchange, 460, "refused");
+                case "Token" -> respond(exchange, 498, "invalid token");
+                case "Closed" -> respond(exchange, 499, "closed");
                 case "Broken" -> respond(exchange, 500, "down");
+                case "Moved" -> {
+                    exchange.getResponseHeaders().add("Location", "/wiki/Alpha");
+                    exchange.sendResponseHeaders(302, -1);
+                    exchange.close();
+                }
                 default -> respond(exchange, 200, "page:" + name);
             }
+        });
+        this.server.createContext("/cached/", exchange -> {
+            this.cachedHits.incrementAndGet();
+            exchange.getResponseHeaders().add("Cache-Control", "max-age=60");
+            respond(exchange, 200, "cached");
         });
         this.server.start();
         this.baseUrl = "http://127.0.0.1:" + this.server.getAddress().getPort();
@@ -235,6 +256,38 @@ class FetchTransformTest {
     }
 
     @Test
+    @DisplayName("The fetch guard does not see a 429 that throws")
+    void guardSkipsThrownClientError() {
+        List<String> seen = new ArrayList<>();
+        PipelineContext ctx = guarded((uri, body) -> seen.add(body));
+
+        assertThrows(UrlFetchException.ClientError.class, () -> wiki().execute(ctx, "Busy"));
+
+        assertThat(seen, is(empty()));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees a body the response cache replays")
+    void guardSeesCacheReplay() {
+        List<String> seen = new ArrayList<>();
+        PipelineContext ctx = guarded((uri, body) -> seen.add(body));
+        FetchTransform stage = FetchTransform.of(DataTypes.RAW_HTML, this.baseUrl + "/cached/{}");
+
+        stage.execute(ctx, "Alpha");
+        stage.execute(ctx, "Alpha");
+
+        assertThat(List.of(seen.size(), this.cachedHits.get()), contains(2, 1));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees the URL the stage requested, not the one a redirect led to")
+    void guardSeesRequestedUrlUnderRedirect() {
+        List<String> seen = new ArrayList<>();
+        wiki().execute(guarded((uri, body) -> seen.add(uri + " -> " + body)), "Moved");
+        assertThat(seen, contains(this.baseUrl + "/wiki/Moved -> page:Alpha"));
+    }
+
+    @Test
     @DisplayName("A guard that throws fails the fetch with its exception")
     void guardThrowFails() {
         IllegalStateException refusal = new IllegalStateException("refused");
@@ -302,6 +355,26 @@ class FetchTransformTest {
     void serverErrorThrows() {
         UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> wiki().execute(context(), "Broken"));
         assertThat(thrown, is(not(instanceOf(UrlFetchException.ClientError.class))));
+    }
+
+    @Test
+    @DisplayName("An Nginx 4xx throws a UrlFetchException that is not a ClientError")
+    void nginxClientCodeThrows() {
+        UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> wiki().execute(context(), "Closed"));
+        assertThat(thrown, is(not(instanceOf(UrlFetchException.ClientError.class))));
+    }
+
+    @Test
+    @DisplayName("A code in the Nginx range the client has no constant for throws as the Nginx codes do")
+    void unknownNginxCodeThrows() {
+        UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> wiki().execute(context(), "Token"));
+        assertThat(thrown, is(not(instanceOf(UrlFetchException.ClientError.class))));
+    }
+
+    @Test
+    @DisplayName("As a map body a 4xx the client has no constant for drops out")
+    void mapBodyDropsUnknownClientError() {
+        assertThat(pages("Alpha,Odd,Beta").execute(context()), contains("page:Alpha", "page:Beta"));
     }
 
     @Test

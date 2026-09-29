@@ -54,7 +54,7 @@ public final class PipelineContext {
     private final @NotNull DataPipelineResolver resolver = DataPipelineResolver.NOOP;
 
     /**
-     * Check every fetching stage runs over each body it fetches before handing it on - a throw
+     * Check every fetching stage runs over each body it hands on, before handing it on - a throw
      * fails the run. {@link FetchGuard#NOOP} accepts every body.
      */
     private final @NotNull FetchGuard fetchGuard = FetchGuard.NOOP;

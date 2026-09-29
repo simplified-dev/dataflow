@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -41,6 +42,11 @@ class UrlSourceFetchTest {
 
     private String baseUrl;
 
+    /**
+     * The requests {@code /cached} has answered.
+     */
+    private final AtomicInteger cachedHits = new AtomicInteger();
+
     @BeforeEach
     void startServer() throws IOException {
         this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -48,6 +54,16 @@ class UrlSourceFetchTest {
         this.server.createContext("/missing", exchange -> respond(exchange, 404, "not here"));
         this.server.createContext("/busy", exchange -> respond(exchange, 429, "slow down"));
         this.server.createContext("/broken", exchange -> respond(exchange, 500, "down"));
+        this.server.createContext("/cached", exchange -> {
+            this.cachedHits.incrementAndGet();
+            exchange.getResponseHeaders().add("Cache-Control", "max-age=60");
+            respond(exchange, 200, BODY);
+        });
+        this.server.createContext("/moved", exchange -> {
+            exchange.getResponseHeaders().add("Location", "/page");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
         this.server.start();
         this.baseUrl = "http://127.0.0.1:" + this.server.getAddress().getPort();
     }
@@ -165,6 +181,27 @@ class UrlSourceFetchTest {
         assertThrows(UrlFetchException.ClientError.class, () -> UrlSource.rawHtml(url("/missing")).execute(ctx, null));
 
         assertThat(seen, is(empty()));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees a body the response cache replays")
+    void guardSeesCacheReplay() {
+        List<String> seen = new ArrayList<>();
+        PipelineContext ctx = guarded((uri, body) -> seen.add(body));
+        UrlSource source = UrlSource.rawHtml(url("/cached"));
+
+        source.execute(ctx, null);
+        source.execute(ctx, null);
+
+        assertThat(List.of(seen.size(), this.cachedHits.get()), contains(2, 1));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees the URL the stage requested, not the one a redirect led to")
+    void guardSeesRequestedUrlUnderRedirect() {
+        List<String> seen = new ArrayList<>();
+        UrlSource.rawHtml(url("/moved")).execute(guarded((uri, body) -> seen.add(uri + " -> " + body)), null);
+        assertThat(seen, contains(url("/moved") + " -> " + BODY));
     }
 
     @Test

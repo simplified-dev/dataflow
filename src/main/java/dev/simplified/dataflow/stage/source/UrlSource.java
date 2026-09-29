@@ -24,8 +24,8 @@ import java.net.URI;
  * The body is held to {@code maxBodyBytes} when one is configured and to the fetcher's
  * configured cap otherwise. The fetch throws a {@link UrlFetchException}, failing the run, on
  * every error status - each {@code 4xx}, {@code 408} and {@code 429} among them, and each
- * {@code 5xx} - on a transport failure, a body past the cap, or a request the local rate limit
- * refuses.
+ * {@code 5xx} - on a status code the client's {@code HttpStatus} has no constant for, on a
+ * transport failure, a body past the cap, or a request the local rate limit refuses.
  * <p>
  * A fetched body passes through the context's {@link PipelineContext#fetchGuard() fetch guard}
  * before it is emitted, and a guard that throws fails the run.

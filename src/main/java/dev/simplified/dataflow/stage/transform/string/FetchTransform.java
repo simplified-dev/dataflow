@@ -32,14 +32,16 @@ import java.util.Set;
  * {@code maxBodyBytes} when one is configured and to the fetcher's configured cap otherwise.
  * <p>
  * A {@code 2xx} body passes through the context's
- * {@link PipelineContext#fetchGuard() fetch guard} and is emitted. A {@code 4xx} the origin
- * answers - a {@link UrlFetchException.ClientError}, whatever the size of its body - rejects with
- * {@code null}, so a map body drops a page that does not exist, except a {@code 408} or a
- * {@code 429}: a timeout or throttling says nothing about whether the page exists, so it throws.
- * Every other failure throws too - a {@code 5xx}, a transport failure, a {@code 2xx} body past the
- * cap, a request the local rate limit refuses, a guard that refuses the body, a blank input, or
- * an input that does not form a URI - so a collection is never silently short a page because the
- * server, the network or the body failed.
+ * {@link PipelineContext#fetchGuard() fetch guard} and is emitted. A client error the origin
+ * answers - a {@link UrlFetchException.ClientError}, {@code 400} to {@code 451} or a {@code 4xx}
+ * the client's {@link HttpStatus} has no constant for outside Nginx's {@code 494-499}, whatever
+ * the size of its body - rejects with {@code null}, so a map body drops a page that does not
+ * exist, except a {@code 408} or a {@code 429}: a timeout or throttling says nothing about
+ * whether the page exists, so it throws. Every other failure throws too - a {@code 5xx}, an Nginx
+ * {@code 444} or {@code 494-499}, a transport failure, a {@code 2xx} body past the cap, a request
+ * the local rate limit refuses, a guard that refuses the body, a blank input, or an input that
+ * does not form a URI - so a collection is never silently short a page because the server, the
+ * network or the body failed.
  */
 @StageSpec(
     id = "TRANSFORM_FETCH",
