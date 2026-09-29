@@ -75,6 +75,9 @@ public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
      * {@linkplain DataType#isAssignableTo(DataType) assignable to} the input of the first stage in
      * {@code chain}, each stage's output to the next stage's input, and the last stage's output to
      * {@code expectedOutputType}. Empty chains report a single pipeline-level "no stages" issue.
+     * <p>
+     * The report carries issues alone and lists no expectations; {@link DataPipeline#validate()}
+     * lists those of a whole pipeline, its bodies included.
      *
      * @param seedInputType the type the enclosing stage hands the first stage
      * @param chain the body stages, in execution order

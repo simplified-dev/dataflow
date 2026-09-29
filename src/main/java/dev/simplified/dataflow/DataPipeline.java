@@ -169,8 +169,14 @@ public final class DataPipeline<O> {
      * <p>
      * The slots are found through the {@link StageSpec} class's {@link StageMetadata}, read from
      * the field that holds each slot's configured value. A stage class without {@link StageSpec},
-     * or whose metadata cannot be derived because it declares no canonical factory, nests nothing,
-     * so a stage the walk cannot read does not fail the validation.
+     * or whose metadata cannot be derived - it declares no canonical factory, or a factory
+     * parameter names no field of the class - nests nothing, so a stage the walk cannot read does
+     * not fail the validation.
+     *
+     * @param stage the stage to read
+     * @param stageIndex zero-based index of the top-level stage that is or nests {@code stage}
+     * @param path where {@code stage} sits, such as {@code #3.body[1]}
+     * @param expectations the list the expectations are added to, in walk order
      */
     @SuppressWarnings("unchecked")
     private static void collectExpectations(
@@ -188,7 +194,7 @@ public final class DataPipeline<O> {
 
         try {
             metadata = StageReflection.of(stageClass);
-        } catch (IllegalStateException ignored) {
+        } catch (RuntimeException ignored) {
             return;
         }
 
@@ -209,6 +215,15 @@ public final class DataPipeline<O> {
         }
     }
 
+    /**
+     * Adds the expectations of every stage in one stage array, each at {@code path} followed by
+     * its index in brackets.
+     *
+     * @param stages the stage array of a body or operand
+     * @param stageIndex zero-based index of the top-level stage that nests the array
+     * @param path where the array sits, such as {@code #3.body}
+     * @param expectations the list the expectations are added to, in walk order
+     */
     private static void collectExpectations(
         @NotNull List<Stage<?, ?>> stages,
         int stageIndex,

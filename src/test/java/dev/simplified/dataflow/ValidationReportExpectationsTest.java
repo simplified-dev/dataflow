@@ -1,11 +1,16 @@
 package dev.simplified.dataflow;
 
+import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.NamedChains;
 import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.StageRegistry;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.filter.list.WhereFilter;
 import dev.simplified.dataflow.stage.fixture.AppendOperandTransform;
+import dev.simplified.dataflow.stage.meta.Configurable;
+import dev.simplified.dataflow.stage.meta.StageReflection;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.predicate.common.AndPredicate;
 import dev.simplified.dataflow.stage.predicate.common.NotNullPredicate;
@@ -23,14 +28,18 @@ import dev.simplified.dataflow.stage.transform.string.UpperCaseTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -39,6 +48,16 @@ import static org.hamcrest.Matchers.is;
  * it.
  */
 class ValidationReportExpectationsTest {
+
+    /**
+     * Field type the expectation walk reads for each slot type that nests stages.
+     */
+    private static final @NotNull Map<FieldSpec.Type, Class<?>> NESTING_FIELD_TYPES = Map.of(
+        FieldSpec.Type.SUB_PIPELINE, Chain.class,
+        FieldSpec.Type.SUB_PIPELINES_MAP, NamedChains.class,
+        FieldSpec.Type.TYPED_SUB_PIPELINES_MAP, Map.class,
+        FieldSpec.Type.PIPELINE, DataPipeline.class
+    );
 
     /**
      * Stage carrying {@link StageSpec} without a canonical factory, so its metadata cannot be
@@ -63,6 +82,50 @@ class ValidationReportExpectationsTest {
         @Override
         public @NotNull String summary() {
             return "Underivable";
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable String input) {
+            return input;
+        }
+
+    }
+
+    /**
+     * Stage carrying {@link StageSpec} and a canonical factory whose parameter names no field of
+     * the class, so its metadata cannot be derived either. It sits outside the registry's package
+     * and never loads from the wire.
+     */
+    @StageSpec(id = "TEST_FIELDLESS", displayName = "Fieldless", description = "STRING -> STRING", category = StageSpec.Category.TRANSFORM_PRIMITIVE)
+    private static final class FieldlessStage implements TransformStage<String, String> {
+
+        /**
+         * Constructs a fieldless stage, dropping the prefix it is given.
+         *
+         * @param prefix a configured value no field holds
+         * @return the stage
+         */
+        static @NotNull FieldlessStage of(@Configurable(label = "Prefix") @NotNull String prefix) {
+            return new FieldlessStage();
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public @NotNull DataType<String> inputType() {
+            return DataTypes.STRING;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public @NotNull DataType<String> outputType() {
+            return DataTypes.STRING;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public @NotNull String summary() {
+            return "Fieldless";
         }
 
         /** {@inheritDoc} */
@@ -276,6 +339,59 @@ class ValidationReportExpectationsTest {
             .stage(nonEmpty("the id is present"))
             .build();
         assertThat(pipeline.validate().expectations(), contains(expectation(2, "#2", "the id is present")));
+    }
+
+    @Test
+    @DisplayName("A stage whose factory parameter names no field nests nothing and does not fail the build")
+    void fieldlessStageNestsNothing() {
+        DataPipeline<?> pipeline = DataPipeline.builder()
+            .source(LiteralSource.text("item_1"))
+            .stage(FieldlessStage.of("item_"))
+            .stage(nonEmpty("the id is present"))
+            .build();
+        assertThat(pipeline.validate().expectations(), contains(expectation(2, "#2", "the id is present")));
+    }
+
+    @Test
+    @DisplayName("A pipeline read from the wire lists an expectation in a compare body under the body's key")
+    void wireCompareBodyLists() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"STRING\",\"value\":\"item_1\"},"
+            + "{\"kind\":\"PREDICATE_COMPARE\",\"inputType\":\"STRING\",\"valueType\":\"STRING\",\"operator\":\"EQUALS\","
+            + "\"left\":[{\"kind\":\"TRANSFORM_UPPERCASE\"}],"
+            + "\"right\":[{\"kind\":\"TRANSFORM_EXPECT\",\"inputType\":\"STRING\",\"expectation\":\"the id is present\","
+            + "\"body\":[{\"kind\":\"PREDICATE_STRING_NON_EMPTY\"}]},{\"kind\":\"TRANSFORM_UPPERCASE\"}]}]";
+        assertThat(PipelineGson.fromJson(json).validate().expectations(), contains(expectation(1, "#1.right[0]", "the id is present")));
+    }
+
+    @Test
+    @DisplayName("A pipeline read from the wire lists an expectation in a pipeline operand with the operand's key")
+    void wireOperandLists() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"STRING\",\"value\":\"item\"},"
+            + "{\"kind\":\"TEST_APPEND_OPERAND\",\"suffix\":[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"STRING\",\"value\":\"_1\"},"
+            + "{\"kind\":\"TRANSFORM_EXPECT\",\"inputType\":\"STRING\",\"expectation\":\"the suffix is present\","
+            + "\"body\":[{\"kind\":\"PREDICATE_STRING_NON_EMPTY\"}]}]}]";
+        assertThat(PipelineGson.fromJson(json).validate().expectations(), contains(expectation(1, "#1.suffix[1]", "the suffix is present")));
+    }
+
+    @TestFactory
+    @DisplayName("Every nesting slot of every registered stage is held in a field of the type the walk reads")
+    Stream<DynamicTest> everyNestingSlotIsWalked() {
+        return StageRegistry.all().stream().flatMap(type -> StageReflection.of(type).slots().stream()
+            .filter(slot -> NESTING_FIELD_TYPES.containsKey(slot.spec().type()))
+            .map(slot -> DynamicTest.dynamicTest(type.getSimpleName() + "." + slot.paramName(), () -> assertThat(
+                declaredFieldType(type, slot.paramName()), is(equalTo(NESTING_FIELD_TYPES.get(slot.spec().type())))
+            )))
+        );
+    }
+
+    private static @Nullable Class<?> declaredFieldType(@NotNull Class<?> type, @NotNull String name) {
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            try {
+                return current.getDeclaredField(name).getType();
+            } catch (NoSuchFieldException ignored) { }
+        }
+
+        return null;
     }
 
 }
