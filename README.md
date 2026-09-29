@@ -61,7 +61,7 @@ dev.simplified.dataflow.stage
   .source                 Url, Literal, LiteralList, Embed
   .filter.string          Contains, Matches, StartsWith, EndsWith, Equals, NonEmpty
   .filter.list            Distinct, DistinctBy, NotNull, Take, Skip, IndexInRange,
-                          TakeWhile, DropWhile
+                          TakeWhile, DropWhile, Where
   .filter.numeric         Int/Long/Double x {GreaterThan, LessThan, InRange}
   .filter.dom             TextContains, TextMatches, HasAttr, TagEquals
   .filter.json            HasField, FieldEquals
@@ -70,7 +70,7 @@ dev.simplified.dataflow.stage
                           RegexExtract, ValueMap, RangeExpand, Fetch
   .transform.primitive    ParseInt/Long/Float/Double/Boolean/Roman, Abs*, Negate*,
                           Arithmetic*, BinaryArithmetic*, RoundFloat/Double, Constant,
-                          Coalesce, ToString, ToRaw, Peek (+ ArithmeticOperator)
+                          Coalesce, ToString, ToRaw, Peek, Expect (+ ArithmeticOperator)
   .transform.list         Size, Reverse, Sort, SortBy, Map, FlatMap, Flatten, Concat,
                           GroupBy, Enumerate, Zip, Rotate, Broadcast
   .transform.dom          ParseHtml, CssSelect, Text, OwnText, Attr, NthChild, Children,
@@ -83,7 +83,7 @@ dev.simplified.dataflow.stage
   .predicate.numeric      Int/Long/Double x {GreaterThan, LessThan, InRange}
   .predicate.dom          TextContains, TextMatches, HasAttr, TagEquals
   .predicate.json         HasField, FieldEquals
-  .predicate.common       NotNull, Not, And, Or
+  .predicate.common       NotNull, Not, And, Or, Compare (+ CompareOperator)
   .terminal.collect       First, Last, Nth, List, SubList, Set, Join, Map,
                           JsonObjectFromEntries
   .terminal.sum           Count, SumInt, SumLong, SumDouble
@@ -223,6 +223,7 @@ never mutate the rows they are given: what they emit is copied.
 | `TRANSFORM_TO_STRING`                | `T`      | `STRING`           |                                                                 |
 | `TRANSFORM_TO_RAW`                   | `STRING` | `RAW_*`            | retypes the string; parses nothing                              |
 | `TRANSFORM_PEEK`                     | `T`      | `T`                | identity + `ctx.log()` side effect                              |
+| `TRANSFORM_EXPECT`                   | `T`      | `T`                | identity while the predicate `body` (`T -> BOOLEAN`) yields `true`; `false` or `null` fails the run with `ExpectationFailedException` naming the `expectation` sentence (see [Expectations](#expectations)) |
 
 `OP` is an `ArithmeticOperator` named by its constant: `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`,
 `MODULO`. `INT` and `LONG` compute through `Math.*Exact`, so an overflow throws
@@ -266,6 +267,7 @@ the load.
 | `FILTER_DISTINCT_BY`          | `List<T>`               | `List<T>`               | key body (`T -> K`); first per key, last with `keepLast`; a `null` key drops |
 | `FILTER_TAKE_WHILE`           | `List<T>`               | `List<T>`               | predicate body (`T -> BOOLEAN`)|
 | `FILTER_DROP_WHILE`           | `List<T>`               | `List<T>`               | predicate body (`T -> BOOLEAN`)|
+| `FILTER_WHERE`                | `List<T>`               | `List<T>`               | predicate body (`T -> BOOLEAN`) over every element; keeps each it yields `true` for, in order - `false`, `null` and a `null` element drop |
 
 ### Predicates (`T -> BOOLEAN`)
 
@@ -299,8 +301,33 @@ Single-element analogues of the filter family. Use them as the body of match col
 | `PREDICATE_NOT`                   | `BOOLEAN`      | `BOOLEAN`  |
 | `PREDICATE_AND`                   | `T`            | `BOOLEAN`  |
 | `PREDICATE_OR`                    | `T`            | `BOOLEAN`  |
+| `PREDICATE_COMPARE`               | `I`            | `BOOLEAN`  |
 
 `AND` / `OR` carry a `SUB_PIPELINES_MAP` of named predicate bodies and short-circuit.
+
+`COMPARE` tests `left OP right` over two values of one input, each read by its own body
+(`left`, `right`: `I -> V`). `valueType` is one of `INT`, `LONG`, `FLOAT`, `DOUBLE`, `STRING` or
+`BOOLEAN`, and `operator` a `CompareOperator` named by its constant: `EQUALS`, `NOT_EQUALS`,
+`LESS_THAN`, `LESS_OR_EQUAL`, `GREATER_THAN`, `GREATER_OR_EQUAL`. Numbers compare numerically
+(`-0.0` equals `0.0`), strings by `String.compareTo` (case-sensitive), and booleans by equality
+alone, so an ordering operator over `BOOLEAN` fails the load. Either body yielding `null`, or a
+`NaN` on either side, yields `null`, and the right body does not run once the left one has yielded
+`null` - so a `FILTER_WHERE` over it drops an element either side cannot be read from:
+
+```json
+{
+  "kind": "FILTER_WHERE",
+  "elementType": "JSON_OBJECT",
+  "body": [{
+    "kind": "PREDICATE_COMPARE",
+    "inputType": "JSON_OBJECT",
+    "valueType": "INT",
+    "operator": "GREATER_OR_EQUAL",
+    "left": [{"kind": "TRANSFORM_JSON_FIELD", "fieldName": "tier"}, {"kind": "TRANSFORM_JSON_AS_INT"}],
+    "right": [{"kind": "TRANSFORM_CONSTANT", "inputType": "JSON_OBJECT", "outputType": "INT", "value": "3"}]
+  }]
+}
+```
 
 ### Terminals
 
@@ -340,10 +367,10 @@ parameter's Java type picks the slot's `FieldSpec.Type`, which fixes its wire fo
 | `FieldSpec.Type`          | Factory parameter                | Wire form                                                          |
 |---------------------------|----------------------------------|--------------------------------------------------------------------|
 | `STRING`                  | `String`                         | string                                                             |
-| `INT`                     | `int` / `Integer`                | number; a fraction or a value past the `int` range fails the load  |
-| `LONG`                    | `long` / `Long`                  | number; a fraction or a value past the `long` range fails the load |
-| `DOUBLE`                  | `double` / `Double`              | number                                                             |
-| `BOOLEAN`                 | `boolean` / `Boolean`            | boolean                                                            |
+| `INT`                     | `int` / `Integer`                | number or numeric text; a fraction or a value past the `int` range fails the load  |
+| `LONG`                    | `long` / `Long`                  | number or numeric text; a fraction or a value past the `long` range fails the load |
+| `DOUBLE`                  | `double` / `Double`              | number or numeric text                                             |
+| `BOOLEAN`                 | `boolean` / `Boolean`            | boolean, or the text `true` / `false` in any case                  |
 | `DATA_TYPE`               | `DataType<?>`                    | type label, such as `"List<JSON_OBJECT>"`                          |
 | `SUB_PIPELINE`            | `List<? extends Stage<?, ?>>` / `Chain` | array of stages with no source - a body run against a value |
 | `SUB_PIPELINES_MAP`       | `NamedChains` / `Map<String, List<...>>` | object of name to stage array                              |
@@ -360,6 +387,8 @@ are `STRING_MAP` slots:
 ```
 
 A `PIPELINE` slot is an operand - see [Reading a second document](#reading-a-second-document).
+Every key a stage carries on the wire must be one of its slots, and every required slot must be
+present - see [Loading](#loading).
 
 ## Persisting a pipeline
 
@@ -544,6 +573,34 @@ operand is validated as a whole pipeline against the type its stage consumes
 (`DataPipeline.validate(DataType)`). Both checks run on the typed builder path and on load
 alike.
 
+### Expectations
+
+A `TRANSFORM_EXPECT` states, in a sentence, what the value passing through it must be, and its
+predicate body tests it on every run. The report lists each one before anything runs:
+`ValidationReport.expectations()` holds every `TRANSFORM_EXPECT` in the pipeline, in walk order,
+at any depth - a body, a named or typed body, a pipeline operand - each as an `Expectation` of the
+top-level stage index, the path of the stage, the sentence and the type it tests. Expectations
+never decide validity: a report with expectations and no issues `isValid()`.
+
+The path follows the wire form: `#` and the top-level index, then per level of nesting a dot, the
+slot's key, the branch name for named bodies (then `.chain` for a typed body) and the index in
+that stage array. `#1` is stage 1, `#1.body[0]` the first stage of its `body`,
+`#1.outputs.id.chain[1]` the second stage of the `id` output of a
+`TRANSFORM_JSON_OBJECT_BUILD`, and `#1.right[0]` stage 0 of a `right` operand.
+
+```java
+for (ValidationReport.Expectation expectation : pipeline.validate().expectations())
+    System.out.println(expectation.path() + ": " + expectation.text());
+// #1.body[0]: each id is an item id
+```
+
+When a run reaches a value the body yields `false` or `null` for, it stops with
+`ExpectationFailedException`: `Expectation 'each id is an item id' failed: body yielded 'false'
+for input '...' of type 'STRING'`, the input cut to 120 characters. A `null` value passes through
+without running the body, so an expectation cannot require a value to be present; state it on the
+value that holds it instead - a body over each row that reads the row's `id` yields `null` on a row
+with none, and that fails.
+
 ### Widening
 
 Every one of these checks asks whether the type produced is assignable to the type expected -
@@ -590,7 +647,8 @@ v0.1, pre-release. The Stream-parity catalog (FlatMap family, terminals, match c
 predicates, comparators, literal sources) is complete, and so is the table-shaping set built on
 it: joins, key lookups, concatenation and ancestor resolution across documents, group-by,
 distinct-by, enumerate, zip, rotate and broadcast over rows, per-element fetch, per-type
-arithmetic and rounding, constants and coalescing, and Lua, HTML-entity, JSON-escape and
+arithmetic and rounding, constants and coalescing, filtering by a predicate body, comparing two
+values of one element, stated expectations that fail a run, and Lua, HTML-entity, JSON-escape and
 table-span decoding.
 
 Open:

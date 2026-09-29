@@ -64,7 +64,7 @@ Packages under `stage/`: `source`, `filter/{string,list,numeric,dom,json}`, `tra
 ## Sub-pipelines
 
 A sourceless body chain is a `chain.Chain`. Variants:
-- Single body (`Map`, `FlatMap`, `SortBy`, `Min/MaxBy`, `DistinctBy`, `*Match`, `FindFirst`, `Take/DropWhile`, `ReplaceMatch`, `Coalesce`, binary arithmetic, `Zip`, `Rotate`, `Broadcast`): `FieldSpec.Type.SUB_PIPELINE` + `StageConfig.subPipeline/getSubPipeline` returning `Chain`.
+- Single body (`Map`, `FlatMap`, `SortBy`, `Min/MaxBy`, `DistinctBy`, `*Match`, `FindFirst`, `Take/DropWhile`, `Where`, `Expect`, `Compare`, `ReplaceMatch`, `Coalesce`, binary arithmetic, `Zip`, `Rotate`, `Broadcast`): `FieldSpec.Type.SUB_PIPELINE` + `StageConfig.subPipeline/getSubPipeline` returning `Chain`.
 - Named bodies (`MapCollect`, `And/OrPredicate`): `FieldSpec.Type.SUB_PIPELINES_MAP` + `subPipelines/getSubPipelines` returning `chain.NamedChains`.
 - Typed named bodies (`ObjectBuildTransform`): `FieldSpec.Type.TYPED_SUB_PIPELINES_MAP` + `typedSubPipelines/getTypedSubPipelines` returning `Map<String, chain.TypedChain>`.
 
@@ -75,6 +75,7 @@ A sourceless body chain is a `chain.Chain`. Variants:
 - `Builder.build()` validates eagerly, throws `IllegalStateException` on bad chain
 - `Builder.validate()` returns `ValidationReport`, no throw
 - `DataPipeline.validate(DataType)` also reports a last stage whose output is not assignable to the given type (operand check)
+- `ValidationReport` is `(issues, expectations)`; only issues decide `isValid()`. `DataPipeline.validate()` lists every `ExpectTransform` as an `Expectation` with a wire path (`#1.body[0]`, `#1.outputs.id.chain[1]`, `#1.right[0]`), found by reading each `@StageSpec` stage's slots off the field named after the parameter - a `Chain`, `NamedChains`, `DataPipeline` or `TYPED_SUB_PIPELINES_MAP` value is walked, anything else nests nothing. A stage that stores a body under another name hides the expectations inside it; a new slot type that holds stages needs a case in `DataPipeline.collectExpectations`. `Chain.validate` reports issues alone.
 - `execute(ctx)` does NOT re-validate (build-time guarantee)
 - `DataPipeline.empty().execute(ctx)` returns `null`
 
