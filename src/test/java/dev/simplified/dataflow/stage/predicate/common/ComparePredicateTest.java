@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -312,6 +313,54 @@ class ComparePredicateTest {
             DataTypes.JSON_ELEMENT, unsupported, "EQUALS", List.of(PathTransform.of("a")), List.of(PathTransform.of("b"))
         ));
         assertThat(thrown.getMessage(), startsWith("ComparePredicate supports value types"));
+    }
+
+    @Test
+    @DisplayName("The unsupported value type refusal lists the six in declaration order and quotes the refused label")
+    void unsupportedValueTypeMessageIsStable() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> ComparePredicate.of(
+            DataTypes.JSON_ELEMENT, DataTypes.JSON_ELEMENT, "EQUALS", List.of(PathTransform.of("a")), List.of(PathTransform.of("b"))
+        ));
+        assertThat(thrown.getMessage(), is(equalTo(
+            "ComparePredicate supports value types [INT, LONG, FLOAT, DOUBLE, STRING, BOOLEAN] but got 'JSON_ELEMENT'"
+        )));
+    }
+
+    @Test
+    @DisplayName("of refuses RAW_HTML values, which are String-backed but not STRING")
+    void refusesRawHtmlValueType() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> ComparePredicate.of(
+            DataTypes.STRING, DataTypes.RAW_HTML, "EQUALS", before(), after()
+        ));
+        assertThat(thrown.getMessage(), endsWith("but got 'RAW_HTML'"));
+    }
+
+    @Test
+    @DisplayName("The unknown operator refusal quotes the name and lists every operator")
+    void unknownOperatorMessageNamesChoices() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> ints("less_than"));
+        assertThat(thrown.getMessage(), is(equalTo(
+            "Unknown compare operator 'less_than', expected one of "
+                + "[EQUALS, NOT_EQUALS, LESS_THAN, LESS_OR_EQUAL, GREATER_THAN, GREATER_OR_EQUAL]"
+        )));
+    }
+
+    @Test
+    @DisplayName("INT values at the ends of the range compare without overflow")
+    void intExtremesCompare() {
+        assertThat(ints("LESS_THAN").execute(this.ctx, "-2147483648,2147483647"), is(true));
+    }
+
+    @Test
+    @DisplayName("LONG values at the ends of the range compare without overflow")
+    void longExtremesCompare() {
+        assertThat(longs("GREATER_THAN").execute(this.ctx, "9223372036854775807,-9223372036854775808"), is(true));
+    }
+
+    @Test
+    @DisplayName("DOUBLE infinity orders above the largest finite value")
+    void doubleInfinityOrders() {
+        assertThat(doubles("GREATER_THAN").execute(this.ctx, "Infinity,1.7976931348623157E308"), is(true));
     }
 
     @Test

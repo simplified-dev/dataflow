@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * {@link TransformStage} that derives two values of one input through a left and a right
@@ -51,7 +50,10 @@ import java.util.Set;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ComparePredicate<I, V> implements TransformStage<I, Boolean> {
 
-    private static final @NotNull Set<DataType<?>> VALUE_TYPES = Set.of(
+    /**
+     * Value types the stage compares, in the order a refusal names them.
+     */
+    private static final @NotNull List<DataType<?>> VALUE_TYPES = List.of(
         DataTypes.INT, DataTypes.LONG, DataTypes.FLOAT, DataTypes.DOUBLE, DataTypes.STRING, DataTypes.BOOLEAN
     );
 
