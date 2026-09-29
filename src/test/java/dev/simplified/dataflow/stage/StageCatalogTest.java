@@ -1,6 +1,7 @@
 package dev.simplified.dataflow.stage;
 
 import dev.simplified.dataflow.stage.filter.list.DistinctByFilter;
+import dev.simplified.dataflow.stage.filter.list.WhereFilter;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.transform.dom.SpanExpandTransform;
 import dev.simplified.dataflow.stage.transform.encoding.HtmlDecodeTransform;
@@ -96,7 +97,8 @@ class StageCatalogTest {
         new Entry("TRANSFORM_ENUMERATE", EnumerateTransform.class, StageSpec.Category.TRANSFORM_LIST),
         new Entry("TRANSFORM_ZIP", ZipTransform.class, StageSpec.Category.TRANSFORM_LIST),
         new Entry("TRANSFORM_ROTATE", RotateTransform.class, StageSpec.Category.TRANSFORM_LIST),
-        new Entry("TRANSFORM_BROADCAST", BroadcastTransform.class, StageSpec.Category.TRANSFORM_LIST)
+        new Entry("TRANSFORM_BROADCAST", BroadcastTransform.class, StageSpec.Category.TRANSFORM_LIST),
+        new Entry("FILTER_WHERE", WhereFilter.class, StageSpec.Category.FILTER_LIST)
     );
 
     @TestFactory
