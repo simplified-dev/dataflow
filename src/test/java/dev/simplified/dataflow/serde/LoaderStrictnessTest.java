@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Covers how strictly {@link PipelineGson#fromJson} and {@link StageMetadata#fromConfig}
- * read a stage: a required key that is absent, a key the stage does not declare, a scalar that
- * does not read as its slot's type and a JSON {@code null} each fail the load or read as absent by
- * rule, and a factory's own refusal reaches the caller as the {@link IllegalArgumentException} it
- * threw.
+ * read a stage: a required key that is absent, a key the stage does not declare, a key named twice,
+ * a scalar that does not read as its slot's type and a JSON {@code null} each fail the load or read
+ * as absent by rule, and a factory's own refusal reaches the caller as the
+ * {@link IllegalArgumentException} it threw.
  */
 class LoaderStrictnessTest {
 
@@ -296,6 +296,41 @@ class LoaderStrictnessTest {
             IllegalArgumentException thrown = loadFails("[" + SOURCE + ",{'kind':'COLLECT_MAP','inputType':'STRING',"
                 + "'outputs':{'n':{}}}]");
             assertThat(thrown.getMessage(), is(equalTo("Sub-pipeline 'n' must be a stage array but was a JSON object")));
+        }
+
+    }
+
+    @Nested
+    @DisplayName("A key named twice in one object")
+    class RepeatedKey {
+
+        @Test
+        @DisplayName("in a stage fails the load naming the key and where it repeats")
+        void inStageFails() {
+            IllegalArgumentException thrown = loadFails("[" + LIST_SOURCE + ",{'kind':'FILTER_TAKE','elementType':'STRING','count':1,'count':2}]");
+            assertThat(thrown.getMessage(), is(equalTo("Pipeline JSON repeats key 'count' at '$[1].count'")));
+        }
+
+        @Test
+        @DisplayName("as the kind fails the load")
+        void kindFails() {
+            IllegalArgumentException thrown = loadFails("[{'kind':'SOURCE_LITERAL','kind':'SOURCE_URL','outputType':'STRING','value':'a'}]");
+            assertThat(thrown.getMessage(), is(equalTo("Pipeline JSON repeats key 'kind' at '$[0].kind'")));
+        }
+
+        @Test
+        @DisplayName("in a stage inside a body fails the load naming its path")
+        void inBodyFails() {
+            IllegalArgumentException thrown = loadFails("[" + LIST_SOURCE + ",{'kind':'TRANSFORM_MAP','elementInputType':'STRING',"
+                + "'elementOutputType':'List<STRING>','body':[{'kind':'TRANSFORM_SPLIT','regex':',','regex':';'}]}]");
+            assertThat(thrown.getMessage(), is(equalTo("Pipeline JSON repeats key 'regex' at '$[1].body[0].regex'")));
+        }
+
+        @Test
+        @DisplayName("in a string map fails the load")
+        void inStringMapFails() {
+            IllegalArgumentException thrown = loadFails("[" + SOURCE + ",{'kind':'TRANSFORM_VALUE_MAP','table':{'a':'x','a':'y'}}]");
+            assertThat(thrown.getMessage(), is(equalTo("Pipeline JSON repeats key 'a' at '$[1].table.a'")));
         }
 
     }

@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import dev.simplified.annotations.UtilityClass;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
@@ -21,6 +23,14 @@ import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.gson.factory.CaseInsensitiveEnumTypeAdapterFactory;
 import dev.simplified.gson.factory.PostInitTypeAdapterFactory;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Gson-based serialiser for {@link DataPipeline} definitions.
@@ -81,15 +91,16 @@ public final class PipelineGson {
      * <p>
      * Every stage, at any depth, is read strictly: each key besides {@code "kind"} must be one of
      * the stage's slots, every required slot must be present, and a JSON {@code null} reads as the
-     * key being absent. A stage factory that refuses its values fails the load with the exception
-     * the factory threw.
+     * key being absent. No object may name a key twice, since only one of the two values would be
+     * read. A stage factory that refuses its values fails the load with the exception the factory
+     * threw.
      *
      * @param json the JSON definition
      * @return the rebuilt pipeline
      * @throws IllegalArgumentException if the JSON references an unknown stage id or
-     *         a {@link DataType} label that this build does not recognise, a stage lacks its
-     *         {@code "kind"} or a required key, holds a key it does not declare or a value of the
-     *         wrong JSON shape, or a stage factory refuses its values
+     *         a {@link DataType} label that this build does not recognise, an object names a key
+     *         twice, a stage lacks its {@code "kind"} or a required key, holds a key it does not
+     *         declare or a value of the wrong JSON shape, or a stage factory refuses its values
      * @throws IllegalStateException if the stages, or the stages of a pipeline operand, do not
      *         form a valid pipeline
      */
@@ -99,10 +110,56 @@ public final class PipelineGson {
         if (!el.isJsonArray())
             throw new IllegalArgumentException("Pipeline JSON must be a top-level array");
 
+        requireUniqueKeys(json);
         return fromJsonArray(el.getAsJsonArray());
     }
 
     /* ====================  internals  ==================== */
+
+    /**
+     * Checks that no object in {@code json} names a key twice. A parsed tree cannot show it,
+     * because the later value replaces the earlier one there, so the text is walked token by token
+     * with the leniency {@link JsonParser} reads it with.
+     *
+     * @param json JSON text that {@link JsonParser} has already parsed
+     * @throws IllegalArgumentException when an object names a key twice
+     */
+    private static void requireUniqueKeys(@NotNull String json) {
+        JsonReader reader = new JsonReader(new StringReader(json));
+        reader.setStrictness(Strictness.LENIENT);
+        Deque<Set<String>> objects = new ArrayDeque<>();
+
+        try {
+            while (true) {
+                switch (reader.peek()) {
+                    case BEGIN_OBJECT -> {
+                        reader.beginObject();
+                        objects.push(new HashSet<>());
+                    }
+                    case END_OBJECT -> {
+                        reader.endObject();
+                        objects.pop();
+                    }
+                    case BEGIN_ARRAY -> reader.beginArray();
+                    case END_ARRAY -> reader.endArray();
+                    case NAME -> {
+                        String name = reader.nextName();
+
+                        if (!objects.getFirst().add(name))
+                            throw new IllegalArgumentException(String.format(
+                                "Pipeline JSON repeats key '%s' at '%s'", name, reader.getPath()
+                            ));
+                    }
+                    case END_DOCUMENT -> {
+                        return;
+                    }
+                    default -> reader.skipValue();
+                }
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
 
     private static @NotNull JsonArray toJsonArray(@NotNull DataPipeline<?> pipeline) {
         return ChainSerde.writePipeline(pipeline, PipelineGson::stageToJson);

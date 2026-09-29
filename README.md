@@ -552,6 +552,8 @@ and each refusal is an `IllegalArgumentException`:
 - **A required key that is absent fails the load**, and so does one holding JSON `null`:
   `Stage 'TRANSFORM_SPLIT' is missing required key 'regex'`.
 - **JSON `null` on an optional key reads as the key being absent**, and is not written back.
+- **An object that names a key twice fails the load**, since only one of the two values would be
+  read: `Pipeline JSON repeats key 'regex' at '$[1].regex'`.
 - **A value of the wrong JSON shape fails the load** - an object where a string belongs, say, or
   anything but a stage array for a body - and so does a stage entry that is not an object or has no
   `kind`, and a `TRANSFORM_JSON_OBJECT_BUILD` output holding a key besides `outputType` and
