@@ -21,10 +21,10 @@ import java.util.List;
  * value through a chain of filters / transforms / collectors to a final result of type
  * {@code O}.
  * <p>
- * A pipeline always begins with a {@link SourceStage}. Every subsequent stage's
- * {@link Stage#inputType() input type} must equal the previous stage's
- * {@link Stage#outputType() output type}; this is enforced by {@link #validate()} and
- * checked at compile time on the typed builder path.
+ * A pipeline always begins with a {@link SourceStage}. The previous stage's
+ * {@link Stage#outputType() output type} must be {@linkplain DataType#isAssignableTo(DataType)
+ * assignable to} every subsequent stage's {@link Stage#inputType() input type}; this is enforced
+ * by {@link #validate()} and checked at compile time on the typed builder path.
  *
  * @param <O> output type of the pipeline's last stage
  */
@@ -104,7 +104,7 @@ public final class DataPipeline<O> {
             Stage<?, ?> stage = this.stages.get(i);
             DataType<?> expected = stage.inputType();
 
-            if (!expected.equals(previousOutput)) {
+            if (!previousOutput.isAssignableTo(expected)) {
                 issues.add(new ValidationReport.Issue(
                     i,
                     "Stage #" + i + " (" + stage.kindId() + ") expects input " + expected
@@ -120,7 +120,8 @@ public final class DataPipeline<O> {
 
     /**
      * Walks the stage chain as {@link #validate()} does, and also reports a pipeline-level issue
-     * when the last stage does not produce {@code expectedOutputType}.
+     * when the last stage produces a type not {@linkplain DataType#isAssignableTo(DataType)
+     * assignable to} {@code expectedOutputType}.
      * <p>
      * Used by a stage that carries this pipeline as an operand, to check it against the type the
      * stage consumes when the stage is built.
@@ -133,7 +134,7 @@ public final class DataPipeline<O> {
         if (this.stages.isEmpty()) return report;
 
         DataType<?> produced = this.stages.getLast().outputType();
-        if (produced.equals(expectedOutputType)) return report;
+        if (produced.isAssignableTo(expectedOutputType)) return report;
 
         List<ValidationReport.Issue> issues = new ArrayList<>(report.issues());
         issues.add(ValidationReport.Issue.pipelineLevel(
@@ -178,18 +179,21 @@ public final class DataPipeline<O> {
 
     /**
      * Narrows this pipeline to one whose static output type is {@code type}, verifying the
-     * runtime output type matches. Used by callers of the deserialisation path to recover a
-     * typed handle from the wildcard pipeline returned by
-     * {@link PipelineGson#fromJson(String)}.
+     * runtime output type is {@linkplain DataType#isAssignableTo(DataType) assignable to} it. Used
+     * by callers of the deserialisation path to recover a typed handle from the wildcard pipeline
+     * returned by {@link PipelineGson#fromJson(String)}.
+     * <p>
+     * {@link #outputType()} is unchanged, so a pipeline producing {@code JSON_OBJECT} narrowed to
+     * {@code JSON_ELEMENT} still reports {@code JSON_OBJECT}.
      *
      * @param type the expected output type
      * @return this pipeline, narrowed to produce {@code T}
      * @param <T> the expected output type
-     * @throws IllegalStateException when the runtime output type does not equal {@code type}
+     * @throws IllegalStateException when the runtime output type is not assignable to {@code type}
      */
     @SuppressWarnings("unchecked")
     public <T> @NotNull DataPipeline<T> expectOutput(@NotNull DataType<T> type) {
-        if (!this.outputType.equals(type))
+        if (!this.outputType.isAssignableTo(type))
             throw new IllegalStateException(
                 "expected output type " + type + " but pipeline produces " + this.outputType
             );

@@ -525,6 +525,22 @@ operand is validated as a whole pipeline against the type its stage consumes
 (`DataPipeline.validate(DataType)`). Both checks run on the typed builder path and on load
 alike.
 
+### Widening
+
+Every one of these checks asks whether the type produced is assignable to the type expected -
+`DataType.isAssignableTo` - rather than equal to it:
+
+- `JSON_OBJECT` and `JSON_ARRAY` are assignable to `JSON_ELEMENT`, so `TRANSFORM_JSON_STRINGIFY`
+  or `TRANSFORM_JSON_PATH` follows a stage that produces an object without a
+  `TRANSFORM_JSON_DESERIALIZE` in between.
+- A `List<X>` or `Set<X>` is assignable to a `List<Y>` or `Set<Y>` when `X` is assignable to
+  `Y`: rows typed `List<JSON_OBJECT>` feed a `TRANSFORM_MAP` over `JSON_ELEMENT`, or a
+  `TRANSFORM_CONCAT` operand onto a `List<JSON_ELEMENT>`. A pipeline never mutates a collection it
+  is handed, so reading one as a collection of a wider element is safe.
+
+Nothing is converted when the pipeline runs - a `JsonObject` is a `JsonElement` already. Nothing
+else widens: `RAW_HTML` is not a `STRING`, and no numeric type is assignable to another.
+
 ### Loading
 
 `PipelineGson.fromJson` reads every stage strictly, at any depth - bodies and operands included -

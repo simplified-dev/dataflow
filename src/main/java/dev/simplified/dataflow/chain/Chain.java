@@ -71,13 +71,14 @@ public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
     /**
      * Walks {@code chain} and reports every type-chain mismatch.
      * <p>
-     * The first stage in {@code chain} must consume {@code seedInputType} (supplied by the
-     * enclosing stage) and the last must produce {@code expectedOutputType}. Empty chains
-     * report a single pipeline-level "no stages" issue.
+     * {@code seedInputType} (supplied by the enclosing stage) must be
+     * {@linkplain DataType#isAssignableTo(DataType) assignable to} the input of the first stage in
+     * {@code chain}, each stage's output to the next stage's input, and the last stage's output to
+     * {@code expectedOutputType}. Empty chains report a single pipeline-level "no stages" issue.
      *
-     * @param seedInputType the type the first stage must consume
+     * @param seedInputType the type the enclosing stage hands the first stage
      * @param chain the body stages, in execution order
-     * @param expectedOutputType the type the last stage must produce
+     * @param expectedOutputType the type the enclosing stage expects of the last stage
      * @return the validation report
      */
     public static @NotNull ValidationReport validate(
@@ -95,7 +96,7 @@ public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
         for (int i = 0; i < chain.size(); i++) {
             Stage<?, ?> stage = chain.get(i);
             DataType<?> expected = stage.inputType();
-            if (!expected.equals(previousOutput))
+            if (!previousOutput.isAssignableTo(expected))
                 issues.add(new ValidationReport.Issue(i,
                     "Sub-pipeline stage #" + i + " (" + stage.kindId() + ") expects input " + expected
                         + " but previous stage produced " + previousOutput
@@ -103,7 +104,7 @@ public record Chain<I, O>(@NotNull ConcurrentList<Stage<?, ?>> stages) {
             previousOutput = stage.outputType();
         }
 
-        if (!expectedOutputType.equals(previousOutput))
+        if (!previousOutput.isAssignableTo(expectedOutputType))
             issues.add(ValidationReport.Issue.pipelineLevel(
                 "Sub-pipeline produces " + previousOutput + " but caller expected " + expectedOutputType
             ));

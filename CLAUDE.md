@@ -74,13 +74,15 @@ A sourceless body chain is a `chain.Chain`. Variants:
 
 - `Builder.build()` validates eagerly, throws `IllegalStateException` on bad chain
 - `Builder.validate()` returns `ValidationReport`, no throw
-- `DataPipeline.validate(DataType)` also reports a last stage that does not produce the given type (operand check)
+- `DataPipeline.validate(DataType)` also reports a last stage whose output is not assignable to the given type (operand check)
 - `execute(ctx)` does NOT re-validate (build-time guarantee)
 - `DataPipeline.empty().execute(ctx)` returns `null`
 
 ## DataType
 
 Sealed: `Basic<T>`, `ListType<E>`, `SetType<E>`. **Identity by `label()`** - `RAW_HTML` ≠ `STRING` despite both being `String`-backed. Parameterised via `DataTypes.byLabel("List<INT>")`.
+
+**Every "does this output satisfy that input / expected type" check is `produced.isAssignableTo(expected)`**, never `equals` - `DataPipeline.validate`, `DataPipeline.validate(DataType)`, `DataPipeline.expectOutput`, `Chain.validate` (seed, each link, expected output). It widens `JSON_OBJECT` / `JSON_ARRAY` to `JSON_ELEMENT` and a `List<X>` / `Set<X>` to a `List<Y>` / `Set<Y>` when `X` is assignable to `Y` (read-only collections, so covariance is safe); nothing is converted at run time. Nothing else widens - no numeric widening, no `RAW_*` to `STRING`. A factory comparing a flowing type against an expected one uses it too; a factory checking its own declared type against a supported set (`COMPARABLE_KEYS`, `SUPPORTED_*`) does not.
 
 Sort/Min/Max key types restricted to `INT, LONG, FLOAT, DOUBLE, STRING`; others rejected at build time.
 
