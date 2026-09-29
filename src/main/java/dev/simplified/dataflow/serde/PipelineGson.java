@@ -42,6 +42,11 @@ import org.jetbrains.annotations.NotNull;
 @UtilityClass
 public final class PipelineGson {
 
+    /**
+     * Key of a stage descriptor holding the {@link StageSpec#id()} of the stage's class.
+     */
+    private static final @NotNull String KIND = "kind";
+
     private static final @NotNull Gson GSON = new GsonBuilder()
         .registerTypeAdapterFactory(new CaseInsensitiveEnumTypeAdapterFactory())
         .registerTypeAdapterFactory(new PostInitTypeAdapterFactory())
@@ -73,11 +78,18 @@ public final class PipelineGson {
      * Deserialises a {@link DataPipeline} from its on-disk JSON form. The returned pipeline
      * has a wildcard output type; callers wanting a typed handle should narrow via
      * {@link DataPipeline#expectOutput(DataType)}.
+     * <p>
+     * Every stage, at any depth, is read strictly: each key besides {@code "kind"} must be one of
+     * the stage's slots, every required slot must be present, and a JSON {@code null} reads as the
+     * key being absent. A stage factory that refuses its values fails the load with the exception
+     * the factory threw.
      *
      * @param json the JSON definition
      * @return the rebuilt pipeline
      * @throws IllegalArgumentException if the JSON references an unknown stage id or
-     *         a {@link DataType} label that this build does not recognise
+     *         a {@link DataType} label that this build does not recognise, a stage lacks its
+     *         {@code "kind"} or a required key, holds a key it does not declare or a value of the
+     *         wrong JSON shape, or a stage factory refuses its values
      * @throws IllegalStateException if the stages, or the stages of a pipeline operand, do not
      *         form a valid pipeline
      */
@@ -103,7 +115,7 @@ public final class PipelineGson {
     @SuppressWarnings("unchecked")
     private static @NotNull JsonObject stageToJson(@NotNull Stage<?, ?> stage) {
         JsonObject o = new JsonObject();
-        o.addProperty("kind", stage.kindId());
+        o.addProperty(KIND, stage.kindId());
         StageMetadata metadata = StageReflection.of((Class<? extends Stage<?, ?>>) stage.getClass());
         StageConfig cfg = stage.config();
 
@@ -115,15 +127,26 @@ public final class PipelineGson {
     }
 
     private static @NotNull Stage<?, ?> stageFromJson(@NotNull JsonObject o) {
-        String id = o.get("kind").getAsString();
-        Class<? extends Stage<?, ?>> cls = StageRegistry.byId(id);
+        JsonElement kind = o.get(KIND);
+
+        if (kind == null || kind.isJsonNull())
+            throw new IllegalArgumentException(String.format("Stage entry is missing required key '%s'", KIND));
+
+        if (!kind.isJsonPrimitive())
+            throw new IllegalArgumentException(String.format(
+                "Stage entry holds %s under '%s' but a stage id was expected", ChainSerde.shapeOf(kind), KIND
+            ));
+
+        Class<? extends Stage<?, ?>> cls = StageRegistry.byId(kind.getAsString());
         StageMetadata metadata = StageReflection.of(cls);
+        metadata.requireDeclared(o.keySet().stream().filter(key -> !KIND.equals(key)).toList());
         StageConfig.Builder b = StageConfig.builder();
 
         for (FieldSpec<?> spec : metadata.schema()) {
             JsonElement raw = o.get(spec.name());
             if (raw != null) spec.readJson(raw, b, PipelineGson::stageFromJson);
         }
+
         return metadata.fromConfig(b.build());
     }
 

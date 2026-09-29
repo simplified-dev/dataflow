@@ -19,7 +19,7 @@ Typed pipeline lib (Java 21, Gradle, Simplified Annotations). Java-8-Streams sha
 - `if (input == null) return null;` (rejection semantics)
 - List outputs: `Concurrent.newUnmodifiableList(...)`. Maps whose order is declared (named outputs, tables, results): `Concurrent.newUnmodifiableLinkedMap(...)`, never `Map.copyOf`.
 - Regex stages: `Pattern.compile(...)` cached in `of(...)`
-- Validate everything in `of` and throw `IllegalArgumentException`: bodies, operands, enum-like strings, ranges. `of` runs on load, so a refusal fails `PipelineGson.fromJson` (wrapped in the reflection library's exception - assert on the root cause).
+- Validate everything in `of` and throw `IllegalArgumentException`: bodies, operands, enum-like strings, ranges. `of` runs on load, so a refusal fails `PipelineGson.fromJson` and `StageMetadata.fromConfig` as the exception `of` threw - `fromConfig` unwraps the reflection library's.
 - JSON text is written with `PipelineGson.gson()` (no HTML escaping).
 
 ## Configuration slots
@@ -37,7 +37,7 @@ The factory parameter's type picks the `FieldSpec.Type`:
 | `Map<String, String>` | `STRING_MAP` | object of strings, document order |
 
 - **The field named after a parameter holds that slot's config value** - `config()` reads it back. A stage that parses a string into another type stores the parsed value under a different name, or renames the parameter and keeps the wire key with `@Configurable(name = "...")`. `StageFieldConventionTest` enforces this for every registered stage.
-- Optional slot: `@Configurable(optional = true)` on a `@Nullable` parameter; absent on the wire means `null`.
+- Optional slot: `@Configurable(optional = true)` on a `@Nullable` parameter; absent or JSON `null` on the wire means `null`.
 - `placeholder` must be a value `of` accepts: `PipelineSerdeTest.everyNonChainKindFactoryRoundTrips` builds each stage's default config from it (a `STRING_MAP` placeholder is a JSON object literal; `PIPELINE` stages are skipped).
 - Adding a `FieldSpec.Type` breaks every exhaustive `switch` over it downstream (the Discord UI's `StageFields`).
 
@@ -91,6 +91,7 @@ Stages fetch through `ctx.fetcher()` (client `UrlFetcher`), never a client of th
 ## Serde / test
 
 - Wire format: `{"kind":"X", ...config}` via `serde/PipelineGson`. Round-tripped by `PipelineSerdeTest`.
+- The loader is strict at every depth (`LoaderStrictnessTest`), each refusal an `IllegalArgumentException`: a key besides `kind` that the stage does not declare (`Stage 'X' does not declare key 'k' (declared keys: [...])`), so a misspelt optional key never reads as absent; a required slot absent or JSON `null` (`Stage 'X' is missing required key 'k'`); a slot value of the wrong JSON shape; a typed output entry with a key besides `outputType` / `chain`. JSON `null` on an optional slot reads as absent. `StageMetadata.fromConfig` applies the same declared and required checks to a `StageConfig`.
 - Tests: JUnit 5 + Hamcrest, one assertion per behavior, in the test package matching the stage's. Every stage gets a wire round trip (build -> `toJson` -> `fromJson` -> equal config and output). `PipelineContext.defaults()` for default fetcher / NOOP resolver.
 - `StageCatalogTest` pins id, class and category; add a row for a new stage.
 - Fixture stages for framework tests live in `src/test/.../stage/fixture` and register on the test classpath.

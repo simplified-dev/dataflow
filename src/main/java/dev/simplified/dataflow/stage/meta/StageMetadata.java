@@ -7,9 +7,12 @@ import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.StageConfig;
 import dev.simplified.reflection.accessor.FieldAccessor;
 import dev.simplified.reflection.accessor.MethodAccessor;
+import dev.simplified.reflection.exception.ReflectionException;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -105,22 +108,78 @@ public record StageMetadata(
     }
 
     /**
+     * Checks that every key in {@code keys} names one of this stage's slots, by its wire key.
+     * <p>
+     * A key no slot declares is almost always a misspelling, and one on an optional slot would
+     * otherwise read as absent in silence, so it is refused.
+     *
+     * @param keys the keys to check
+     * @throws IllegalArgumentException when a key names no slot of this stage
+     */
+    public void requireDeclared(@NotNull Collection<String> keys) {
+        for (String key : keys) {
+            if (this.declares(key)) continue;
+
+            List<String> declared = this.slots.stream().map(slot -> slot.spec().name()).toList();
+            throw new IllegalArgumentException(String.format(
+                "Stage '%s' does not declare key '%s' (declared keys: %s)",
+                this.annotation.id(), key, declared.isEmpty() ? "none" : declared
+            ));
+        }
+    }
+
+    /**
      * Reconstructs a {@link Stage} by reading each slot from {@code cfg} through its
      * {@link FieldSpec}, applying the slot's {@link Slot#argAdapter}, and invoking the
      * canonical factory with the resulting arguments.
+     * <p>
+     * An optional slot absent from {@code cfg} passes {@code null} to the factory. A refusal the
+     * factory throws reaches the caller as the exception the factory threw, not wrapped in the
+     * reflection library's.
      *
      * @param cfg the populated configuration
      * @return the rebuilt stage
+     * @throws IllegalArgumentException when {@code cfg} holds a key no slot declares, lacks a
+     *         required slot, or the factory refuses the values
      */
     public @NotNull Stage<?, ?> fromConfig(@NotNull StageConfig cfg) {
+        this.requireDeclared(cfg.names());
         Object[] args = new Object[this.slots.size()];
+
         for (int i = 0; i < this.slots.size(); i++) {
             Slot<?> slot = this.slots.get(i);
             FieldSpec<?> spec = slot.spec();
-            Object raw = spec.optional() && !spec.isPresent(cfg) ? null : spec.get(cfg);
+
+            if (!spec.isPresent(cfg)) {
+                if (spec.optional()) continue;
+
+                throw new IllegalArgumentException(String.format(
+                    "Stage '%s' is missing required key '%s'", this.annotation.id(), spec.name()
+                ));
+            }
+
+            Object raw = spec.get(cfg);
             args[i] = raw == null ? null : slot.argAdapter().apply(raw);
         }
-        return (Stage<?, ?>) this.factory.invoke(null, args);
+
+        return this.invokeFactory(args);
+    }
+
+    private boolean declares(@NotNull String key) {
+        return this.slots.stream().anyMatch(slot -> slot.spec().name().equals(key));
+    }
+
+    private @NotNull Stage<?, ?> invokeFactory(@NotNull Object[] args) {
+        try {
+            return (Stage<?, ?>) this.factory.invoke(null, args);
+        } catch (ReflectionException ex) {
+            if (ex.getCause() instanceof InvocationTargetException invocation) {
+                if (invocation.getCause() instanceof RuntimeException refusal) throw refusal;
+                if (invocation.getCause() instanceof Error error) throw error;
+            }
+
+            throw ex;
+        }
     }
 
 }

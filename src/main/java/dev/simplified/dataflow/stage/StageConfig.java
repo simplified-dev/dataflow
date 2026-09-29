@@ -13,8 +13,10 @@ import dev.simplified.dataflow.stage.meta.StageMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Typed name-to-value bag holding one stage's configuration.
@@ -320,6 +322,15 @@ public final class StageConfig {
      */
     public boolean has(@NotNull String name) {
         return this.values.containsKey(name);
+    }
+
+    /**
+     * Returns the name of every field this configuration holds a value for.
+     *
+     * @return the unmodifiable field names
+     */
+    public @NotNull Set<String> names() {
+        return Collections.unmodifiableSet(this.values.keySet());
     }
 
     /**

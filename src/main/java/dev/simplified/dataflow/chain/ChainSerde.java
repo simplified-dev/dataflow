@@ -29,6 +29,18 @@ import java.util.function.Function;
 public final class ChainSerde {
 
     /**
+     * Key of a typed sub-pipeline entry holding the label of the type its chain produces.
+     */
+    private static final @NotNull String OUTPUT_TYPE = "outputType";
+
+    /**
+     * Key of a typed sub-pipeline entry holding its stage array.
+     */
+    private static final @NotNull String CHAIN = "chain";
+
+    private static final @NotNull List<String> TYPED_KEYS = List.of(OUTPUT_TYPE, CHAIN);
+
+    /**
      * Serialises a {@link Chain} as a JSON array of stage objects.
      *
      * @param chain the chain to serialise
@@ -52,15 +64,13 @@ public final class ChainSerde {
      * @param arr the JSON array
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt chain
+     * @throws IllegalArgumentException when an entry of the array is not a JSON object
      */
     public static @NotNull Chain<?, ?> readChain(
         @NotNull JsonArray arr,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
-        List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
-        for (JsonElement el : arr)
-            stages.add(stageReader.apply(el.getAsJsonObject()));
-        return Chain.unchecked(stages);
+        return Chain.unchecked(readStages(arr, stageReader));
     }
 
     /**
@@ -93,6 +103,7 @@ public final class ChainSerde {
      * @param arr the JSON array
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt pipeline
+     * @throws IllegalArgumentException when an entry of the array is not a JSON object
      * @throws IllegalStateException when the stages do not form a valid pipeline
      */
     public static @NotNull DataPipeline<?> readPipeline(
@@ -134,14 +145,24 @@ public final class ChainSerde {
      * @param obj the JSON object
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt named chains
+     * @throws IllegalArgumentException when a name maps to anything but a stage array, or an entry of
+     *         one is not a JSON object
      */
     public static @NotNull NamedChains<?> readNamedChains(
         @NotNull JsonObject obj,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
         LinkedHashMap<String, Chain<Object, ?>> map = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonElement> entry : obj.entrySet())
+
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            if (!entry.getValue().isJsonArray())
+                throw new IllegalArgumentException(String.format(
+                    "Sub-pipeline '%s' must be a stage array but was %s", entry.getKey(), shapeOf(entry.getValue())
+                ));
+
             map.put(entry.getKey(), Chain.of(readStages(entry.getValue().getAsJsonArray(), stageReader)));
+        }
+
         return new NamedChains<>(map);
     }
 
@@ -160,8 +181,8 @@ public final class ChainSerde {
         JsonObject out = new JsonObject();
         for (Map.Entry<String, TypedChain<?>> entry : chains.entrySet()) {
             JsonObject typed = new JsonObject();
-            typed.addProperty("outputType", entry.getValue().outputType().label());
-            typed.add("chain", writeChain(entry.getValue().chain(), stageWriter));
+            typed.addProperty(OUTPUT_TYPE, entry.getValue().outputType().label());
+            typed.add(CHAIN, writeChain(entry.getValue().chain(), stageWriter));
             out.add(entry.getKey(), typed);
         }
         return out;
@@ -170,27 +191,87 @@ public final class ChainSerde {
     /**
      * Deserialises a typed named-chains JSON object into an unmodifiable
      * {@code Map<String, TypedChain<?>>} that keeps the document order of the names.
+     * <p>
+     * Each entry is an object holding exactly {@code outputType} and {@code chain}; a JSON
+     * {@code null} on either reads as the key being absent.
      *
      * @param obj the JSON object
      * @param stageReader callback that rebuilds a single stage from its JSON form
      * @return the rebuilt typed named-chains map
-     * @throws IllegalArgumentException if any entry references an unknown {@link DataType} label
+     * @throws IllegalArgumentException if any entry is not an object, lacks either key, holds a key
+     *         besides them, holds either in the wrong shape, or references an unknown
+     *         {@link DataType} label
      */
     public static @NotNull Map<String, TypedChain<?>> readTypedNamedChains(
         @NotNull JsonObject obj,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
         LinkedHashMap<String, TypedChain<?>> map = new LinkedHashMap<>();
+
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String name = entry.getKey();
+
+            if (!entry.getValue().isJsonObject())
+                throw new IllegalArgumentException(String.format(
+                    "Typed sub-pipeline '%s' must be a JSON object but was %s", name, shapeOf(entry.getValue())
+                ));
+
             JsonObject typed = entry.getValue().getAsJsonObject();
-            String label = typed.get("outputType").getAsString();
+
+            for (String key : typed.keySet()) {
+                if (!TYPED_KEYS.contains(key))
+                    throw new IllegalArgumentException(String.format(
+                        "Typed sub-pipeline '%s' does not declare key '%s' (declared keys: %s)", name, key, TYPED_KEYS
+                    ));
+            }
+
+            JsonElement rawLabel = typedEntry(name, typed, OUTPUT_TYPE);
+            JsonElement rawChain = typedEntry(name, typed, CHAIN);
+
+            if (!rawLabel.isJsonPrimitive())
+                throw new IllegalArgumentException(String.format(
+                    "Typed sub-pipeline '%s' holds %s under '%s' but a type label was expected", name, shapeOf(rawLabel), OUTPUT_TYPE
+                ));
+
+            if (!rawChain.isJsonArray())
+                throw new IllegalArgumentException(String.format(
+                    "Typed sub-pipeline '%s' holds %s under '%s' but a stage array was expected", name, shapeOf(rawChain), CHAIN
+                ));
+
+            String label = rawLabel.getAsString();
             DataType<?> outputType = DataTypes.byLabel(label);
             if (outputType == null)
                 throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
-            List<Stage<?, ?>> stages = readStages(typed.get("chain").getAsJsonArray(), stageReader);
-            map.put(entry.getKey(), typedChainOf(outputType, stages));
+            List<Stage<?, ?>> stages = readStages(rawChain.getAsJsonArray(), stageReader);
+            map.put(name, typedChainOf(outputType, stages));
         }
+
         return Concurrent.newUnmodifiableLinkedMap(map);
+    }
+
+    /**
+     * Names the JSON shape of an element for a load error - {@code a JSON object},
+     * {@code a JSON array}, {@code a JSON primitive} or {@code a JSON null}.
+     *
+     * @param element the element to describe
+     * @return the shape, with its article
+     */
+    public static @NotNull String shapeOf(@NotNull JsonElement element) {
+        if (element.isJsonObject()) return "a JSON object";
+        if (element.isJsonArray()) return "a JSON array";
+        if (element.isJsonPrimitive()) return "a JSON primitive";
+        return "a JSON null";
+    }
+
+    private static @NotNull JsonElement typedEntry(@NotNull String name, @NotNull JsonObject typed, @NotNull String key) {
+        JsonElement value = typed.get(key);
+
+        if (value == null || value.isJsonNull())
+            throw new IllegalArgumentException(String.format(
+                "Typed sub-pipeline '%s' is missing required key '%s'", name, key
+            ));
+
+        return value;
     }
 
     private static @NotNull List<Stage<?, ?>> readStages(
@@ -198,8 +279,16 @@ public final class ChainSerde {
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
         List<Stage<?, ?>> stages = new ArrayList<>(arr.size());
-        for (JsonElement el : arr)
+
+        for (JsonElement el : arr) {
+            if (!el.isJsonObject())
+                throw new IllegalArgumentException(String.format(
+                    "Stage entry must be a JSON object but was %s", shapeOf(el)
+                ));
+
             stages.add(stageReader.apply(el.getAsJsonObject()));
+        }
+
         return stages;
     }
 

@@ -525,6 +525,24 @@ operand is validated as a whole pipeline against the type its stage consumes
 (`DataPipeline.validate(DataType)`). Both checks run on the typed builder path and on load
 alike.
 
+### Loading
+
+`PipelineGson.fromJson` reads every stage strictly, at any depth - bodies and operands included -
+and each refusal is an `IllegalArgumentException`:
+
+- **A key the stage does not declare fails the load.** Every key besides `kind` must be one of the
+  stage's slots, so a misspelt key is caught rather than read as an absent optional one:
+  `Stage 'TRANSFORM_SPLIT' does not declare key 'regx' (declared keys: [regex])`.
+- **A required key that is absent fails the load**, and so does one holding JSON `null`:
+  `Stage 'TRANSFORM_SPLIT' is missing required key 'regex'`.
+- **JSON `null` on an optional key reads as the key being absent**, and is not written back.
+- **A value of the wrong JSON shape fails the load** - an object where a string belongs, say, or
+  anything but a stage array for a body - and so does a stage entry that is not an object or has no
+  `kind`, and a `TRANSFORM_JSON_OBJECT_BUILD` output holding a key besides `outputType` and
+  `chain`.
+- **A stage factory's refusal reaches the caller as the exception the factory threw**, with its own
+  message: `UrlSource maxBodyBytes must not be negative but got '-1'`.
+
 ## Status
 
 v0.1, pre-release. The Stream-parity catalog (FlatMap family, terminals, match collectors,

@@ -149,11 +149,17 @@ public record FieldSpec<T>(
     /**
      * Deserialises a value for this slot from its JSON form into the given builder. Routes
      * to the matching {@link StageConfig.Builder} method based on {@link #type}.
+     * <p>
+     * A JSON {@code null} leaves the slot unset, so it reads as an absent key: an optional slot
+     * passes {@code null} to the factory and a required one fails as missing.
      *
      * @param raw the JSON form
      * @param b the builder to populate
      * @param stageReader recursive callback used by sub-pipeline types to deserialise nested stages
      * @return {@code b} for chaining
+     * @throws IllegalArgumentException when the JSON form is not the shape the slot's type is written
+     *         as - a primitive for a scalar or {@code DATA_TYPE}, a stage array for a
+     *         {@code SUB_PIPELINE} or {@code PIPELINE}, an object for a map
      * @throws IllegalArgumentException when an {@code INT} or {@code LONG} slot's number is not integral or does not fit the type
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
      * @throws IllegalArgumentException when a {@code STRING_MAP} slot maps a key to a JSON null, object or array
@@ -164,6 +170,9 @@ public record FieldSpec<T>(
         @NotNull StageConfig.Builder b,
         @NotNull Function<JsonObject, Stage<?, ?>> stageReader
     ) {
+        if (raw.isJsonNull()) return b;
+        this.requireShape(raw);
+
         switch (this.type) {
             case STRING    -> b.string(this.name, raw.getAsString());
             case INT       -> b.integer(this.name, (int) this.readIntegral(raw));
@@ -184,6 +193,25 @@ public record FieldSpec<T>(
             case STRING_MAP              -> b.stringMap(this.name, this.readStringMap(raw.getAsJsonObject()));
         }
         return b;
+    }
+
+    /**
+     * Checks that a slot's JSON form is the shape its type is written as.
+     *
+     * @param raw the JSON form, not a JSON {@code null}
+     * @throws IllegalArgumentException when the form is not the shape of this slot's type
+     */
+    private void requireShape(@NotNull JsonElement raw) {
+        boolean fits = switch (this.type) {
+            case STRING, INT, LONG, DOUBLE, BOOLEAN, DATA_TYPE          -> raw.isJsonPrimitive();
+            case SUB_PIPELINE, PIPELINE                                 -> raw.isJsonArray();
+            case SUB_PIPELINES_MAP, TYPED_SUB_PIPELINES_MAP, STRING_MAP -> raw.isJsonObject();
+        };
+
+        if (!fits)
+            throw new IllegalArgumentException(String.format(
+                "Field '%s' holds %s but a %s was expected", this.name, ChainSerde.shapeOf(raw), this.type
+            ));
     }
 
     /**
