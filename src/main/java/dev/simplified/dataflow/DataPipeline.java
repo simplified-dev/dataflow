@@ -7,23 +7,34 @@ import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.dataflow.chain.Chain;
+import dev.simplified.dataflow.chain.NamedChains;
+import dev.simplified.dataflow.chain.TypedChain;
+import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.SourceStage;
 import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.meta.StageMetadata;
+import dev.simplified.dataflow.stage.meta.StageReflection;
+import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.transform.primitive.ExpectTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Immutable, validated sequence of {@link Stage} instances that maps a source-produced
  * value through a chain of filters / transforms / collectors to a final result of type
  * {@code O}.
  * <p>
- * A pipeline always begins with a {@link SourceStage}. Every subsequent stage's
- * {@link Stage#inputType() input type} must equal the previous stage's
- * {@link Stage#outputType() output type}; this is enforced by {@link #validate()} and
- * checked at compile time on the typed builder path.
+ * A pipeline always begins with a {@link SourceStage}. Each stage's
+ * {@link Stage#outputType() output type} must be {@linkplain DataType#isAssignableTo(DataType)
+ * assignable to} the {@link Stage#inputType() input type} of the stage after it; this is enforced
+ * by {@link #validate()}. The typed builder path also checks it at compile time, where Java's
+ * invariant generics refuse a list or set of a narrower element that {@link #validate()} accepts.
  *
  * @param <O> output type of the pipeline's last stage
  */
@@ -61,7 +72,7 @@ public final class DataPipeline<O> {
      * Serde-only entry that bypasses the typed builder. The caller asserts that
      * {@code stages} forms a well-typed chain whose final stage produces {@code outputType};
      * the contract is checked dynamically via {@link #validate()} on the
-     * {@link dev.simplified.dataflow.serde.PipelineGson} path. Not intended for general use -
+     * {@link PipelineGson} path. Not intended for general use -
      * the {@link Builder} path enforces the same contract at compile time.
      *
      * @param stages the assembled stages in execution order
@@ -77,10 +88,16 @@ public final class DataPipeline<O> {
     }
 
     /**
-     * Walks the stage chain and reports every type-chain mismatch and structural issue.
+     * Walks the stage chain and reports every type-chain mismatch and structural issue, and
+     * every expectation an {@link ExpectTransform} states.
      * <p>
      * Pipelines with zero stages report a single pipeline-level "missing source" issue.
      * Pipelines whose first stage expects an upstream input report a structural issue.
+     * <p>
+     * Expectations are gathered from every top-level stage and from every stage nested in a
+     * body, a named or typed body, or a pipeline operand, at any depth, each with the path of
+     * the stage that states it. They are listed whether or not the pipeline has issues, and
+     * they never make it invalid.
      *
      * @return the validation report
      */
@@ -103,7 +120,7 @@ public final class DataPipeline<O> {
             Stage<?, ?> stage = this.stages.get(i);
             DataType<?> expected = stage.inputType();
 
-            if (!expected.equals(previousOutput)) {
+            if (!previousOutput.isAssignableTo(expected)) {
                 issues.add(new ValidationReport.Issue(
                     i,
                     "Stage #" + i + " (" + stage.kindId() + ") expects input " + expected
@@ -114,7 +131,107 @@ public final class DataPipeline<O> {
             previousOutput = stage.outputType();
         }
 
-        return new ValidationReport(List.copyOf(issues));
+        List<ValidationReport.Expectation> expectations = new ArrayList<>();
+        for (int i = 0; i < this.stages.size(); i++)
+            collectExpectations(this.stages.get(i), i, "#" + i, expectations);
+
+        return new ValidationReport(List.copyOf(issues), List.copyOf(expectations));
+    }
+
+    /**
+     * Walks the stage chain as {@link #validate()} does, and also reports a pipeline-level issue
+     * when the last stage produces a type not {@linkplain DataType#isAssignableTo(DataType)
+     * assignable to} {@code expectedOutputType}.
+     * <p>
+     * Used by a stage that carries this pipeline as an operand, to check it against the type the
+     * stage consumes when the stage is built.
+     *
+     * @param expectedOutputType the type the caller expects of the last stage
+     * @return the validation report
+     */
+    public @NotNull ValidationReport validate(@NotNull DataType<?> expectedOutputType) {
+        ValidationReport report = this.validate();
+        if (this.stages.isEmpty()) return report;
+
+        DataType<?> produced = this.stages.getLast().outputType();
+        if (produced.isAssignableTo(expectedOutputType)) return report;
+
+        List<ValidationReport.Issue> issues = new ArrayList<>(report.issues());
+        issues.add(ValidationReport.Issue.pipelineLevel(
+            "Pipeline produces " + produced + " but caller expected " + expectedOutputType
+        ));
+        return new ValidationReport(List.copyOf(issues), report.expectations());
+    }
+
+    /**
+     * Adds the expectation {@code stage} states, if it is an {@link ExpectTransform}, then the
+     * expectations of every stage its body and operand slots hold.
+     * <p>
+     * The slots are found through the {@link StageSpec} class's {@link StageMetadata}, read from
+     * the field that holds each slot's configured value. A stage class without {@link StageSpec},
+     * or whose metadata cannot be derived - it declares no canonical factory, or a factory
+     * parameter names no field of the class - nests nothing, so a stage the walk cannot read does
+     * not fail the validation.
+     *
+     * @param stage the stage to read
+     * @param stageIndex zero-based index of the top-level stage that is or nests {@code stage}
+     * @param path where {@code stage} sits, such as {@code #3.body[1]}
+     * @param expectations the list the expectations are added to, in walk order
+     */
+    @SuppressWarnings("unchecked")
+    private static void collectExpectations(
+        @NotNull Stage<?, ?> stage,
+        int stageIndex,
+        @NotNull String path,
+        @NotNull List<ValidationReport.Expectation> expectations
+    ) {
+        if (stage instanceof ExpectTransform<?> expect)
+            expectations.add(new ValidationReport.Expectation(stageIndex, path, expect.expectation(), expect.inputType()));
+
+        Class<? extends Stage<?, ?>> stageClass = (Class<? extends Stage<?, ?>>) stage.getClass();
+        if (!stageClass.isAnnotationPresent(StageSpec.class)) return;
+        StageMetadata metadata;
+
+        try {
+            metadata = StageReflection.of(stageClass);
+        } catch (RuntimeException ignored) {
+            return;
+        }
+
+        for (StageMetadata.Slot<?> slot : metadata.slots()) {
+            String slotPath = path + "." + slot.spec().name();
+
+            switch (slot.instanceField().get(stage)) {
+                case Chain<?, ?> body -> collectExpectations(body.stages(), stageIndex, slotPath, expectations);
+                case NamedChains<?> bodies -> bodies.chains().forEach((branch, body) ->
+                    collectExpectations(body.stages(), stageIndex, slotPath + "." + branch, expectations)
+                );
+                case DataPipeline<?> operand -> collectExpectations(operand.stages(), stageIndex, slotPath, expectations);
+                case Map<?, ?> map when slot.spec().type() == FieldSpec.Type.TYPED_SUB_PIPELINES_MAP -> map.forEach((branch, body) ->
+                    collectExpectations(((TypedChain<?>) body).chain().stages(), stageIndex, slotPath + "." + branch + ".chain", expectations)
+                );
+                case null, default -> { }
+            }
+        }
+    }
+
+    /**
+     * Adds the expectations of every stage in one stage array, each at {@code path} followed by
+     * its index in brackets.
+     *
+     * @param stages the stage array of a body or operand
+     * @param stageIndex zero-based index of the top-level stage that nests the array
+     * @param path where the array sits, such as {@code #3.body}
+     * @param expectations the list the expectations are added to, in walk order
+     */
+    private static void collectExpectations(
+        @NotNull List<Stage<?, ?>> stages,
+        int stageIndex,
+        @NotNull String path,
+        @NotNull List<ValidationReport.Expectation> expectations
+    ) {
+        for (int i = 0; i < stages.size(); i++)
+            collectExpectations(stages.get(i), stageIndex, path + "[" + i + "]", expectations);
     }
 
     /**
@@ -153,18 +270,21 @@ public final class DataPipeline<O> {
 
     /**
      * Narrows this pipeline to one whose static output type is {@code type}, verifying the
-     * runtime output type matches. Used by callers of the deserialisation path to recover a
-     * typed handle from the wildcard pipeline returned by
-     * {@link dev.simplified.dataflow.serde.PipelineGson#fromJson(String)}.
+     * runtime output type is {@linkplain DataType#isAssignableTo(DataType) assignable to} it. Used
+     * by callers of the deserialisation path to recover a typed handle from the wildcard pipeline
+     * returned by {@link PipelineGson#fromJson(String)}.
+     * <p>
+     * {@link #outputType()} is unchanged, so a pipeline producing {@code JSON_OBJECT} narrowed to
+     * {@code JSON_ELEMENT} still reports {@code JSON_OBJECT}.
      *
      * @param type the expected output type
      * @return this pipeline, narrowed to produce {@code T}
      * @param <T> the expected output type
-     * @throws IllegalStateException when the runtime output type does not equal {@code type}
+     * @throws IllegalStateException when the runtime output type is not assignable to {@code type}
      */
     @SuppressWarnings("unchecked")
     public <T> @NotNull DataPipeline<T> expectOutput(@NotNull DataType<T> type) {
-        if (!this.outputType.equals(type))
+        if (!this.outputType.isAssignableTo(type))
             throw new IllegalStateException(
                 "expected output type " + type + " but pipeline produces " + this.outputType
             );
@@ -230,7 +350,9 @@ public final class DataPipeline<O> {
 
         /**
          * Returns a validation report for the stages staged so far without throwing. Useful
-         * for inspecting type-chain errors while a pipeline is still under construction.
+         * for inspecting type-chain errors while a pipeline is still under construction, and
+         * for listing the expectations its stages state, as {@link DataPipeline#validate()}
+         * does for a built pipeline.
          *
          * @return the validation report
          */

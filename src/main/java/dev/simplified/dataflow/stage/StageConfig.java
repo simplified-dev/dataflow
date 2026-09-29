@@ -4,6 +4,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.NamedChains;
@@ -12,8 +13,10 @@ import dev.simplified.dataflow.stage.meta.StageMetadata;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Typed name-to-value bag holding one stage's configuration.
@@ -122,6 +125,32 @@ public final class StageConfig {
          */
         public @NotNull Builder typedSubPipelines(@NotNull String name, @NotNull Map<String, TypedChain<?>> value) {
             this.values.put(name, value);
+            return this;
+        }
+
+        /**
+         * Stores a whole sourced {@link DataPipeline} under {@code name}. Used by stages whose
+         * configuration carries a pipeline operand that reads a second document.
+         *
+         * @param name the field name
+         * @param pipeline the operand pipeline
+         * @return this builder
+         */
+        public @NotNull Builder pipeline(@NotNull String name, @NotNull DataPipeline<?> pipeline) {
+            this.values.put(name, pipeline);
+            return this;
+        }
+
+        /**
+         * Stores an unmodifiable copy of a string-to-string map under {@code name}, keeping the
+         * iteration order of {@code value}.
+         *
+         * @param name the field name
+         * @param value the map to copy
+         * @return this builder
+         */
+        public @NotNull Builder stringMap(@NotNull String name, @NotNull Map<String, String> value) {
+            this.values.put(name, Concurrent.newUnmodifiableLinkedMap(value));
             return this;
         }
 
@@ -250,6 +279,29 @@ public final class StageConfig {
     }
 
     /**
+     * Returns the operand {@link DataPipeline} stored under {@code name}.
+     *
+     * @param name the field name
+     * @return the operand pipeline
+     * @throws ClassCastException when the field is present but not a {@link DataPipeline}
+     */
+    public @NotNull DataPipeline<?> getPipeline(@NotNull String name) {
+        return (DataPipeline<?>) this.values.get(name);
+    }
+
+    /**
+     * Returns the string-to-string map stored under {@code name}, in the order it was stored.
+     *
+     * @param name the field name
+     * @return the unmodifiable map
+     * @throws ClassCastException when the field is present but not a map
+     */
+    @SuppressWarnings("unchecked")
+    public @NotNull Map<String, String> getStringMap(@NotNull String name) {
+        return (Map<String, String>) this.values.get(name);
+    }
+
+    /**
      * Returns the typed named-chains map stored under {@code name}.
      *
      * @param name the field name
@@ -270,6 +322,15 @@ public final class StageConfig {
      */
     public boolean has(@NotNull String name) {
         return this.values.containsKey(name);
+    }
+
+    /**
+     * Returns the name of every field this configuration holds a value for.
+     *
+     * @return the unmodifiable field names
+     */
+    public @NotNull Set<String> names() {
+        return Collections.unmodifiableSet(this.values.keySet());
     }
 
     /**

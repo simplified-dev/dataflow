@@ -1,20 +1,24 @@
 package dev.simplified.dataflow.stage.transform.json;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
+import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * {@link TransformStage} that serialises a {@link JsonElement} back into its JSON string
+ * {@link TransformStage} that serialises a {@link JsonElement} back into its compact JSON string
  * representation.
+ * <p>
+ * Serialises through {@link PipelineGson#gson()}, which does not HTML-escape, so {@code <},
+ * {@code >}, {@code &}, {@code =} and {@code '} inside strings come out as themselves rather than
+ * as Unicode escape sequences.
  */
 @StageSpec(
     id = "TRANSFORM_JSON_STRINGIFY",
@@ -24,8 +28,6 @@ import org.jetbrains.annotations.Nullable;
 )
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StringifyTransform implements TransformStage<JsonElement, String> {
-
-    private static final @NotNull Gson GSON = new Gson();
 
     /**
      * Constructs a json-stringify stage.
@@ -39,7 +41,7 @@ public final class StringifyTransform implements TransformStage<JsonElement, Str
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable JsonElement input) {
-        return input == null ? null : GSON.toJson(input);
+        return input == null ? null : PipelineGson.gson().toJson(input);
     }
 
     /** {@inheritDoc} */

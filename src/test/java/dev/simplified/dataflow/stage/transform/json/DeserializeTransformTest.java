@@ -50,11 +50,11 @@ class DeserializeTransformTest {
     }
 
     @Test
-    @DisplayName("Rejects parameterised DataType at build time")
-    void rejectsListType() {
-        DataType<?> listType = DataType.list(DataTypes.STRING);
+    @DisplayName("Rejects a Set DataType at build time")
+    void rejectsSetType() {
+        DataType<?> setType = DataType.set(DataTypes.STRING);
         assertThrows(IllegalArgumentException.class,
-            () -> DeserializeTransform.of(listType));
+            () -> DeserializeTransform.of(setType));
     }
 
     @Test

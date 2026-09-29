@@ -63,9 +63,9 @@ public @interface StageSpec {
      * Coarse grouping used by UI palette renderers to bucket stages into pickable categories.
      * <p>
      * The categories mirror the dataflow source layout: e.g. {@code TRANSFORM_DOM} groups
-     * every kind whose impl lives in {@code dev.sbs.dataflow.stage.transform.dom}. Declaration
-     * order is meaningful: {@link #SOURCE} comes first, the {@code TERMINAL_*} block comes last,
-     * and everything in between is sorted alphabetically.
+     * every kind whose impl lives in {@code dev.simplified.dataflow.stage.transform.dom}.
+     * Declaration order is meaningful: {@link #SOURCE} comes first, the {@code TERMINAL_*} block
+     * comes last, and everything in between is sorted alphabetically.
      * <p>
      * Downstream UI code can rely on {@link Enum#ordinal()} for natural display order.
      */
@@ -88,7 +88,8 @@ public @interface StageSpec {
         FILTER_JSON,
 
         /**
-         * List-shape filters (distinct, not-null, take, skip, index-in-range).
+         * List-shape filters (distinct, distinct-by, not-null, take, skip, index-in-range,
+         * take-while...).
          */
         FILTER_LIST,
 
@@ -128,32 +129,37 @@ public @interface StageSpec {
         PREDICATE_STRING,
 
         /**
-         * Jsoup-backed DOM transforms (parse-html, css-select, dom-text, dom-nth-child...).
+         * Jsoup-backed DOM transforms (parse-html, css-select, dom-text, dom-nth-child, table span
+         * expand...).
          */
         TRANSFORM_DOM,
 
         /**
-         * Encoding transforms (base64, url-encode/decode).
+         * Encoding transforms (base64, url-encode/decode, html-decode, json-unescape).
          */
         TRANSFORM_ENCODING,
 
         /**
-         * Gson-backed JSON transforms (parse-json, parse-xml, json-path, json-as-*...).
+         * Gson-backed JSON transforms (parse-json, parse-xml, parse-lua, json-path, json-as-*,
+         * entries, join-by-key, key-lookup, resolve-ancestor...).
          */
         TRANSFORM_JSON,
 
         /**
-         * List-shape transforms (length, reverse).
+         * List-shape transforms (length, reverse, sort, map, flat-map, concat, group-by, enumerate,
+         * zip, rotate, broadcast...).
          */
         TRANSFORM_LIST,
 
         /**
-         * Primitive arithmetic and parsing transforms (parse-int, abs, negate, to-string...).
+         * Primitive arithmetic and parsing transforms (parse-int, parse-roman, abs, negate,
+         * arithmetic, binary arithmetic, round, constant, coalesce, to-string, to-raw...).
          */
         TRANSFORM_PRIMITIVE,
 
         /**
-         * String-valued transforms (lowercase, regex, trim, replace, length, prefix...).
+         * String-valued transforms (lowercase, regex, trim, replace, replace-match, value-map,
+         * range-expand, length, prefix...), and the fetch of the URL a string names.
          */
         TRANSFORM_STRING,
 

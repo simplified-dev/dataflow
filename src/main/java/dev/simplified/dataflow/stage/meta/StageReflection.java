@@ -4,6 +4,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentMap;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.chain.Chain;
 import dev.simplified.dataflow.chain.NamedChains;
@@ -50,6 +51,8 @@ import java.util.stream.Collectors;
  *   <li>{@link NamedChains} -> {@link FieldSpec.Type#SUB_PIPELINES_MAP}, identity adapter</li>
  *   <li>{@code Map<String, ? extends List<? extends Stage<?, ?>>>} -> {@link FieldSpec.Type#SUB_PIPELINES_MAP}, adapter {@code named -> {name -> chain.stages()}}</li>
  *   <li>{@code Map<String, TypedChain>} -> {@link FieldSpec.Type#TYPED_SUB_PIPELINES_MAP}, identity adapter</li>
+ *   <li>{@link DataPipeline} -> {@link FieldSpec.Type#PIPELINE}, identity adapter</li>
+ *   <li>{@code Map<String, String>} -> {@link FieldSpec.Type#STRING_MAP}, identity adapter</li>
  * </ul>
  * The derived {@link StageMetadata} is cached per class so each subsequent lookup is a map
  * read.
@@ -172,9 +175,12 @@ public final class StageReflection {
         if (DataType.class.isAssignableFrom(raw)) return new TypeResolution(FieldSpec.Type.DATA_TYPE, StageMetadata.Slot.IDENTITY);
         if (raw == Chain.class) return new TypeResolution(FieldSpec.Type.SUB_PIPELINE, StageMetadata.Slot.IDENTITY);
         if (raw == NamedChains.class) return new TypeResolution(FieldSpec.Type.SUB_PIPELINES_MAP, StageMetadata.Slot.IDENTITY);
+        if (raw == DataPipeline.class) return new TypeResolution(FieldSpec.Type.PIPELINE, StageMetadata.Slot.IDENTITY);
         if (List.class.isAssignableFrom(raw) && listOfStages(parameterized))
             return new TypeResolution(FieldSpec.Type.SUB_PIPELINE, CHAIN_TO_STAGES);
         if (Map.class.isAssignableFrom(raw)) {
+            if (stringValued(parameterized))
+                return new TypeResolution(FieldSpec.Type.STRING_MAP, StageMetadata.Slot.IDENTITY);
             if (typedChainValued(parameterized))
                 return new TypeResolution(FieldSpec.Type.TYPED_SUB_PIPELINES_MAP, StageMetadata.Slot.IDENTITY);
             if (stringKeyedListOfStagesValued(parameterized))
@@ -202,6 +208,12 @@ public final class StageReflection {
         Type[] args = pt.getActualTypeArguments();
         if (args.length != 1) return false;
         return rawType(args[0]) == Stage.class;
+    }
+
+    private static boolean stringValued(@NotNull Type t) {
+        if (!(t instanceof ParameterizedType pt)) return false;
+        Type[] args = pt.getActualTypeArguments();
+        return args.length == 2 && rawType(args[0]) == String.class && rawType(args[1]) == String.class;
     }
 
     private static boolean typedChainValued(@NotNull Type t) {

@@ -6,6 +6,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.Getter;
 import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
+import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -29,10 +30,11 @@ import java.util.function.Consumer;
  * several named sub-pipelines and assembling their results as fields.
  * <p>
  * Each named output declares an explicit output {@link DataType}; the body chain is
- * validated against {@code (inputType, branchOutputType)} at build time. At execute time,
+ * validated against {@code (inputType, branchOutputType)} when the stage is built, on the
+ * typed builder path and the wire path alike. At execute time,
  * each branch's final value is coerced to a {@link JsonElement} via
- * {@link PipelineGson#gson() gson.toJsonTree(...)} and stored under its name. Null branch
- * results omit the field.
+ * {@link PipelineGson#gson() gson.toJsonTree(...)} and stored under its name, in the order the
+ * outputs were declared. Null branch results omit the field.
  *
  * @param <I> input type, shared by every named sub-pipeline
  */
@@ -114,12 +116,15 @@ public final class ObjectBuildTransform<I> implements TransformStage<I, JsonObje
 
     /**
      * Canonical flat factory matching the wire shape. Constructs a {@link ObjectBuildTransform}
-     * from its shared input type and a map of named, typed sub-chains.
+     * from its shared input type and a map of named, typed sub-chains, validating every
+     * sub-chain against {@code (inputType, declared output type)}.
      *
      * @param inputType the shared input type
      * @param outputs named sub-chains, each carrying its declared output {@link DataType}
      * @return the built transform
      * @param <I> input type
+     * @throws IllegalArgumentException when a sub-chain is empty, does not consume
+     *         {@code inputType}, breaks its type chain, or does not produce its declared type
      */
     public static <I> @NotNull ObjectBuildTransform<I> of(
         @Configurable(label = "Input type", placeholder = "STRING")
@@ -127,7 +132,15 @@ public final class ObjectBuildTransform<I> implements TransformStage<I, JsonObje
         @Configurable(label = "Outputs (typed)", placeholder = "")
         @NotNull Map<String, TypedChain<?>> outputs
     ) {
-        return new ObjectBuildTransform<>(inputType, Map.copyOf(outputs));
+        for (Map.Entry<String, TypedChain<?>> entry : outputs.entrySet()) {
+            TypedChain<?> typed = entry.getValue();
+            ValidationReport report = Chain.validate(inputType, typed.chain().stages(), typed.outputType());
+
+            if (!report.isValid())
+                throw new IllegalArgumentException("Invalid ObjectBuildTransform output '" + entry.getKey() + "': " + report.issues());
+        }
+
+        return new ObjectBuildTransform<>(inputType, Concurrent.newUnmodifiableLinkedMap(outputs));
     }
 
     /** {@inheritDoc} */

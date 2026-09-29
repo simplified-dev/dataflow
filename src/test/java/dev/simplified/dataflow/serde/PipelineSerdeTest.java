@@ -1,5 +1,6 @@
 package dev.simplified.dataflow.serde;
 
+import com.google.gson.JsonParser;
 import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
@@ -24,14 +25,14 @@ import dev.simplified.dataflow.stage.terminal.collect.MapCollect;
 import dev.simplified.dataflow.stage.terminal.collect.NthCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SetCollect;
 import dev.simplified.dataflow.stage.terminal.collect.SubListCollect;
-import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.simplified.dataflow.stage.transform.dom.AttrTransform;
+import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
 import dev.simplified.dataflow.stage.transform.dom.NthChildTransform;
-import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.dom.ParseHtmlTransform;
-import dev.simplified.dataflow.stage.transform.json.PathTransform;
+import dev.simplified.dataflow.stage.transform.dom.TextTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseJsonTransform;
 import dev.simplified.dataflow.stage.transform.json.ParseXmlTransform;
+import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseDoubleTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseIntTransform;
 import dev.simplified.dataflow.stage.transform.string.RegexExtractTransform;
@@ -266,16 +267,19 @@ class PipelineSerdeTest {
 
     /**
      * Per-stage smoke test: every {@link StageRegistry registered stage} with a non-chain schema
-     * must instantiate cleanly from its {@link FieldSpec#placeholder()} defaults, and the resulting
+     * must instantiate cleanly from its {@link FieldSpec#placeholder()} defaults (a
+     * {@code STRING_MAP} placeholder is read as its JSON object, empty when blank), and the resulting
      * stage's {@code config()} must round-trip through the factory back to an equivalent stage.
-     * Chain-bearing stages are excluded because their bodies have no schema-level default.
+     * Chain-bearing and operand-bearing stages are excluded because their bodies and operands
+     * have no schema-level default.
      */
     @TestFactory
     Stream<DynamicTest> everyNonChainKindFactoryRoundTrips() {
         Set<FieldSpec.Type> chainFieldTypes = EnumSet.of(
             FieldSpec.Type.SUB_PIPELINE,
             FieldSpec.Type.SUB_PIPELINES_MAP,
-            FieldSpec.Type.TYPED_SUB_PIPELINES_MAP
+            FieldSpec.Type.TYPED_SUB_PIPELINES_MAP,
+            FieldSpec.Type.PIPELINE
         );
 
         return StageRegistry.allOrdered().stream()
@@ -316,7 +320,11 @@ class PipelineSerdeTest {
                         );
                     b.dataType(spec.name(), resolved);
                 }
-                default -> {} // chain field types skipped via filter()
+                case STRING_MAP -> spec.readJson(
+                    JsonParser.parseString(placeholder.isEmpty() ? "{}" : placeholder), b,
+                    o -> { throw new AssertionError("Stage " + spec0.id() + " field '" + spec.name() + "' holds no stages"); }
+                );
+                default -> {} // chain and operand field types skipped via filter()
             }
         }
         return b.build();

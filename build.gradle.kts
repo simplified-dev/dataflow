@@ -33,7 +33,7 @@ dependencies {
     api(libs.slf4j.api)
 
     // Simplified Libraries (extracted to github.com/simplified-dev)
-    api("com.github.simplified-dev:client") { version { strictly("1f1a2ae") } }
+    api("com.github.simplified-dev:client") { version { strictly("daefea3") } }
     api("com.github.simplified-dev:collections") { version { strictly("4029e80") } }
     api("com.github.simplified-dev:gson-extras") { version { strictly("3ac0d4f") } }
     api("com.github.simplified-dev:reflection") { version { strictly("5186e88") } }

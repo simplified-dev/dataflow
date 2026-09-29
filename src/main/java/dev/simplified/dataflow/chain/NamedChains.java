@@ -1,5 +1,6 @@
 package dev.simplified.dataflow.chain;
 
+import dev.simplified.collection.Concurrent;
 import dev.simplified.dataflow.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,12 +13,23 @@ import java.util.Map;
  * may produce heterogeneous outputs.
  * <p>
  * Carried by stages whose configuration fans the same input value through several named
- * sub-pipelines (e.g. {@code MapCollect}, {@code AndPredicate}, {@code OrPredicate}).
+ * sub-pipelines (e.g. {@code MapCollect}, {@code AndPredicate}, {@code OrPredicate}). The map
+ * is held as an unmodifiable copy in the iteration order it was given, so the declared order
+ * of the bodies survives into execution and back onto the wire.
  *
- * @param chains the named-body map; iteration order is preserved
+ * @param chains the named-body map, in declared order
  * @param <I> shared input type for every named chain
  */
 public record NamedChains<I>(@NotNull Map<String, Chain<I, ?>> chains) {
+
+    /**
+     * Copies {@code chains} into an unmodifiable map that keeps its iteration order.
+     *
+     * @param chains the named-body map, in declared order
+     */
+    public NamedChains {
+        chains = Concurrent.newUnmodifiableLinkedMap(chains);
+    }
 
     /**
      * Wraps a raw {@code Map<String, List<Stage>>} as a {@link NamedChains}, freezing each
@@ -33,7 +45,7 @@ public record NamedChains<I>(@NotNull Map<String, Chain<I, ?>> chains) {
         LinkedHashMap<String, Chain<I, ?>> frozen = new LinkedHashMap<>();
         for (Map.Entry<String, ? extends List<? extends Stage<?, ?>>> entry : raw.entrySet())
             frozen.put(entry.getKey(), Chain.of(entry.getValue()));
-        return new NamedChains<>(Map.copyOf(frozen));
+        return new NamedChains<>(frozen);
     }
 
     /**
