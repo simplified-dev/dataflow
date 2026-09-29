@@ -7,14 +7,23 @@ import dev.simplified.annotations.NoArgsConstructor;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.collection.Concurrent;
 import dev.simplified.collection.ConcurrentList;
+import dev.simplified.dataflow.chain.Chain;
+import dev.simplified.dataflow.chain.NamedChains;
+import dev.simplified.dataflow.chain.TypedChain;
 import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.FieldSpec;
 import dev.simplified.dataflow.stage.SourceStage;
 import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.meta.StageMetadata;
+import dev.simplified.dataflow.stage.meta.StageReflection;
+import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.transform.primitive.ExpectTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Immutable, validated sequence of {@link Stage} instances that maps a source-produced
@@ -79,10 +88,16 @@ public final class DataPipeline<O> {
     }
 
     /**
-     * Walks the stage chain and reports every type-chain mismatch and structural issue.
+     * Walks the stage chain and reports every type-chain mismatch and structural issue, and
+     * every expectation an {@link ExpectTransform} states.
      * <p>
      * Pipelines with zero stages report a single pipeline-level "missing source" issue.
      * Pipelines whose first stage expects an upstream input report a structural issue.
+     * <p>
+     * Expectations are gathered from every top-level stage and from every stage nested in a
+     * body, a named or typed body, or a pipeline operand, at any depth, each with the path of
+     * the stage that states it. They are listed whether or not the pipeline has issues, and
+     * they never make it invalid.
      *
      * @return the validation report
      */
@@ -116,7 +131,11 @@ public final class DataPipeline<O> {
             previousOutput = stage.outputType();
         }
 
-        return new ValidationReport(List.copyOf(issues));
+        List<ValidationReport.Expectation> expectations = new ArrayList<>();
+        for (int i = 0; i < this.stages.size(); i++)
+            collectExpectations(this.stages.get(i), i, "#" + i, expectations);
+
+        return new ValidationReport(List.copyOf(issues), List.copyOf(expectations));
     }
 
     /**
@@ -141,7 +160,63 @@ public final class DataPipeline<O> {
         issues.add(ValidationReport.Issue.pipelineLevel(
             "Pipeline produces " + produced + " but caller expected " + expectedOutputType
         ));
-        return new ValidationReport(List.copyOf(issues));
+        return new ValidationReport(List.copyOf(issues), report.expectations());
+    }
+
+    /**
+     * Adds the expectation {@code stage} states, if it is an {@link ExpectTransform}, then the
+     * expectations of every stage its body and operand slots hold.
+     * <p>
+     * The slots are found through the {@link StageSpec} class's {@link StageMetadata}, read from
+     * the field that holds each slot's configured value. A stage class without {@link StageSpec},
+     * or whose metadata cannot be derived because it declares no canonical factory, nests nothing,
+     * so a stage the walk cannot read does not fail the validation.
+     */
+    @SuppressWarnings("unchecked")
+    private static void collectExpectations(
+        @NotNull Stage<?, ?> stage,
+        int stageIndex,
+        @NotNull String path,
+        @NotNull List<ValidationReport.Expectation> expectations
+    ) {
+        if (stage instanceof ExpectTransform<?> expect)
+            expectations.add(new ValidationReport.Expectation(stageIndex, path, expect.expectation(), expect.inputType()));
+
+        Class<? extends Stage<?, ?>> stageClass = (Class<? extends Stage<?, ?>>) stage.getClass();
+        if (!stageClass.isAnnotationPresent(StageSpec.class)) return;
+        StageMetadata metadata;
+
+        try {
+            metadata = StageReflection.of(stageClass);
+        } catch (IllegalStateException ignored) {
+            return;
+        }
+
+        for (StageMetadata.Slot<?> slot : metadata.slots()) {
+            String slotPath = path + "." + slot.spec().name();
+
+            switch (slot.instanceField().get(stage)) {
+                case Chain<?, ?> body -> collectExpectations(body.stages(), stageIndex, slotPath, expectations);
+                case NamedChains<?> bodies -> bodies.chains().forEach((branch, body) ->
+                    collectExpectations(body.stages(), stageIndex, slotPath + "." + branch, expectations)
+                );
+                case DataPipeline<?> operand -> collectExpectations(operand.stages(), stageIndex, slotPath, expectations);
+                case Map<?, ?> map when slot.spec().type() == FieldSpec.Type.TYPED_SUB_PIPELINES_MAP -> map.forEach((branch, body) ->
+                    collectExpectations(((TypedChain<?>) body).chain().stages(), stageIndex, slotPath + "." + branch + ".chain", expectations)
+                );
+                case null, default -> { }
+            }
+        }
+    }
+
+    private static void collectExpectations(
+        @NotNull List<Stage<?, ?>> stages,
+        int stageIndex,
+        @NotNull String path,
+        @NotNull List<ValidationReport.Expectation> expectations
+    ) {
+        for (int i = 0; i < stages.size(); i++)
+            collectExpectations(stages.get(i), stageIndex, path + "[" + i + "]", expectations);
     }
 
     /**
@@ -260,7 +335,9 @@ public final class DataPipeline<O> {
 
         /**
          * Returns a validation report for the stages staged so far without throwing. Useful
-         * for inspecting type-chain errors while a pipeline is still under construction.
+         * for inspecting type-chain errors while a pipeline is still under construction, and
+         * for listing the expectations its stages state, as {@link DataPipeline#validate()}
+         * does for a built pipeline.
          *
          * @return the validation report
          */

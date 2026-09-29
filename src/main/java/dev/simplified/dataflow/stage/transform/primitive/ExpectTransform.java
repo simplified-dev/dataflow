@@ -4,6 +4,7 @@ import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.Getter;
 import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
+import dev.simplified.dataflow.DataPipeline;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -28,6 +29,11 @@ import java.util.List;
  * message names the expectation, so a document that no longer has the shape a pipeline was
  * written against fails loudly rather than producing wrong rows. A {@code null} input is
  * passed through as {@code null} without running the body.
+ * <p>
+ * The expectation is known before any run: {@link DataPipeline#validate()} lists it in
+ * {@link ValidationReport#expectations()} with the path of the stage, wherever the stage sits -
+ * at the top level, in a body, or in a pipeline operand. Stating one never makes a pipeline
+ * invalid.
  *
  * @param <T> value type
  */
