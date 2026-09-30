@@ -54,6 +54,9 @@ class UrlSourceFetchTest {
         this.server.createContext("/missing", exchange -> respond(exchange, 404, "not here"));
         this.server.createContext("/busy", exchange -> respond(exchange, 429, "slow down"));
         this.server.createContext("/broken", exchange -> respond(exchange, 500, "down"));
+        this.server.createContext("/choices", exchange -> respond(exchange, 300, "pick one"));
+        this.server.createContext("/unlisted", exchange -> respond(exchange, 299, BODY));
+        this.server.createContext("/echo/", exchange -> respond(exchange, 200, exchange.getRequestURI().getRawPath()));
         this.server.createContext("/cached", exchange -> {
             this.cachedHits.incrementAndGet();
             exchange.getResponseHeaders().add("Cache-Control", "max-age=60");
@@ -106,6 +109,12 @@ class UrlSourceFetchTest {
     void absentCapUsesConfiguredCap() {
         UrlSource source = UrlSource.rawHtml(url("/page"));
         assertThrows(UrlFetchException.BodyCapExceeded.class, () -> source.execute(context(8), null));
+    }
+
+    @Test
+    @DisplayName("A character outside ASCII is sent as percent-encoded UTF-8")
+    void nonAsciiSentAsUtf8() {
+        assertThat(UrlSource.text(url("/echo/Déjà_Vu")).execute(context(), null), is(equalTo("/echo/D%C3%A9j%C3%A0_Vu")));
     }
 
     @Test
@@ -162,6 +171,20 @@ class UrlSourceFetchTest {
         UrlSource source = UrlSource.rawHtml(url("/broken"));
         UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> source.execute(context(), null));
         assertThat(thrown, is(not(instanceOf(UrlFetchException.ClientError.class))));
+    }
+
+    @Test
+    @DisplayName("A 3xx the fetcher does not follow fails the run, carrying its code, rather than emitting its body")
+    void unfollowedRedirectionThrows() {
+        UrlSource source = UrlSource.rawHtml(url("/choices"));
+        UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> source.execute(context(), null));
+        assertThat(thrown.getStatusCode(), is(300));
+    }
+
+    @Test
+    @DisplayName("A 2xx the client has no constant for is emitted")
+    void unknownSuccessEmitted() {
+        assertThat(UrlSource.rawHtml(url("/unlisted")).execute(context(), null), is(equalTo(BODY)));
     }
 
     @Test
