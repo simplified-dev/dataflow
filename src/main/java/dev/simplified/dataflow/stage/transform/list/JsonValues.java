@@ -9,12 +9,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.nodes.Node;
 
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * Helpers that write the elements of a list stage into the JSON objects it builds.
  * <p>
  * A value is written the way an {@link ObjectBuildTransform} output is, through
  * {@link PipelineGson#gson()}, except that a {@link JsonElement} is copied rather than shared, so a
- * built object never aliases a tree another stage holds.
+ * built object never aliases a tree another stage holds, and a value JSON cannot hold - a
+ * {@code NaN} or infinite {@link Double} or {@link Float} - is rejected as absent rather than
+ * failing the run, the way the arithmetic stages reject a non-finite result.
  */
 @UtilityClass
 final class JsonValues {
@@ -41,23 +46,31 @@ final class JsonValues {
     }
 
     /**
-     * Tells whether a value is absent, a Java {@code null} or a JSON {@code null}.
+     * Writes a value as a JSON tree of its own.
+     * <p>
+     * A value is absent when it is a Java {@code null} or a JSON {@code null}, and also when JSON
+     * cannot hold it: a {@code NaN} or infinite {@link Double} or {@link Float}, or a list, set or
+     * map holding one at any depth.
      *
      * @param value the value
-     * @return {@code true} when {@code value} is absent
+     * @return a copy of {@code value} when it is a {@link JsonElement}, else its Gson tree, or
+     *         {@code null} when {@code value} is absent
      */
-    static boolean isNull(@Nullable Object value) {
-        return value == null || (value instanceof JsonElement element && element.isJsonNull());
+    static @Nullable JsonElement toJson(@Nullable Object value) {
+        if (value == null || !hasJsonForm(value)) return null;
+        if (value instanceof JsonElement element) return element.isJsonNull() ? null : element.deepCopy();
+        return PipelineGson.gson().toJsonTree(value);
     }
 
-    /**
-     * Writes a value as a JSON tree of its own.
-     *
-     * @param value the value, never absent
-     * @return a copy of {@code value} when it is a {@link JsonElement}, else its Gson tree
-     */
-    static @NotNull JsonElement toJson(@NotNull Object value) {
-        return value instanceof JsonElement element ? element.deepCopy() : PipelineGson.gson().toJsonTree(value);
+    private static boolean hasJsonForm(@Nullable Object value) {
+        return switch (value) {
+            case null -> true;
+            case Double number -> Double.isFinite(number);
+            case Float number -> Float.isFinite(number);
+            case Collection<?> members -> members.stream().allMatch(JsonValues::hasJsonForm);
+            case Map<?, ?> entries -> entries.values().stream().allMatch(JsonValues::hasJsonForm);
+            default -> true;
+        };
     }
 
     private static @NotNull Class<?> leafType(@NotNull DataType<?> type) {

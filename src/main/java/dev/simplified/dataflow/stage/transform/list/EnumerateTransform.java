@@ -27,9 +27,10 @@ import java.util.List;
  * <p>
  * Each element becomes {@code {indexKey: start + position, valueKey: element}}, in input order.
  * The position is the element's index in the input list, so a {@code null} element, which is
- * dropped, still uses up its number; a JSON {@code null} element is dropped the same way. An
- * element is written as an {@link ObjectBuildTransform} output is, and a {@link JsonElement}
- * element is copied. Numbering that restarts per group is a {@link FlatMapTransform} over the
+ * dropped, still uses up its number; a JSON {@code null} element is dropped the same way, and so
+ * is an element JSON cannot hold - a {@code NaN} or infinite {@code FLOAT} or {@code DOUBLE}, or a
+ * list holding one. An element is written as an {@link ObjectBuildTransform} output is, and a
+ * {@link JsonElement} element is copied. Numbering that restarts per group is a {@link FlatMapTransform} over the
  * groups with this stage in its body.
  *
  * @param <T> element type
@@ -138,10 +139,12 @@ public final class EnumerateTransform<T> implements TransformStage<List<T>, List
         long index = this.start;
 
         for (T element : input) {
-            if (!JsonValues.isNull(element)) {
+            JsonElement value = JsonValues.toJson(element);
+
+            if (value != null) {
                 JsonObject entry = new JsonObject();
                 entry.addProperty(this.indexKey, index);
-                entry.add(this.valueKey, JsonValues.toJson(element));
+                entry.add(this.valueKey, value);
                 result.add(entry);
             }
 

@@ -31,7 +31,9 @@ import java.util.List;
  * Both bodies run against the same input. There is one output per child, in order, each
  * {@code {parentKey: parent, childKey: child}}. A {@code null} parent omits {@code parentKey} from
  * every output, as an {@link ObjectBuildTransform} output omits a {@code null}, and a {@code null}
- * child is dropped. It is a {@link ZipTransform} with one side held constant. A value is written
+ * child is dropped. A parent or child JSON cannot hold - a {@code NaN} or infinite {@code FLOAT} or
+ * {@code DOUBLE}, or a list holding one - counts as {@code null}. It is a {@link ZipTransform} with
+ * one side held constant. A value is written
  * as an {@link ObjectBuildTransform} output is, and a {@link JsonElement} value is copied into
  * each output, so no two outputs share a tree.
  *
@@ -135,14 +137,15 @@ public final class BroadcastTransform<I, P, C> implements TransformStage<I, List
         P value = this.parent.execute(ctx, input);
         List<C> elements = this.children.execute(ctx, input);
         if (elements == null) return null;
-        JsonElement shared = JsonValues.isNull(value) ? null : JsonValues.toJson(value);
+        JsonElement shared = JsonValues.toJson(value);
         List<JsonObject> result = new ArrayList<>(elements.size());
 
         for (C child : elements) {
-            if (JsonValues.isNull(child)) continue;
+            JsonElement written = JsonValues.toJson(child);
+            if (written == null) continue;
             JsonObject row = new JsonObject();
             if (shared != null) row.add(this.parentKey, shared.deepCopy());
-            row.add(this.childKey, JsonValues.toJson(child));
+            row.add(this.childKey, written);
             result.add(row);
         }
 

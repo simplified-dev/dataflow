@@ -162,6 +162,19 @@ class ZipTransformTest {
     }
 
     @Test
+    @DisplayName("A NaN or infinite DOUBLE element omits its key")
+    void nonFiniteElementOmitsKey() {
+        ZipTransform<List<Double>, Double, Double> stage = ZipTransform.of(
+            DataType.list(DataTypes.DOUBLE), DataTypes.DOUBLE, DataTypes.DOUBLE,
+            List.of(ReverseTransform.of(DataTypes.DOUBLE), ReverseTransform.of(DataTypes.DOUBLE)),
+            List.of(ReverseTransform.of(DataTypes.DOUBLE)),
+            "l", "r", null
+        );
+        List<JsonObject> result = stage.execute(this.ctx, List.of(1.5, Double.NaN, Double.NEGATIVE_INFINITY));
+        assertThat(json(result), is(equalTo("[{\"l\":1.5},{},{\"r\":1.5}]")));
+    }
+
+    @Test
     @DisplayName("A JSON element is copied, so changing the output leaves the input unchanged")
     void jsonElementCopied() {
         JsonObject input = object("{\"rows\":[{\"k\":1}],\"ids\":[\"A\"]}");

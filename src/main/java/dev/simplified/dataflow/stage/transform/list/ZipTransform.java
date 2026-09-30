@@ -35,8 +35,10 @@ import java.util.List;
  * list under {@code leftKey} and the k-th element of the right list under {@code rightKey}.
  * {@link Mode#SHORTEST} stops at the end of the shorter list; {@link Mode#LONGEST} runs to the end
  * of the longer one and omits the key of the side that has run out. A {@code null} element omits
- * its key the same way, as an {@link ObjectBuildTransform} output omits a {@code null}, and a
- * position where both sides are absent is an empty object, so every output stays at its position.
+ * its key the same way, as an {@link ObjectBuildTransform} output omits a {@code null}, and so does
+ * an element JSON cannot hold - a {@code NaN} or infinite {@code FLOAT} or {@code DOUBLE}, or a list
+ * holding one. A position where both sides are absent is an empty object, so every output stays at
+ * its position.
  * An element is written as an {@link ObjectBuildTransform} output is, and a {@link JsonElement}
  * element is copied.
  *
@@ -206,7 +208,8 @@ public final class ZipTransform<I, L, R> implements TransformStage<I, List<JsonO
     }
 
     private static void put(@NotNull JsonObject pair, @NotNull String key, @Nullable Object element) {
-        if (!JsonValues.isNull(element)) pair.add(key, JsonValues.toJson(element));
+        JsonElement value = JsonValues.toJson(element);
+        if (value != null) pair.add(key, value);
     }
 
     /** {@inheritDoc} */

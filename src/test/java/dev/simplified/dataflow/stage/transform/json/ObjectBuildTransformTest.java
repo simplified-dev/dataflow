@@ -1,6 +1,7 @@
 package dev.simplified.dataflow.stage.transform.json;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.transform.string.PrependTransform;
@@ -29,6 +30,19 @@ class ObjectBuildTransformTest {
         assertThat(result, is(notNullValue()));
         assertThat(result.get("upper").getAsString(), is(equalTo("HELLO")));
         assertThat(result.get("prefixed").getAsString(), is(equalTo(">>>hello")));
+    }
+
+    @Test
+    @DisplayName("A JSON branch value keeps its null members")
+    void jsonBranchKeepsNullMembers() {
+        ObjectBuildTransform<JsonObject> stage = ObjectBuildTransform.over(DataTypes.JSON_OBJECT)
+            .output("stats", DataTypes.JSON_ELEMENT, chain -> chain.stage(FieldTransform.of("stats")))
+            .build();
+        JsonObject input = JsonParser.parseString("{\"stats\":{\"a\":null,\"b\":{\"c\":null}}}").getAsJsonObject();
+
+        JsonObject result = stage.execute(PipelineContext.defaults(), input);
+
+        assertThat(result.toString(), is(equalTo("{\"stats\":{\"a\":null,\"b\":{\"c\":null}}}")));
     }
 
     @Test

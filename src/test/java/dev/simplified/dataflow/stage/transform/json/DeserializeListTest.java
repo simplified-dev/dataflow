@@ -81,6 +81,55 @@ class DeserializeListTest {
     }
 
     @Test
+    @DisplayName("An element that is not a number is dropped from a List<DOUBLE>")
+    void nonNumberDroppedFromDoubleList() {
+        assertThat(read(DataTypes.DOUBLE, "[1.5,\"N/A\",2.5]"), contains(1.5, 2.5));
+    }
+
+    @Test
+    @DisplayName("An empty text element is dropped from a List<FLOAT>")
+    void emptyTextDroppedFromFloatList() {
+        assertThat(read(DataTypes.FLOAT, "[1.5,\"\",2.5]"), contains(1.5f, 2.5f));
+    }
+
+    @Test
+    @DisplayName("A List of DOM_NODE, which Gson cannot build, is rejected at build time")
+    void rejectsDomNodeList() {
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+            () -> DeserializeTransform.of(DataType.list(DataTypes.DOM_NODE)));
+        assertThat(thrown.getMessage(), startsWith("Invalid DeserializeTransform outputType"));
+    }
+
+    @Test
+    @DisplayName("A List of NONE, which carries no value, is rejected at build time")
+    void rejectsNoneList() {
+        assertThrows(IllegalArgumentException.class, () -> DeserializeTransform.of(DataType.list(DataTypes.NONE)));
+    }
+
+    @Test
+    @DisplayName("A List output over a JSON_OBJECT input, which never holds an array, is rejected at build time")
+    void rejectsListOverObjectInput() {
+        DataType<List<Integer>> ints = DataType.list(DataTypes.INT);
+        assertThrows(IllegalArgumentException.class, () -> DeserializeTransform.of(DataTypes.JSON_OBJECT, ints));
+    }
+
+    @Test
+    @DisplayName("A List output over a JSON_ARRAY input is accepted")
+    void acceptsListOverArrayInput() {
+        DataType<List<Integer>> ints = DataType.list(DataTypes.INT);
+        assertThat(DeserializeTransform.of(DataTypes.JSON_ARRAY, ints).inputType(), is(equalTo(DataTypes.JSON_ARRAY)));
+    }
+
+    @Test
+    @DisplayName("A wire List<DOM_NODE> output fails the load")
+    void wireDomNodeListFailsAtLoad() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"RAW_JSON\",\"value\":\"[]\"},{\"kind\":\"PARSE_JSON\"},"
+            + "{\"kind\":\"TRANSFORM_JSON_DESERIALIZE\",\"inputType\":\"JSON_ELEMENT\",\"outputType\":\"List<DOM_NODE>\"}]";
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> PipelineGson.fromJson(json));
+        assertThat(thrown.getMessage(), startsWith("Invalid DeserializeTransform outputType"));
+    }
+
+    @Test
     @DisplayName("A non-array input rejects with null")
     void nonArrayRejects() {
         assertThat(read(DataTypes.INT, "{\"a\":1}"), is(nullValue()));
