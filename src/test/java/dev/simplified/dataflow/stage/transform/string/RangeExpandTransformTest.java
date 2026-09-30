@@ -220,6 +220,27 @@ class RangeExpandTransformTest {
     }
 
     @Test
+    @DisplayName("of accepts a max size at the ceiling")
+    void ofAcceptsMaxSizeAtCeiling() {
+        assertThat(RangeExpandTransform.of(null, null, 100_000).maxSize(), is(equalTo(100_000)));
+    }
+
+    @Test
+    @DisplayName("of refuses a max size above the ceiling")
+    void ofRefusesMaxSizeAboveCeiling() {
+        assertThrows(IllegalArgumentException.class, () -> RangeExpandTransform.of(null, null, 100_001));
+    }
+
+    @Test
+    @DisplayName("A wire file with a max size above the ceiling fails to load")
+    void wireRefusesMaxSizeAboveCeiling() {
+        String json = "[{\"kind\":\"SOURCE_LITERAL\",\"outputType\":\"STRING\",\"value\":\"1-3\"},"
+            + "{\"kind\":\"TRANSFORM_RANGE_EXPAND\",\"maxSize\":2147483647}]";
+        Throwable thrown = assertThrows(RuntimeException.class, () -> PipelineGson.fromJson(json));
+        assertThat(rootCause(thrown).getMessage(), startsWith("RangeExpandTransform maxSize '2147483647' is above"));
+    }
+
+    @Test
     @DisplayName("The wire form omits every unset optional slot")
     void wireFormOmitsUnsetSlots() {
         String json = PipelineGson.toJson(pipeline("1-3", RangeExpandTransform.of(null, null, null)));

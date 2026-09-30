@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
  *   <li><b>a bound is not an {@code int}</b></li>
  *   <li><b>the low bound is above the high bound</b></li>
  *   <li><b>the range has more members than {@code maxSize}</b> - a guard against a very large
- *       list</li>
+ *       list, which is itself at most {@code 100000}</li>
  * </ul>
  */
 @StageSpec(
@@ -58,6 +58,11 @@ public final class RangeExpandTransform implements TransformStage<String, List<I
     private static final int DEFAULT_MAX_SIZE = 1000;
 
     /**
+     * Largest {@code maxSize} the factory accepts.
+     */
+    private static final int MAX_SIZE_CEILING = 100_000;
+
+    /**
      * Pattern whose groups {@code 1} and {@code 2} hold the bounds, or {@code null} when not
      * configured, which is {@code ^(-?\d+)-(-?\d+)$}.
      */
@@ -69,7 +74,8 @@ public final class RangeExpandTransform implements TransformStage<String, List<I
     private final @Nullable Integer step;
 
     /**
-     * Largest member count expanded, or {@code null} when not configured, which is {@code 1000}.
+     * Largest member count expanded, from {@code 1} to {@code 100000}, or {@code null} when not
+     * configured, which is {@code 1000}.
      */
     private final @Nullable Integer maxSize;
 
@@ -84,10 +90,12 @@ public final class RangeExpandTransform implements TransformStage<String, List<I
      * @param regex the pattern whose groups {@code 1} and {@code 2} hold the bounds, or {@code null}
      *         for {@code ^(-?\d+)-(-?\d+)$}
      * @param step the distance between consecutive members, or {@code null} for {@code 1}
-     * @param maxSize the largest member count expanded, or {@code null} for {@code 1000}
+     * @param maxSize the largest member count expanded, from {@code 1} to {@code 100000}, or
+     *         {@code null} for {@code 1000}
      * @return the stage
      * @throws IllegalArgumentException when {@code regex} does not compile or has fewer than two
-     *         groups, or {@code step} or {@code maxSize} is below {@code 1}
+     *         groups, {@code step} or {@code maxSize} is below {@code 1}, or {@code maxSize} is
+     *         above {@code 100000}
      */
     public static @NotNull RangeExpandTransform of(
         @Configurable(label = "Regex (optional)", placeholder = DEFAULT_REGEX, optional = true)
@@ -110,6 +118,9 @@ public final class RangeExpandTransform implements TransformStage<String, List<I
 
         if (maxSize != null && maxSize < 1)
             throw new IllegalArgumentException(String.format("RangeExpandTransform maxSize '%s' is below 1", maxSize));
+
+        if (maxSize != null && maxSize > MAX_SIZE_CEILING)
+            throw new IllegalArgumentException(String.format("RangeExpandTransform maxSize '%s' is above %s", maxSize, MAX_SIZE_CEILING));
 
         return new RangeExpandTransform(regex, step, maxSize, pattern);
     }
