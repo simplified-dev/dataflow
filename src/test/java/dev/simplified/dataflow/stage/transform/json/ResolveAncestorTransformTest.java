@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -178,6 +179,45 @@ class ResolveAncestorTransformTest {
         List<JsonObject> resolved = ResolveAncestorTransform.of("id", "parent", "root", "name", null)
             .execute(PipelineContext.defaults(), rows("[{'id':'a','name':'first'},{'id':'a','name':'second'},{'id':'b','parent':'a'}]"));
         assertThat(resolved.getLast().get("root").getAsString(), is(equalTo("first")));
+    }
+
+    @Test
+    @DisplayName("A later row repeating a key takes its parent's root one step further")
+    void repeatedKeyRowTakesParentRoot() {
+        assertThat(resolve(null, "depth", "[{'id':'r'},{'id':'m','parent':'r'},{'id':'x'},{'id':'x','parent':'m'}]"),
+            is(equalTo(q("[{'id':'r','root':'r','depth':0},{'id':'m','parent':'r','root':'r','depth':1},"
+                + "{'id':'x','root':'x','depth':0},{'id':'x','parent':'m','root':'r','depth':2}]"))));
+    }
+
+    @Test
+    @DisplayName("A row with no key takes its parent's root one step further")
+    void keylessRowTakesParentRoot() {
+        assertThat(resolve(null, "depth", "[{'id':'r'},{'id':'m','parent':'r'},{'parent':'m'}]"),
+            is(equalTo(q("[{'id':'r','root':'r','depth':0},{'id':'m','parent':'r','root':'r','depth':1},{'parent':'m','root':'r','depth':2}]"))));
+    }
+
+    @Test
+    @DisplayName("A later row repeating a key whose chain reaches the first row of that key is a cycle")
+    void repeatedKeyReachingItsFirstRowIsCycle() {
+        assertThat(resolve(null, "depth", "[{'id':'a'},{'id':'a','parent':'b'},{'id':'b','parent':'a'}]"),
+            is(equalTo(q("[{'id':'a','root':'a','depth':0},{'id':'a','parent':'b'},{'id':'b','parent':'a','root':'a','depth':1}]"))));
+    }
+
+    @Test
+    @Timeout(10)
+    @DisplayName("A chain of 50,000 rows resolves in one step per row")
+    void deepChainResolvesLinearly() {
+        List<JsonObject> chain = new ArrayList<>();
+
+        for (int i = 0; i < 50_000; i++) {
+            JsonObject row = new JsonObject();
+            row.addProperty("id", "r" + i);
+            if (i > 0) row.addProperty("parent", "r" + (i - 1));
+            chain.add(row);
+        }
+
+        List<JsonObject> resolved = ResolveAncestorTransform.of("id", "parent", "root", null, "depth").execute(PipelineContext.defaults(), chain);
+        assertThat(resolved.getLast().get("depth").getAsInt(), is(49_999));
     }
 
     @Test

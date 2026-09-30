@@ -4,12 +4,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.simplified.annotations.AccessLevel;
 import dev.simplified.annotations.NoArgsConstructor;
-import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.dataflow.DataPipeline;
-import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
-import dev.simplified.dataflow.stage.SourceStage;
+import dev.simplified.dataflow.stage.transform.list.GroupByTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +15,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Key handling shared by the stages that match {@link JsonObject} rows on a field: the string
@@ -26,13 +25,14 @@ import java.util.Map;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class RowKeys {
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static final @NotNull DataType<Map<String, JsonObject>> INDEX =
-        new DataType.Basic<>((Class) Map.class, "ROW_INDEX");
-
     /**
      * Returns the string form a key compares by: a primitive's {@link JsonElement#getAsString()},
      * and the compact JSON of an array or object.
+     * <p>
+     * Two keys are equal when their string forms are, so the number {@code 1} and the text
+     * {@code "1"} are one key, {@code 1}, {@code 1.0} and {@code 1e0} are three, and two objects
+     * are one key only when they list the same members in the same order. A
+     * {@link GroupByTransform} compares its keys by JSON value instead.
      *
      * @param value the key value
      * @return the string form, or {@code null} when {@code value} is absent or JSON null
@@ -59,46 +59,53 @@ final class RowKeys {
     }
 
     /**
-     * Wraps a rows operand in a one-stage pipeline whose output indexes those rows by the string
-     * form of {@code keyField}, in row order, keeping the first row that carries each key and
-     * skipping rows that carry none.
-     * <p>
-     * Evaluate the result through {@link PipelineContext#evaluateOperand(DataPipeline)}: the
-     * index is then built at most once per context, and it reads {@code rows} through the same
-     * memo, so the rows are read once however many stages consume them. The index is
-     * {@code null} when {@code rows} yields {@code null}. Its rows are the operand's own
-     * instances and are never to be mutated.
+     * Returns an index of the rows {@code rows} produces by the string form of {@code keyField}.
      *
      * @param rows the operand producing the rows
      * @param keyField the field whose string form keys the index
-     * @param kindId the wire id of the owning stage, reported by the index step to a tracer
-     * @return the index pipeline
+     * @return the index
      */
-    static @NotNull DataPipeline<Map<String, JsonObject>> index(
-        @NotNull DataPipeline<List<JsonObject>> rows,
-        @NotNull String keyField,
-        @NotNull String kindId
-    ) {
-        return DataPipeline.builder().source(new IndexSource(rows, keyField, kindId)).build();
+    static @NotNull Index index(@NotNull DataPipeline<List<JsonObject>> rows, @NotNull String keyField) {
+        return new Index(rows, keyField);
     }
 
     /**
-     * Source step of an index pipeline, reading its rows operand and indexing it by one field.
+     * Index of the rows a pipeline operand produces by the string form of one field, built at most
+     * once per {@link PipelineContext}.
+     * <p>
+     * It keeps, in row order, the first row that carries each key and skips rows that carry none.
+     * The operand is read through {@link PipelineContext#evaluateOperand(DataPipeline)}, so it runs
+     * at most once per context however many stages read it. The index is held by the context
+     * through {@link PipelineContext#derive(Object, Supplier)}, keyed by this instance, so it is
+     * built at most once per context and released with the context, and this instance holds no
+     * rows. The indexing is no stage: a tracer sees the operand's own stages and nothing for the
+     * index. The index holds the operand's own row instances, which are never to be mutated.
      */
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    private static final class IndexSource implements SourceStage<Map<String, JsonObject>> {
+    static final class Index {
 
         private final @NotNull DataPipeline<List<JsonObject>> rows;
 
         private final @NotNull String keyField;
 
-        private final @NotNull String kindId;
+        private Index(@NotNull DataPipeline<List<JsonObject>> rows, @NotNull String keyField) {
+            this.rows = rows;
+            this.keyField = keyField;
+        }
 
-        /** {@inheritDoc} */
-        @Override
-        public @Nullable Map<String, JsonObject> execute(@NotNull PipelineContext ctx, @Nullable Void input) {
+        /**
+         * Returns the index of the rows the operand produces in {@code ctx}, built on the first call
+         * for that context and held by it from then on.
+         *
+         * @param ctx the context the operand is read in
+         * @return the index, or {@code null} when the operand yields {@code null}
+         */
+        @Nullable Map<String, JsonObject> read(@NotNull PipelineContext ctx) {
             List<JsonObject> operand = ctx.evaluateOperand(this.rows);
             if (operand == null) return null;
+            return ctx.derive(this, () -> this.build(operand));
+        }
+
+        private @NotNull Map<String, JsonObject> build(@NotNull List<JsonObject> operand) {
             Map<String, JsonObject> index = new LinkedHashMap<>();
 
             for (JsonObject row : operand) {
@@ -108,24 +115,6 @@ final class RowKeys {
             }
 
             return Collections.unmodifiableMap(index);
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public @NotNull String kindId() {
-            return this.kindId;
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public @NotNull DataType<Map<String, JsonObject>> outputType() {
-            return INDEX;
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public @NotNull String summary() {
-            return "Index rows on '" + this.keyField + "'";
         }
 
     }

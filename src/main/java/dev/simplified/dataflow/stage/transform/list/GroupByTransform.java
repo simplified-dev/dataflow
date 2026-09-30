@@ -16,11 +16,14 @@ import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.transform.json.JoinByKeyTransform;
+import dev.simplified.dataflow.stage.transform.json.KeyLookupTransform;
 import dev.simplified.dataflow.stage.transform.json.ObjectBuildTransform;
+import dev.simplified.dataflow.stage.transform.json.ResolveAncestorTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,11 +39,18 @@ import java.util.Set;
  * into one new row.
  * <p>
  * Groups appear in the order their key first occurs. A row with no key field, or whose key is
- * JSON {@code null}, is dropped. Keys compare as JSON values: a number by its exact value, so
- * {@code 1}, {@code 1.0} and {@code 1e0} are one key while {@code "1"} is another and two integers
- * past double precision stay two, and an object by its members whatever their order. The folds
- * that look for equal values, {@link Aggregate#UNION} and {@link Aggregate#MODE}, compare values
- * the same way.
+ * JSON {@code null}, is dropped. Keys compare as JSON values: a number by its exact value whatever
+ * its size, so {@code 1}, {@code 1.0} and {@code 1e0} are one key while {@code "1"} is another and
+ * two integers past double precision stay two, and an object by its members whatever their order.
+ * The folds that look for equal values, {@link Aggregate#UNION} and {@link Aggregate#MODE},
+ * compare values the same way, and {@link Aggregate#MAX} and {@link Aggregate#MIN} order numbers
+ * by the same exact value.
+ * <p>
+ * A {@link JoinByKeyTransform}, {@link KeyLookupTransform} or {@link ResolveAncestorTransform}
+ * matches keys by another rule, their string form, under which {@code 1} and {@code "1"} are one
+ * key and {@code 1} and {@code 1.0} are two. A folded row keeps its key as its group's first row
+ * wrote it, so whether a later join on that key matches a row keyed {@code 1} or one keyed
+ * {@code 1.0} depends on which the group met first.
  * <p>
  * A folded row carries every field its group's rows carry, in the order the fields first appear,
  * then each field the aggregates table names that no row carries, in the table's order. A field
@@ -116,14 +126,14 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
         CONCAT,
 
         /**
-         * The greatest JSON number, the earliest on a tie; a value that is not a JSON number is
-         * skipped.
+         * The greatest JSON number by exact value, whatever its size, the earliest on a tie; a
+         * value that is not a JSON number is skipped.
          */
         MAX,
 
         /**
-         * The least JSON number, the earliest on a tie; a value that is not a JSON number is
-         * skipped.
+         * The least JSON number by exact value, whatever its size, the earliest on a tie; a value
+         * that is not a JSON number is skipped.
          */
         MIN,
 
@@ -211,17 +221,12 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
 
         private static @Nullable JsonElement extreme(@NotNull List<JsonElement> values, int direction) {
             JsonPrimitive best = null;
-            BigDecimal bestNumber = null;
+            ExactNumber bestNumber = null;
 
             for (JsonElement value : values) {
                 if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) continue;
-                BigDecimal number;
-
-                try {
-                    number = value.getAsBigDecimal();
-                } catch (NumberFormatException ex) {
-                    continue;
-                }
+                ExactNumber number = ExactNumber.of(value.getAsString());
+                if (number == null) continue;
 
                 if (best == null || number.compareTo(bestNumber) * direction > 0) {
                     best = value.getAsJsonPrimitive();
@@ -260,12 +265,94 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
     }
 
     /**
+     * Exact value of a JSON number, read off its text: its sign, its significant digits with no
+     * leading or trailing zero, and the power of ten of the first of them.
+     * <p>
+     * Reading the text keeps every number exact whatever its size. Gson's own
+     * {@link JsonPrimitive#getAsBigDecimal()} refuses a text over 10,000 characters or a scale of
+     * 10,000 or more either way, and its number equality goes through {@code double}.
+     *
+     * @param signum the sign, {@code -1}, {@code 0} or {@code 1}
+     * @param digits the significant digits, empty for zero
+     * @param exponent the power of ten of the first significant digit, zero for zero
+     */
+    private record ExactNumber(int signum, @NotNull String digits, @NotNull BigInteger exponent) implements Comparable<ExactNumber> {
+
+        private static final @NotNull ExactNumber ZERO = new ExactNumber(0, "", BigInteger.ZERO);
+
+        /**
+         * Reads the exact value of a number's text.
+         *
+         * @param text the text, as {@link JsonPrimitive#getAsString()} gives it
+         * @return the value, or {@code null} when the text is no decimal number - the text of a
+         *         {@code NaN} or infinite {@code double} built into a tree
+         */
+        static @Nullable ExactNumber of(@NotNull String text) {
+            int length = text.length();
+            int at = 0;
+            int signum = 1;
+
+            if (at < length && (text.charAt(at) == '-' || text.charAt(at) == '+')) {
+                if (text.charAt(at) == '-') signum = -1;
+                at++;
+            }
+
+            StringBuilder digits = new StringBuilder(length);
+            int point = -1;
+
+            for (; at < length; at++) {
+                char c = text.charAt(at);
+
+                if (c >= '0' && c <= '9')
+                    digits.append(c);
+                else if (c == '.' && point < 0)
+                    point = digits.length();
+                else
+                    break;
+            }
+
+            if (digits.isEmpty()) return null;
+            if (point < 0) point = digits.length();
+            BigInteger exponent = BigInteger.ZERO;
+
+            if (at < length) {
+                char marker = text.charAt(at);
+                if (marker != 'e' && marker != 'E') return null;
+
+                try {
+                    exponent = new BigInteger(text.substring(at + 1));
+                } catch (NumberFormatException ex) {
+                    return null;
+                }
+            }
+
+            int first = 0;
+            while (first < digits.length() && digits.charAt(first) == '0') first++;
+            if (first == digits.length()) return ZERO;
+            int end = digits.length();
+            while (digits.charAt(end - 1) == '0') end--;
+            BigInteger leading = exponent.add(BigInteger.valueOf((long) point - first - 1));
+            return new ExactNumber(signum, digits.substring(first, end), leading);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int compareTo(@NotNull ExactNumber other) {
+            if (this.signum != other.signum) return Integer.compare(this.signum, other.signum);
+            int magnitude = this.exponent.compareTo(other.exponent);
+            if (magnitude == 0) magnitude = this.digits.compareTo(other.digits);
+            return this.signum * Integer.signum(magnitude);
+        }
+
+    }
+
+    /**
      * Reduces a JSON value to a hash key that two equal values share.
      * <p>
-     * A number becomes its exact {@link BigDecimal} value without trailing zeros, an object the
-     * map of its members' keys, and an array the list of its elements' keys; any other value is
-     * its own key. Gson's own number equality goes through {@code double}, and its hash disagrees
-     * with it across number representations, so neither keys a hash map soundly.
+     * A number becomes its {@link ExactNumber}, or its text when it has none, an object the map of
+     * its members' keys, and an array the list of its elements' keys; any other value is its own
+     * key. Gson's own number equality goes through {@code double}, and its hash disagrees with it
+     * across number representations, so neither keys a hash map soundly.
      *
      * @param value the value
      * @return the key
@@ -294,11 +381,9 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
     }
 
     private static @NotNull Object exact(@NotNull JsonPrimitive number) {
-        try {
-            return number.getAsBigDecimal().stripTrailingZeros();
-        } catch (NumberFormatException ex) {
-            return number;
-        }
+        String text = number.getAsString();
+        ExactNumber exact = ExactNumber.of(text);
+        return exact == null ? text : exact;
     }
 
     /**
@@ -308,8 +393,8 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
      * @param rawAggregates field name to {@link Aggregate} name, or {@code null} to fold every
      *                      field to its first value; carried on the wire as {@code aggregates}
      * @return the stage
-     * @throws IllegalArgumentException when an aggregate name is not an {@link Aggregate}, or the
-     *         table names {@code keyField}
+     * @throws IllegalArgumentException when the table holds a {@code null} key, an aggregate name is
+     *         not an {@link Aggregate}, or the table names {@code keyField}
      */
     public static @NotNull GroupByTransform of(
         @Configurable(label = "Key field", placeholder = "id")
@@ -321,6 +406,9 @@ public final class GroupByTransform implements TransformStage<List<JsonObject>, 
 
         if (rawAggregates != null) {
             for (Map.Entry<String, String> entry : rawAggregates.entrySet()) {
+                if (entry.getKey() == null)
+                    throw new IllegalArgumentException("GroupByTransform aggregates hold a null key");
+
                 if (entry.getKey().equals(keyField)) {
                     throw new IllegalArgumentException(String.format(
                         "Invalid GroupByTransform aggregates: the key field '%s' cannot be aggregated", keyField

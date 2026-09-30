@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 /**
  * Per-execution state and dependencies threaded through a {@link DataPipeline}.
@@ -30,10 +31,11 @@ import java.util.function.BiConsumer;
  * Discord-agnostic by design: holds a {@link UrlFetcher}, a {@link FetchGuard} over what it
  * fetches, a {@link Logger}, a {@link DataPipelineResolver}, and an opaque key/value bag that the
  * host application can use to attach whatever extra context it needs without invading the
- * pipeline core. The mutable {@code activeIds} set guards against {@link EmbedSource} cycles, and
- * a per-context operand memo lets {@link #evaluateOperand(DataPipeline)} run each pipeline operand
- * at most once. An optional tracing hook fires after every stage's {@code execute} for debugging /
- * instrumentation.
+ * pipeline core. The mutable {@code activeIds} set guards against {@link EmbedSource} cycles, a
+ * per-context operand memo lets {@link #evaluateOperand(DataPipeline)} run each pipeline operand
+ * at most once, and a per-context derivation memo lets {@link #derive(Object, Supplier)} build
+ * each value a stage derives from them at most once. An optional tracing hook fires after every
+ * stage's {@code execute} for debugging / instrumentation.
  */
 @Getter(style = NamingStyle.FLUENT)
 @ClassBuilder(
@@ -46,8 +48,8 @@ public final class PipelineContext {
     private static final @NotNull UrlFetcher DEFAULT_FETCHER = UrlFetcher.create(
         UrlFetcherConfig.builder(new Gson()).build()
     );
-    private static final @NotNull Object OPERAND_NULL = new Object();
-    private static final @NotNull Object OPERAND_IN_FLIGHT = new Object();
+    private static final @NotNull Object HELD_NULL = new Object();
+    private static final @NotNull Object IN_FLIGHT = new Object();
 
     private final @NotNull UrlFetcher fetcher = DEFAULT_FETCHER;
     private final @NotNull Logger log = DEFAULT_LOG;
@@ -68,12 +70,22 @@ public final class PipelineContext {
     /**
      * Results of the pipeline operands evaluated in this context, keyed by operand identity and
      * guarded by the map's own monitor. An operand that produced {@code null} holds
-     * {@link #OPERAND_NULL}, and one whose evaluation is under way holds
-     * {@link #OPERAND_IN_FLIGHT}.
+     * {@link #HELD_NULL}, and one whose evaluation is under way holds {@link #IN_FLIGHT}.
      */
     @BuilderIgnore
     @Getter(AccessLevel.NONE)
     private final @NotNull Map<DataPipeline<?>, Object> operands = new IdentityHashMap<>();
+
+    /**
+     * Values derived in this context through {@link #derive(Object, Supplier)}, keyed by the
+     * identity of the key each is held under and guarded by the monitor of {@link #operands}, so
+     * a derivation that reads an operand and an operand whose stages derive a value take one lock
+     * and cannot wait on each other. A derivation that produced {@code null} holds
+     * {@link #HELD_NULL}, and one under way holds {@link #IN_FLIGHT}.
+     */
+    @BuilderIgnore
+    @Getter(AccessLevel.NONE)
+    private final @NotNull Map<Object, Object> derived = new IdentityHashMap<>();
 
     /**
      * Per-stage callback fired after every stage's {@code execute}, in both top-level
@@ -154,29 +166,89 @@ public final class PipelineContext {
      * @throws IllegalStateException when {@code operand} is already being evaluated in this
      *         context, indicating a cycle
      */
-    @SuppressWarnings("unchecked")
     public <T> @Nullable T evaluateOperand(@NotNull DataPipeline<T> operand) {
-        synchronized (this.operands) {
-            Object held = this.operands.get(operand);
+        return this.memoize(
+            this.operands,
+            operand,
+            () -> operand.execute(this),
+            () -> "Pipeline operand cycle detected; operand " + describe(operand) + " is already being evaluated"
+        );
+    }
 
-            if (held == OPERAND_IN_FLIGHT)
-                throw new IllegalStateException(
-                    "Pipeline operand cycle detected; operand " + describe(operand) + " is already being evaluated"
-                );
+    /**
+     * Answers the value held under {@code key} in this context, deriving it on the first call for
+     * that key.
+     * <p>
+     * A stage holds here what it derives from an operand once per run - an index of the operand's
+     * rows, say - so the value lives as long as the context and no longer. The first call for a
+     * key runs {@code derivation} and holds its result, {@code null} included; every later call
+     * for the same key answers the held result without running it again. Keys are compared by
+     * identity, so a stage keys its value by an object of its own and two stages never share one
+     * by accident. A derivation is no stage and reaches no tracer; an operand it reads through
+     * {@link #evaluateOperand(DataPipeline)} traces its own stages as any read does.
+     * <p>
+     * Derivations follow the rules of operand evaluations, under the same lock: a derivation that
+     * reaches its own key again is a cycle and throws, one that throws holds nothing, so the next
+     * call for the key runs it again, and a call from a second thread waits for the derivation or
+     * evaluation in progress. Every new context, one {@code mutate().build()} makes included,
+     * starts with nothing derived.
+     *
+     * @param key the key the value is held under, compared by identity
+     * @param derivation the function deriving the value on the first call for {@code key}
+     * @return the value held under {@code key}, or {@code null} when the derivation produced
+     *         {@code null}
+     * @param <T> the value's type
+     * @throws IllegalStateException when {@code key} is already being derived in this context,
+     *         indicating a cycle
+     */
+    public <T> @Nullable T derive(@NotNull Object key, @NotNull Supplier<? extends T> derivation) {
+        return this.memoize(
+            this.derived,
+            key,
+            derivation,
+            () -> "Derived value cycle detected; the value under key '" + key + "' is already being derived"
+        );
+    }
+
+    /**
+     * Answers the result {@code memo} holds for {@code key}, computing and holding it on the
+     * first call, under the monitor of {@link #operands}.
+     *
+     * @param memo the memo holding results by key identity
+     * @param key the key the result is held under
+     * @param computation the function computing the result on the first call for {@code key}
+     * @param cycle the message of the exception thrown when {@code key} is already being computed
+     * @return the result held under {@code key}
+     * @param <K> the key's type
+     * @param <T> the result's type
+     * @throws IllegalStateException when {@code key} is already being computed in this context
+     */
+    @SuppressWarnings("unchecked")
+    private <K, T> @Nullable T memoize(
+        @NotNull Map<K, Object> memo,
+        @NotNull K key,
+        @NotNull Supplier<? extends T> computation,
+        @NotNull Supplier<String> cycle
+    ) {
+        synchronized (this.operands) {
+            Object held = memo.get(key);
+
+            if (held == IN_FLIGHT)
+                throw new IllegalStateException(cycle.get());
 
             if (held != null)
-                return held == OPERAND_NULL ? null : (T) held;
+                return held == HELD_NULL ? null : (T) held;
 
-            this.operands.put(operand, OPERAND_IN_FLIGHT);
-            boolean evaluated = false;
+            memo.put(key, IN_FLIGHT);
+            boolean computed = false;
 
             try {
-                T result = operand.execute(this);
-                this.operands.put(operand, result == null ? OPERAND_NULL : result);
-                evaluated = true;
+                T result = computation.get();
+                memo.put(key, result == null ? HELD_NULL : result);
+                computed = true;
                 return result;
             } finally {
-                if (!evaluated) this.operands.remove(operand);
+                if (!computed) memo.remove(key);
             }
         }
     }

@@ -28,7 +28,7 @@ import java.util.Map;
  * text, the compact JSON of an array or object - and when two rows carry one key, the first is
  * the one matched. The result is a copy of that row's {@code valueField}. The table is read and
  * indexed at most once per context, so a lookup inside a Map body over many elements reads its
- * document once; a tracer sees that indexing as one extra step reporting this stage's id.
+ * document once; a tracer sees the table's own stages run once and no step for the indexing.
  * <p>
  * A {@code null} input, a {@code null} operand output, a key no row carries, and a row whose
  * {@code valueField} is absent or JSON null all yield {@code null}, so a Map body drops the
@@ -56,7 +56,7 @@ public final class KeyLookupTransform implements TransformStage<String, JsonElem
      * The table's rows indexed by {@link #keyField}, built at most once per context.
      */
     @Getter(AccessLevel.NONE)
-    private final @NotNull DataPipeline<Map<String, JsonObject>> index;
+    private final @NotNull RowKeys.Index index;
 
     /**
      * Constructs a lookup of each input key in the rows {@code table} produces.
@@ -83,14 +83,14 @@ public final class KeyLookupTransform implements TransformStage<String, JsonElem
             throw new IllegalArgumentException("Invalid KeyLookupTransform operand: " + report.issues());
 
         DataPipeline<List<JsonObject>> rows = (DataPipeline<List<JsonObject>>) table;
-        return new KeyLookupTransform(keyField, valueField, rows, RowKeys.index(rows, keyField, "TRANSFORM_KEY_LOOKUP"));
+        return new KeyLookupTransform(keyField, valueField, rows, RowKeys.index(rows, keyField));
     }
 
     /** {@inheritDoc} */
     @Override
     public @Nullable JsonElement execute(@NotNull PipelineContext ctx, @Nullable String input) {
         if (input == null) return null;
-        Map<String, JsonObject> rows = ctx.evaluateOperand(this.index);
+        Map<String, JsonObject> rows = this.index.read(ctx);
         if (rows == null) return null;
         JsonObject row = rows.get(input);
         if (row == null) return null;
