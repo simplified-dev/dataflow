@@ -104,7 +104,7 @@ public @interface StageSpec {
         FILTER_STRING,
 
         /**
-         * Type-agnostic single-element predicates (not-null, not, and, or).
+         * Type-agnostic single-element predicates (not-null, not, and, or, compare).
          */
         PREDICATE_COMMON,
 

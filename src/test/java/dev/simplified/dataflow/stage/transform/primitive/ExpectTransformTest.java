@@ -13,6 +13,7 @@ import dev.simplified.dataflow.stage.predicate.numeric.IntGreaterThanPredicate;
 import dev.simplified.dataflow.stage.predicate.string.StartsWithPredicate;
 import dev.simplified.dataflow.stage.source.LiteralListSource;
 import dev.simplified.dataflow.stage.source.LiteralSource;
+import dev.simplified.dataflow.stage.transform.json.AsStringTransform;
 import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import dev.simplified.dataflow.stage.transform.string.LengthTransform;
@@ -100,6 +101,15 @@ class ExpectTransformTest {
     }
 
     @Test
+    @DisplayName("The failure message cuts a long value after a whole character, never inside a surrogate pair")
+    void failureCutsOnCodePointBoundary() {
+        String value = "x".repeat(119) + "\uD83D\uDE00" + "y".repeat(10);
+        ExpectTransform<String> stage = itemId();
+        ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, value));
+        assertThat(thrown.getMessage(), containsString("'" + "x".repeat(119) + "\uD83D\uDE00...'"));
+    }
+
+    @Test
     @DisplayName("A value whose body yields null throws")
     void nullVerdictThrows() {
         ExpectTransform<String> stage = ExpectTransform.of(
@@ -164,6 +174,37 @@ class ExpectTransformTest {
         JsonElement row = JsonParser.parseString("{\"name\":\"apple\"}");
         ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, row));
         assertThat(thrown.getMessage(), containsString("body yielded 'null'"));
+    }
+
+    @Test
+    @DisplayName("A body testing the JSON value for null passes a row whose field holds JSON null")
+    void jsonNullFieldPassesUntypedPresence() {
+        ExpectTransform<JsonElement> stage = ExpectTransform.of(
+            DataTypes.JSON_ELEMENT, "every row carries an id", List.of(PathTransform.of("id"), NotNullPredicate.of(DataTypes.JSON_ELEMENT))
+        );
+        JsonElement row = JsonParser.parseString("{\"id\":null}");
+        assertThat(stage.execute(this.ctx, row), is(sameInstance(row)));
+    }
+
+    @Test
+    @DisplayName("A body reading the field as a string fails a row whose field holds JSON null")
+    void jsonNullFieldFailsTypedPresence() {
+        ExpectTransform<JsonElement> stage = ExpectTransform.of(
+            DataTypes.JSON_ELEMENT, "every row carries an id", List.of(PathTransform.of("id"), AsStringTransform.of(), NotNullPredicate.of(DataTypes.STRING))
+        );
+        JsonElement row = JsonParser.parseString("{\"id\":null}");
+        ExpectationFailedException thrown = assertThrows(ExpectationFailedException.class, () -> stage.execute(this.ctx, row));
+        assertThat(thrown.getMessage(), containsString("body yielded 'null'"));
+    }
+
+    @Test
+    @DisplayName("A body reading the field as a string passes a row whose field holds a value")
+    void typedPresencePassesPresentField() {
+        ExpectTransform<JsonElement> stage = ExpectTransform.of(
+            DataTypes.JSON_ELEMENT, "every row carries an id", List.of(PathTransform.of("id"), AsStringTransform.of(), NotNullPredicate.of(DataTypes.STRING))
+        );
+        JsonElement row = JsonParser.parseString("{\"id\":\"apple\"}");
+        assertThat(stage.execute(this.ctx, row), is(sameInstance(row)));
     }
 
     @Test

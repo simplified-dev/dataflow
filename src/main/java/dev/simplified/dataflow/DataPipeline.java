@@ -17,6 +17,7 @@ import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.meta.StageMetadata;
 import dev.simplified.dataflow.stage.meta.StageReflection;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.source.EmbedSource;
 import dev.simplified.dataflow.stage.transform.primitive.ExpectTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,6 +99,12 @@ public final class DataPipeline<O> {
      * body, a named or typed body, or a pipeline operand, at any depth, each with the path of
      * the stage that states it. They are listed whether or not the pipeline has issues, and
      * they never make it invalid.
+     * <p>
+     * An {@link EmbedSource} holds only the id of the saved pipeline it runs, which the context's
+     * {@link DataPipelineResolver} resolves when the embed executes, so no expectation inside that
+     * pipeline is listed and nothing in the report marks the embed. A caller holding the resolver
+     * lists them by validating the pipeline it resolves for
+     * {@link EmbedSource#embeddedPipelineId()}.
      *
      * @return the validation report
      */
