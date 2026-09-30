@@ -13,11 +13,13 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class ParseLuaTransformTest {
 
@@ -230,6 +232,24 @@ class ParseLuaTransformTest {
     }
 
     @Test
+    @DisplayName("A leveled long string may hold its own opening bracket and a '[['")
+    void leveledLongStringHoldsOpeners() {
+        assertThat(parse("return { [=[a [=[b [[c]=] }").getAsJsonArray().get(0).getAsString(), is(equalTo("a [=[b [[c")));
+    }
+
+    @Test
+    @DisplayName("A '[[' inside a long string that '[[' opens throws, as Lua 5.1 refuses the nesting")
+    void nestedLongStringThrows() {
+        assertRejects("return { [[a [[b]] }");
+    }
+
+    @Test
+    @DisplayName("A '[[' inside a long comment that '[[' opens throws, as Lua 5.1 refuses the nesting")
+    void nestedLongCommentThrows() {
+        assertRejects("--[[ a [[ b ]] return { 1 }");
+    }
+
+    @Test
     @DisplayName("Block comments with levels are skipped")
     void leveledBlockComment() {
         assertThat(parse("--[==[ return { ]] } ]==] return { --[[ x ]] 1 }"), is(equalTo(json("[1]"))));
@@ -378,9 +398,33 @@ class ParseLuaTransformTest {
     }
 
     @Test
-    @DisplayName("A hexadecimal integer beyond 64 bits throws")
-    void hugeHexThrows() {
-        assertRejects("return { 0xFFFFFFFFFFFFFFFF }");
+    @DisplayName("A hexadecimal integer from 2^63 up reads as a float, as Lua 5.1 reads it")
+    void hugeHexIsFloat() {
+        assertThat(parse("return { 0x8000000000000000, 0xFFFFFFFFFFFFFFFF }").toString(), is(equalTo("[9.223372036854776E18,1.8446744073709552E19]")));
+    }
+
+    @Test
+    @DisplayName("The largest hexadecimal integer a signed 64-bit integer holds stays an integer")
+    void largestHexIsInteger() {
+        assertThat(parse("return { 0x7FFFFFFFFFFFFFFF }").toString(), is(equalTo("[9223372036854775807]")));
+    }
+
+    @Test
+    @DisplayName("A negated hexadecimal 2^63 reads as the float its decimal spelling reads as")
+    void negatedHugeHexIsFloat() {
+        assertThat(parse("return { -0x8000000000000000 }").toString(), is(equalTo(parse("return { -9223372036854775808 }").toString())));
+    }
+
+    @Test
+    @DisplayName("Leading zeros do not carry a hexadecimal integer past 64 bits")
+    void hexLeadingZerosStayInteger() {
+        assertThat(parse("return { 0x" + "0".repeat(300) + "1F }").toString(), is(equalTo("[31]")));
+    }
+
+    @Test
+    @DisplayName("A hexadecimal integer past every double throws")
+    void hexPastDoubleThrows() {
+        assertRejects("return { 0x1" + "0".repeat(256) + " }");
     }
 
     @Test
@@ -503,6 +547,26 @@ class ParseLuaTransformTest {
             tree = tree.getAsJsonArray().get(0);
 
         assertThat(tree.getAsJsonArray().size(), is(equalTo(8)));
+    }
+
+    @Test
+    @DisplayName("A long string local named several times throws once its copied characters outgrow the module")
+    void repeatedLongStringLocalThrows() {
+        assertRejects("local s = '" + "x".repeat(1000) + "' return { s, s, s }");
+    }
+
+    @Test
+    @DisplayName("The string keys of a local table count toward its copies")
+    void repeatedLongKeyLocalThrows() {
+        assertRejects("local t = { ['" + "k".repeat(1000) + "'] = 1 } return { t, t, t }");
+    }
+
+    @Test
+    @DisplayName("A local redeclared as itself over and over parses without measuring its value again")
+    void redeclaredLocalParsesPromptly() {
+        int elements = 100_000;
+        String lua = "local a = { " + "0, ".repeat(elements) + "}\n" + "local a = a\n".repeat(200_000) + "return a";
+        assertThat(assertTimeoutPreemptively(Duration.ofSeconds(5), () -> parse(lua).getAsJsonArray().size()), is(equalTo(elements)));
     }
 
     @Test

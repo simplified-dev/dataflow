@@ -15,6 +15,12 @@ import dev.simplified.dataflow.stage.Stage;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.predicate.common.NotNullPredicate;
+import dev.simplified.dataflow.stage.predicate.json.HasFieldPredicate;
+import dev.simplified.dataflow.stage.source.EmbedSource;
+import dev.simplified.dataflow.stage.transform.json.AsStringTransform;
+import dev.simplified.dataflow.stage.transform.json.FieldTransform;
+import dev.simplified.dataflow.stage.transform.json.PathTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,10 +41,21 @@ import java.util.List;
  * part out of its input yields {@code null}, and that verdict fails, so an expectation over each
  * row whose body reads its {@code id} fails on a row that has none.
  * <p>
+ * A key holding JSON {@code null} is not missing. {@link PathTransform} and {@link FieldTransform}
+ * read it as a JSON null element, which is a value, and {@link NotNullPredicate} and
+ * {@link HasFieldPredicate} both answer {@code true} for it, so a body built of those stages
+ * passes a row whose {@code id} is JSON {@code null}. A body that requires a non-null JSON
+ * primitive reads it typed: {@link AsStringTransform}, like every {@code TRANSFORM_JSON_AS_*}
+ * stage, yields {@code null} for JSON {@code null}, an object or an array, so an expectation whose
+ * body is {@code TRANSFORM_JSON_PATH id}, {@code TRANSFORM_JSON_AS_STRING},
+ * {@code PREDICATE_NOT_NULL} fails on a row whose {@code id} is missing or JSON {@code null}.
+ * <p>
  * The expectation is known before any run: {@link DataPipeline#validate()} lists it in
- * {@link ValidationReport#expectations()} with the path of the stage, wherever the stage sits -
- * at the top level, in a body, or in a pipeline operand. Stating one never makes a pipeline
- * invalid.
+ * {@link ValidationReport#expectations()} with the path of the stage, wherever the stage sits in
+ * the pipeline - at the top level, in a body, or in a pipeline operand - and stating one never
+ * makes a pipeline invalid. A saved pipeline an {@link EmbedSource} runs is resolved only when the
+ * embed executes, so an expectation inside it is listed by validating the resolved pipeline, not
+ * the pipeline that embeds it.
  *
  * @param <T> value type
  */
@@ -119,9 +136,20 @@ public final class ExpectTransform<T> implements TransformStage<T, T> {
         );
     }
 
+    /**
+     * Renders {@code value} for a failure message, cut after its first {@code PREVIEW_LENGTH}
+     * code points so the cut never splits a surrogate pair.
+     *
+     * @param value the failing input
+     * @return the rendered value, followed by {@code ...} when it was cut
+     */
     private static @NotNull String preview(@NotNull Object value) {
         String text = String.valueOf(value);
-        return text.length() <= PREVIEW_LENGTH ? text : text.substring(0, PREVIEW_LENGTH) + "...";
+
+        if (text.codePointCount(0, text.length()) <= PREVIEW_LENGTH)
+            return text;
+
+        return text.substring(0, text.offsetByCodePoints(0, PREVIEW_LENGTH)) + "...";
     }
 
     /** {@inheritDoc} */

@@ -46,8 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * ({@code 410}), {@code Slow} ({@code 408}), {@code Busy} ({@code 429}), {@code Odd}
  * ({@code 460}, a code the client has no constant for), {@code Token} ({@code 498}, one in the
  * Nginx range the client has no constant for), {@code Closed} ({@code 499}, an Nginx code),
- * {@code Broken} ({@code 500}) and {@code Moved} ({@code 302} to {@code Alpha}), and whose
- * {@code /cached/<name>} answers {@code 200} with {@code cached}, fresh for a minute.
+ * {@code Broken} ({@code 500}), {@code Moved} ({@code 302} to {@code Alpha}), {@code Choices}
+ * ({@code 300}, which no fetcher follows) and {@code Unlisted} ({@code 299}, a {@code 2xx} the
+ * client has no constant for, with {@code page:Unlisted}), whose {@code /cached/<name>} answers {@code 200} with {@code cached}, fresh for a minute, and whose
+ * {@code /echo/<name>} answers {@code 200} with the raw path its request line carried.
  */
 class FetchTransformTest {
 
@@ -75,6 +77,8 @@ class FetchTransformTest {
                 case "Token" -> respond(exchange, 498, "invalid token");
                 case "Closed" -> respond(exchange, 499, "closed");
                 case "Broken" -> respond(exchange, 500, "down");
+                case "Choices" -> respond(exchange, 300, "pick one");
+                case "Unlisted" -> respond(exchange, 299, "page:Unlisted");
                 case "Moved" -> {
                     exchange.getResponseHeaders().add("Location", "/wiki/Alpha");
                     exchange.sendResponseHeaders(302, -1);
@@ -88,6 +92,7 @@ class FetchTransformTest {
             exchange.getResponseHeaders().add("Cache-Control", "max-age=60");
             respond(exchange, 200, "cached");
         });
+        this.server.createContext("/echo/", exchange -> respond(exchange, 200, exchange.getRequestURI().getRawPath()));
         this.server.start();
         this.baseUrl = "http://127.0.0.1:" + this.server.getAddress().getPort();
     }
@@ -372,6 +377,34 @@ class FetchTransformTest {
     }
 
     @Test
+    @DisplayName("A 3xx the fetcher does not follow throws, carrying its code, rather than emitting its body")
+    void unfollowedRedirectionThrows() {
+        UrlFetchException thrown = assertThrows(UrlFetchException.class, () -> wiki().execute(context(), "Choices"));
+        assertThat(thrown.getStatusCode(), is(300));
+    }
+
+    @Test
+    @DisplayName("As a map body a 3xx the fetcher does not follow fails the run")
+    void mapBodyFailsOnUnfollowedRedirection() {
+        DataPipeline<List<String>> pipeline = pages("Alpha,Choices,Beta");
+        assertThrows(UrlFetchException.class, () -> pipeline.execute(context()));
+    }
+
+    @Test
+    @DisplayName("A 2xx the client has no constant for is emitted")
+    void unknownSuccessEmitted() {
+        assertThat(wiki().execute(context(), "Unlisted"), is(equalTo("page:Unlisted")));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees a body under a 2xx the client has no constant for")
+    void guardSeesUnknownSuccess() {
+        List<String> seen = new ArrayList<>();
+        wiki().execute(guarded((uri, body) -> seen.add(body)), "Unlisted");
+        assertThat(seen, contains("page:Unlisted"));
+    }
+
+    @Test
     @DisplayName("As a map body a 4xx the client has no constant for drops out")
     void mapBodyDropsUnknownClientError() {
         assertThat(pages("Alpha,Odd,Beta").execute(context()), contains("page:Alpha", "page:Beta"));
@@ -394,6 +427,27 @@ class FetchTransformTest {
     @DisplayName("An input that does not form a URI throws")
     void malformedUriThrows() {
         assertThrows(IllegalArgumentException.class, () -> wiki().execute(context(), "Alpha Beta"));
+    }
+
+    @Test
+    @DisplayName("A character outside ASCII goes out as its UTF-8 bytes percent-encoded")
+    void nonAsciiGoesOutPercentEncoded() {
+        FetchTransform stage = FetchTransform.of(DataTypes.STRING, this.baseUrl + "/echo/{}");
+        assertThat(stage.execute(context(), "Déjà_Vu"), is(equalTo("/echo/D%C3%A9j%C3%A0_Vu")));
+    }
+
+    @Test
+    @DisplayName("A character outside Latin-1 fetches the page it names rather than one its name starts with")
+    void nonLatin1FetchesNamedPage() {
+        assertThat(wiki().execute(context(), "KnockOff™_Cola"), is(equalTo("page:KnockOff™_Cola")));
+    }
+
+    @Test
+    @DisplayName("The fetch guard sees the URL in the ASCII form it was sent in")
+    void guardSeesAsciiUrl() {
+        List<String> seen = new ArrayList<>();
+        wiki().execute(guarded((uri, body) -> seen.add(uri.toString())), "Déjà_Vu");
+        assertThat(seen, contains(this.baseUrl + "/wiki/D%C3%A9j%C3%A0_Vu"));
     }
 
     @Test

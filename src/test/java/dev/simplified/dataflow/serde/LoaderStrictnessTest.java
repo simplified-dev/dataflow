@@ -402,6 +402,41 @@ class LoaderStrictnessTest {
             assertThat(thrown.getMessage(), is(equalTo("Field 'threshold' holds 'false' but a number was expected")));
         }
 
+        @Test
+        @DisplayName("on a DOUBLE slot holding the text NaN fails the load naming the key")
+        void doubleHoldingNaNFails() {
+            IllegalArgumentException thrown = loadFails(threshold("'NaN'"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'threshold' holds '\"NaN\"' but a finite number was expected")));
+        }
+
+        @Test
+        @DisplayName("on a DOUBLE slot holding the text -Infinity fails the load naming the key")
+        void doubleHoldingNegativeInfinityFails() {
+            IllegalArgumentException thrown = loadFails(threshold("'-Infinity'"));
+            assertThat(thrown.getMessage(), is(equalTo("Field 'threshold' holds '\"-Infinity\"' but a finite number was expected")));
+        }
+
+        @Test
+        @DisplayName("on a DOUBLE slot holding a bare Infinity token fails the load")
+        void doubleHoldingBareInfinityFails() {
+            IllegalArgumentException thrown = loadFails(threshold("Infinity"));
+            assertThat(thrown.getMessage(), endsWith("but a finite number was expected"));
+        }
+
+        @Test
+        @DisplayName("on a DOUBLE slot holding a number past the double range fails the load rather than reading as infinite")
+        void doubleOverflowFails() {
+            IllegalArgumentException thrown = loadFails(threshold("1e400"));
+            assertThat(thrown.getMessage(), endsWith("but a finite number was expected"));
+        }
+
+        @Test
+        @DisplayName("on a DATA_TYPE slot holding an unknown label fails the load naming the key and the label")
+        void dataTypeHoldingUnknownLabelFails() {
+            IllegalArgumentException thrown = loadFails("[{'kind':'SOURCE_LITERAL','outputType':'string','value':'a'}]");
+            assertThat(thrown.getMessage(), is(equalTo("Field 'outputType' holds unknown DataType label 'string'")));
+        }
+
     }
 
     @Nested
@@ -433,6 +468,13 @@ class LoaderStrictnessTest {
             assertThat(thrown.getMessage(), is(equalTo(
                 "Typed sub-pipeline 'n' does not declare key 'type' (declared keys: [outputType, chain])"
             )));
+        }
+
+        @Test
+        @DisplayName("with an unknown outputType label fails the load naming the output and the label")
+        void unknownOutputTypeFails() {
+            IllegalArgumentException thrown = loadFails(objectBuild("{'outputType':'int','chain':[{'kind':'TRANSFORM_STRING_LENGTH'}]}"));
+            assertThat(thrown.getMessage(), is(equalTo("Typed sub-pipeline 'n' holds unknown DataType label 'int' under 'outputType'")));
         }
 
         @Test

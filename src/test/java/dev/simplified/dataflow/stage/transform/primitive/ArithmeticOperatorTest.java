@@ -170,6 +170,12 @@ class ArithmeticOperatorTest {
     }
 
     @Test
+    @DisplayName("float MODULO of a remainder that would round onto a positive divisor is positive zero")
+    void floatModuloRoundingOntoDivisorIsZero() {
+        assertThat(ArithmeticOperator.MODULO.apply(-1e-7f, 360f), is(equalTo(0.0f)));
+    }
+
+    @Test
     @DisplayName("float DIVIDE by zero rejects with null")
     void floatDivideByZero() {
         assertThat(ArithmeticOperator.DIVIDE.apply(7f, 0f), is(nullValue()));
@@ -215,6 +221,18 @@ class ArithmeticOperatorTest {
     @DisplayName("double MODULO with no remainder is a zero carrying the divisor's sign")
     void doubleModuloZeroCarriesDivisorSign() {
         assertThat(ArithmeticOperator.MODULO.apply(8.0, -4.0), is(equalTo(-0.0)));
+    }
+
+    @Test
+    @DisplayName("double MODULO of a remainder that would round onto a positive divisor is positive zero")
+    void doubleModuloRoundingOntoDivisorIsZero() {
+        assertThat(ArithmeticOperator.MODULO.apply(-1e-14, 360.0), is(equalTo(0.0)));
+    }
+
+    @Test
+    @DisplayName("double MODULO of a remainder that would round onto a negative divisor is negative zero")
+    void doubleModuloRoundingOntoNegativeDivisorIsNegativeZero() {
+        assertThat(ArithmeticOperator.MODULO.apply(1e-14, -360.0), is(equalTo(-0.0)));
     }
 
     @Test

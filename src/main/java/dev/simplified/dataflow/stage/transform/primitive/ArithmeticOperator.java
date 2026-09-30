@@ -47,8 +47,10 @@ public enum ArithmeticOperator {
     /**
      * Floored remainder of the left operand divided by the right operand, as
      * {@link Math#floorMod(int, int)} computes it: the result is zero or has the sign of the right
-     * operand, so a positive divisor never yields a negative remainder. Floating-point operands
-     * follow the same rule.
+     * operand and is smaller in magnitude, so a positive divisor yields a remainder from zero up to
+     * but not including the divisor. Floating-point operands follow the same rule, and a
+     * floating-point remainder that would round onto a finite divisor, as {@code -1e-14 MODULO 360}
+     * does, is zero with the divisor's sign.
      */
     MODULO;
 
@@ -162,7 +164,11 @@ public enum ArithmeticOperator {
         if (remainder == 0)
             return Math.copySign(0.0f, right);
 
-        return (remainder < 0) == (right < 0) ? remainder : remainder + right;
+        if ((remainder < 0) == (right < 0))
+            return remainder;
+
+        float floored = remainder + right;
+        return floored == right && Float.isFinite(right) ? Math.copySign(0.0f, right) : floored;
     }
 
     private static double floorMod(double left, double right) {
@@ -171,7 +177,11 @@ public enum ArithmeticOperator {
         if (remainder == 0)
             return Math.copySign(0.0, right);
 
-        return (remainder < 0) == (right < 0) ? remainder : remainder + right;
+        if ((remainder < 0) == (right < 0))
+            return remainder;
+
+        double floored = remainder + right;
+        return floored == right && Double.isFinite(right) ? Math.copySign(0.0, right) : floored;
     }
 
 }

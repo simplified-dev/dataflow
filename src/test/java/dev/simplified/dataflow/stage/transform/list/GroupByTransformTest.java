@@ -290,6 +290,39 @@ class GroupByTransformTest {
     }
 
     @Test
+    @DisplayName("Number keys past Gson's limits that round to one double stay apart")
+    void keysPastGsonLimitsStayApart() {
+        assertThat(this.group(null, "[{\"id\":1e10000},{\"id\":2e10000}]"), hasSize(2));
+    }
+
+    @Test
+    @DisplayName("A number key past Gson's limits groups with an equal one inside them")
+    void keyPastGsonLimitsGroupsByValue() {
+        assertThat(this.group(null, "[{\"id\":1e10000},{\"id\":10e9999}]"), hasSize(1));
+    }
+
+    @Test
+    @DisplayName("UNION keeps numbers past Gson's limits apart")
+    void unionKeepsNumbersPastGsonLimitsApart() {
+        JsonObject row = this.only(table("v", "UNION"), "[{\"id\":1,\"v\":[1e-10000,2e-10000]}]");
+        assertThat(row.get("v").toString(), is(equalTo("[1e-10000,2e-10000]")));
+    }
+
+    @Test
+    @DisplayName("MAX reads a number past Gson's limits")
+    void maxReadsNumberPastGsonLimits() {
+        JsonObject row = this.only(table("v", "MAX"), "[{\"id\":1,\"v\":5},{\"id\":1,\"v\":1e10000},{\"id\":1,\"v\":7}]");
+        assertThat(row.get("v").toString(), is(equalTo("1e10000")));
+    }
+
+    @Test
+    @DisplayName("MIN orders numbers past Gson's limits by exact value")
+    void minOrdersNumbersPastGsonLimits() {
+        JsonObject row = this.only(table("v", "MIN"), "[{\"id\":1,\"v\":1},{\"id\":1,\"v\":-1e-10000},{\"id\":1,\"v\":-2e-10000}]");
+        assertThat(row.get("v").toString(), is(equalTo("-2e-10000")));
+    }
+
+    @Test
     @DisplayName("Fields keep their first-appearance order, then fields only the table names")
     void fieldOrder() {
         JsonObject row = this.only(table("n", "COUNT", "b", "LAST"), "[{\"id\":1,\"b\":1},{\"a\":2,\"id\":1,\"b\":3}]");
@@ -348,6 +381,15 @@ class GroupByTransformTest {
     @DisplayName("of rejects a table that aggregates the key field")
     void rejectsAggregatedKey() {
         assertThrows(IllegalArgumentException.class, () -> GroupByTransform.of("id", table("id", "COUNT")));
+    }
+
+    @Test
+    @DisplayName("of rejects a table holding a null key")
+    void rejectsNullAggregateKey() {
+        Map<String, String> aggregates = new LinkedHashMap<>();
+        aggregates.put(null, "LIST");
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> GroupByTransform.of("id", aggregates));
+        assertThat(thrown.getMessage(), is(equalTo("GroupByTransform aggregates hold a null key")));
     }
 
     @Test

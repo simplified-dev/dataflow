@@ -1,5 +1,6 @@
 package dev.simplified.dataflow;
 
+import dev.simplified.dataflow.stage.source.EmbedSource;
 import dev.simplified.dataflow.stage.transform.primitive.ExpectTransform;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,10 +13,15 @@ import java.util.List;
  * {@link ExpectTransform} states about the values it will see, listed so a reader of the report
  * learns what the pipeline checks at run time before running it. A pipeline with expectations and
  * no issues is valid.
+ * <p>
+ * A saved pipeline an {@link EmbedSource} runs is resolved only when the embed executes, so the
+ * report lists none of its expectations and does not mark the embed; they are listed by the report
+ * of the resolved pipeline.
  *
  * @param issues every problem found, in walk order; an empty list means the pipeline is valid
  * @param expectations every expectation an {@link ExpectTransform} in the pipeline states, in walk
- *                     order, including those nested in bodies and operands
+ *                     order, including those nested in bodies and operands and excluding those of a
+ *                     saved pipeline an {@link EmbedSource} runs
  */
 public record ValidationReport(@NotNull List<Issue> issues, @NotNull List<Expectation> expectations) {
 

@@ -1,5 +1,6 @@
 package dev.simplified.dataflow.stage.transform.json;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.simplified.dataflow.PipelineContext;
@@ -10,9 +11,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
- * Covers {@link StringifyTransform} writing HTML-significant characters as themselves. Before,
- * it serialised with a default {@code Gson}, which wrote {@code '}, {@code <}, {@code >},
- * {@code &} and {@code =} as backslash-u escapes.
+ * Covers {@link StringifyTransform} writing HTML-significant characters as themselves, and object
+ * members holding JSON {@code null} as {@code null}. Before, it serialised with a default
+ * {@code Gson}, which wrote {@code '}, {@code <}, {@code >}, {@code &} and {@code =} as
+ * backslash-u escapes, and it left every null member out of the text.
  */
 class StringifyEscapingTest {
 
@@ -41,6 +43,29 @@ class StringifyEscapingTest {
         input.addProperty("t", "a\"b\\c");
         assertThat(StringifyTransform.of().execute(PipelineContext.defaults(), input),
             is(equalTo("{\"t\":\"a\\\"b\\\\c\"}")));
+    }
+
+    @Test
+    @DisplayName("A member whose value is JSON null is written rather than left out")
+    void nullMemberKept() {
+        JsonElement input = JsonParser.parseString("{\"a\":null,\"b\":1}");
+        assertThat(StringifyTransform.of().execute(PipelineContext.defaults(), input), is(equalTo("{\"a\":null,\"b\":1}")));
+    }
+
+    @Test
+    @DisplayName("A nested member whose value is JSON null is written rather than left out")
+    void nestedNullMemberKept() {
+        JsonElement input = JsonParser.parseString("{\"c\":{\"d\":null},\"e\":[null,{\"f\":null}]}");
+        assertThat(StringifyTransform.of().execute(PipelineContext.defaults(), input),
+            is(equalTo("{\"c\":{\"d\":null},\"e\":[null,{\"f\":null}]}")));
+    }
+
+    @Test
+    @DisplayName("An object holding JSON null members parses back to the same element")
+    void nullMembersParseBack() {
+        JsonElement input = JsonParser.parseString("{\"a\":null,\"c\":{\"d\":null}}");
+        String text = StringifyTransform.of().execute(PipelineContext.defaults(), input);
+        assertThat(JsonParser.parseString(text), is(equalTo(input)));
     }
 
 }

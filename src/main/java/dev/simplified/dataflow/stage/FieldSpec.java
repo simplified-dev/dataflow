@@ -161,7 +161,7 @@ public record FieldSpec<T>(
      *         as - a primitive for a scalar or {@code DATA_TYPE}, a stage array for a
      *         {@code SUB_PIPELINE} or {@code PIPELINE}, an object for a map
      * @throws IllegalArgumentException when an {@code INT} or {@code LONG} slot's value is not a number, is not integral or does not fit the type
-     * @throws IllegalArgumentException when a {@code DOUBLE} slot's value is not a number
+     * @throws IllegalArgumentException when a {@code DOUBLE} slot's value is not a number, or is {@code NaN} or infinite
      * @throws IllegalArgumentException when a {@code BOOLEAN} slot's value is neither a JSON boolean nor the text {@code true} or {@code false}
      * @throws IllegalArgumentException when a {@code DATA_TYPE} slot's label is not recognised by {@link DataTypes#byLabel}
      * @throws IllegalArgumentException when a {@code STRING_MAP} slot maps a key to a JSON null, object or array
@@ -184,8 +184,13 @@ public record FieldSpec<T>(
             case DATA_TYPE -> {
                 String label = raw.getAsString();
                 DataType<?> resolved = DataTypes.byLabel(label);
-                if (resolved == null)
-                    throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
+
+                if (resolved == null) {
+                    throw new IllegalArgumentException(String.format(
+                        "Field '%s' holds unknown DataType label '%s'", this.name, label
+                    ));
+                }
+
                 b.dataType(this.name, resolved);
             }
             case SUB_PIPELINE            -> b.subPipeline(this.name, ChainSerde.readChain(raw.getAsJsonArray(), stageReader));
@@ -242,21 +247,33 @@ public record FieldSpec<T>(
     }
 
     /**
-     * Reads a {@code DOUBLE} slot's number, so a value that is not one is refused under this
-     * slot's name.
+     * Reads a {@code DOUBLE} slot's number, so a value that is not a finite number is refused under
+     * this slot's name rather than read as {@code NaN} or an infinity, neither of which JSON can
+     * hold.
      *
      * @param raw the JSON form, a number or a numeric string
      * @return the value
-     * @throws IllegalArgumentException when the value is not a number
+     * @throws IllegalArgumentException when the value is not a number, or is {@code NaN} or infinite,
+     *         including a number too large for a {@code double}
      */
     private double readDouble(@NotNull JsonElement raw) {
+        double value;
+
         try {
-            return raw.getAsDouble();
+            value = raw.getAsDouble();
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException(String.format(
                 "Field '%s' holds '%s' but a number was expected", this.name, raw
             ), ex);
         }
+
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(String.format(
+                "Field '%s' holds '%s' but a finite number was expected", this.name, raw
+            ));
+        }
+
+        return value;
     }
 
     /**

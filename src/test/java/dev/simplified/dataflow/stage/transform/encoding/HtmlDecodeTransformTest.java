@@ -90,6 +90,30 @@ class HtmlDecodeTransformTest {
     }
 
     @Test
+    @DisplayName("A zero reference decodes to U+0000, as jsoup decodes it")
+    void zeroReferenceDecodesToNul() {
+        assertThat(decode("&#0;"), is(equalTo("\u0000")));
+    }
+
+    @Test
+    @DisplayName("A surrogate reference decodes to that lone surrogate, as jsoup decodes it")
+    void surrogateReferenceDecodesToLoneSurrogate() {
+        assertThat(decode("&#xD800;"), is(equalTo("\uD800")));
+    }
+
+    @Test
+    @DisplayName("Two surrogate references forming a pair decode to one supplementary character, as jsoup decodes them")
+    void surrogatePairReferencesJoin() {
+        assertThat(decode("&#xD83D;&#xDE00;").codePoints().toArray(), is(equalTo(new int[] { 0x1F600 })));
+    }
+
+    @Test
+    @DisplayName("A reference past jsoup's digit limit decodes only its leading digits")
+    void overlongReferenceDecodesLeadingDigits() {
+        assertThat(decode("&#" + "0".repeat(2045) + "65;"), is(equalTo("\u00065;")));
+    }
+
+    @Test
     @DisplayName("Line breaks, carriage returns and NUL characters pass through unchanged")
     void controlCharactersPassThrough() {
         assertThat(decode("a\r\nb\rc\u0000d&#10;"), is(equalTo("a\r\nb\rc\u0000d\n")));

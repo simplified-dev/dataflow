@@ -14,6 +14,7 @@ import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.source.UrlSource;
+import dev.simplified.dataflow.stage.transform.encoding.UrlEncodeTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,22 +27,50 @@ import java.util.Set;
  * taken from the running value, so a map body over page names reads one page per element.
  * <p>
  * The URL is the input itself, or {@code urlTemplate} with every {@code {}} replaced by the
- * input. The input is substituted as given, so a page name that needs escaping passes through an
- * encoding stage first. The fetch goes through {@link PipelineContext#fetcher()}, so it carries
- * that {@link UrlFetcher}'s headers, rate limit and response cache, and it is held to
+ * input. The input is substituted as given, and the URL is sent in its
+ * {@linkplain URI#toASCIIString() ASCII form}, so a character outside ASCII goes out as its UTF-8
+ * bytes percent-encoded - an {@code e} with an acute accent as {@code %C3%A9}. A space does not
+ * form a URI and a {@code ?} or {@code #} ends the path, so a page name placed in a path segment
+ * has its spaces replaced first, by a {@link ReplaceTransform} of {@code " "} with {@code "_"}
+ * for a MediaWiki title or with {@code "%20"} otherwise. {@link UrlEncodeTransform} writes a
+ * space as {@code +}, which a path reads as a literal plus, so it encodes a query value and not a
+ * path segment.
+ * <p>
+ * The fetch goes through {@link PipelineContext#fetcher()}, so it carries that
+ * {@link UrlFetcher}'s headers, rate limit and response cache, and it is held to
  * {@code maxBodyBytes} when one is configured and to the fetcher's configured cap otherwise.
  * <p>
  * A {@code 2xx} body passes through the context's
- * {@link PipelineContext#fetchGuard() fetch guard} and is emitted. A client error the origin
- * answers - a {@link UrlFetchException.ClientError}, {@code 400} to {@code 451} or a {@code 4xx}
- * the client's {@link HttpStatus} has no constant for outside Nginx's {@code 494-499}, whatever
- * the size of its body - rejects with {@code null}, so a map body drops a page that does not
- * exist, except a {@code 408} or a {@code 429}: a timeout or throttling says nothing about
- * whether the page exists, so it throws. Every other failure throws too - a {@code 5xx}, an Nginx
- * {@code 444} or {@code 494-499}, a transport failure, a {@code 2xx} body past the cap, a request
- * the local rate limit refuses, a guard that refuses the body, a blank input, or an input that
- * does not form a URI - so a collection is never silently short a page because the server, the
- * network or the body failed.
+ * {@link PipelineContext#fetchGuard() fetch guard} and is emitted - one under a {@code 2xx} code
+ * the client's {@link HttpStatus} has no constant for among them, which the fetcher reads as a
+ * {@code 200} and the response cache does not store. A redirect the fetcher follows is read
+ * through to the page it leads to, and a {@code 304} answering the fetcher's own revalidation of a
+ * cached copy is answered with the cached body. The guard is handed the URL and the body, not the
+ * status.
+ * <p>
+ * A client error the origin answers - a {@link UrlFetchException.ClientError}, {@code 400} to
+ * {@code 451} or a {@code 4xx} {@link HttpStatus} has no constant for outside Nginx's
+ * {@code 494-499}, whatever the size of its body - rejects with {@code null}, so a map body drops
+ * a page that does not exist, except a {@code 408} or a {@code 429}: a timeout or throttling says
+ * nothing about whether the page exists, so it throws. Every other failure throws too - a
+ * {@code 3xx} the fetcher does not follow, a {@code 5xx}, an Nginx {@code 444} or
+ * {@code 494-499}, any other status outside the {@code 2xx} class, a transport failure, a
+ * {@code 2xx} body past the cap, a request the local rate limit refuses, a guard that refuses the
+ * body, a blank input, or an input that does not form a URI - so a collection is never silently
+ * short a page because the server, the network or the body failed.
+ * <p>
+ * A {@code 3xx} the fetcher does not follow throws {@link UrlFetchException.Redirection}: a
+ * {@code 300}, {@code 305} or {@code 306}, a {@code 304} that answers no revalidation the fetcher
+ * made - one answering an {@code If-None-Match} or {@code If-Modified-Since} among the fetcher's
+ * own headers included - a redirect with no {@code Location} header, a redirect to another host
+ * or port from a fetcher that sends {@code Authorization} or {@code Cookie}, or a {@code 3xx} code
+ * {@link HttpStatus} has no constant for.
+ * <p>
+ * A {@code 5xx} the origin answers while the fetcher refreshes a stale cached copy of the URL is
+ * not raised when that copy's {@code stale-if-error} window is still open as the fetch begins and
+ * no directive requires it revalidated: the fetcher answers the cached body in its place, and the
+ * stage passes it through the guard and emits it like a fresh one, so a finished run can hold a
+ * page an earlier fetch read.
  */
 @StageSpec(
     id = "TRANSFORM_FETCH",
@@ -155,7 +184,8 @@ public final class FetchTransform implements TransformStage<String, String> {
         if (input.isBlank())
             throw new IllegalArgumentException("FetchTransform input is blank, so it names no URL");
 
-        URI uri = URI.create(this.urlTemplate == null ? input : this.urlTemplate.replace(INPUT_MARKER, input));
+        String url = this.urlTemplate == null ? input : this.urlTemplate.replace(INPUT_MARKER, input);
+        URI uri = URI.create(URI.create(url).toASCIIString());
         String body;
 
         try {

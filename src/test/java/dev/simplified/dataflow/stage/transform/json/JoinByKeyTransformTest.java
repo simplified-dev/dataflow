@@ -10,6 +10,7 @@ import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
+import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -180,6 +181,20 @@ class JoinByKeyTransformTest {
     }
 
     @Test
+    @DisplayName("An empty left key is never filled from a right cell named like it")
+    void emptyLeftKeyNotFilled() {
+        JoinByKeyTransform stage = JoinByKeyTransform.of("id", "key", "LEFT", null, operand("[{'key':'','id':'X','v':1}]"));
+        assertThat(text(stage.execute(PipelineContext.defaults(), rows("[{'id':''}]"))), is(equalTo(q("[{'id':'','v':1}]"))));
+    }
+
+    @Test
+    @DisplayName("A right-only row keeps its empty key over a right cell named like the left key")
+    void rightOnlyRowKeepsEmptyKey() {
+        JoinByKeyTransform stage = JoinByKeyTransform.of("id", "key", "FULL", null, operand("[{'key':'','id':'X'}]"));
+        assertThat(text(stage.execute(PipelineContext.defaults(), rows("[]"))), is(equalTo(q("[{'id':''}]"))));
+    }
+
+    @Test
     @DisplayName("A right-only row takes only the allowed columns")
     void rightOnlyRowTakesAllowedColumns() {
         assertThat(join("FULL", "v", "[]", "[{'id':'a','v':1,'w':2}]"), is(equalTo(q("[{'id':'a','v':1}]"))));
@@ -214,6 +229,12 @@ class JoinByKeyTransformTest {
     @DisplayName("FULL appends a duplicated right key once, from its first row")
     void fullAppendsDuplicateOnce() {
         assertThat(join("FULL", null, "[]", "[{'id':'a','v':1},{'id':'a','v':2}]"), is(equalTo(q("[{'id':'a','v':1}]"))));
+    }
+
+    @Test
+    @DisplayName("FULL appends no later right row repeating a key a left row matched")
+    void fullSkipsDuplicateOfMatchedKey() {
+        assertThat(join("FULL", null, "[{'id':'a'}]", "[{'id':'a','v':1},{'id':'a','v':2}]"), is(equalTo(q("[{'id':'a','v':1}]"))));
     }
 
     @Test
@@ -336,6 +357,20 @@ class JoinByKeyTransformTest {
         stage.execute(ctx, rows("[{'id':'b'}]"));
 
         assertThat(runs.get(), is(1));
+    }
+
+    @Test
+    @DisplayName("A tracer sees only registered stages, and no step for the indexing")
+    void tracerSeesOnlyRegisteredStages() {
+        JoinByKeyTransform stage = JoinByKeyTransform.of("id", "id", "LEFT", null, operand("[{'id':'a','v':1}]"));
+        List<String> unregistered = new ArrayList<>();
+        PipelineContext ctx = PipelineContext.builder()
+            .withTrace((traced, output) -> {
+                if (!traced.getClass().isAnnotationPresent(StageSpec.class)) unregistered.add(traced.getClass().getName());
+            })
+            .build();
+        stage.execute(ctx, rows("[{'id':'a'}]"));
+        assertThat(unregistered, is(empty()));
     }
 
     @Test

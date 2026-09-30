@@ -248,8 +248,13 @@ public final class ChainSerde {
 
             String label = rawLabel.getAsString();
             DataType<?> outputType = DataTypes.byLabel(label);
-            if (outputType == null)
-                throw new IllegalArgumentException("Unknown DataType label: '" + label + "'");
+
+            if (outputType == null) {
+                throw new IllegalArgumentException(String.format(
+                    "Typed sub-pipeline '%s' holds unknown DataType label '%s' under '%s'", name, label, OUTPUT_TYPE
+                ));
+            }
+
             List<Stage<?, ?>> stages = readStages(rawChain.getAsJsonArray(), stageReader);
             map.put(name, typedChainOf(outputType, stages));
         }

@@ -9,6 +9,7 @@ import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.Stage;
+import dev.simplified.dataflow.stage.filter.list.SkipFilter;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import dev.simplified.dataflow.stage.terminal.collect.FirstCollect;
 import dev.simplified.dataflow.stage.transform.dom.CssSelectTransform;
@@ -64,6 +65,14 @@ class BroadcastTransformTest {
         );
     }
 
+    private static @NotNull BroadcastTransform<List<Double>, Double, Double> headOntoTail() {
+        return BroadcastTransform.of(
+            DataType.list(DataTypes.DOUBLE), DataTypes.DOUBLE, DataTypes.DOUBLE,
+            List.of(FirstCollect.of(DataTypes.DOUBLE)), List.of(SkipFilter.of(DataTypes.DOUBLE, 1)),
+            "p", "c"
+        );
+    }
+
     private static @NotNull DataPipeline<?> pipeline() {
         return DataPipeline.builder()
             .source(LiteralSource.rawJson(KEYWORD))
@@ -97,6 +106,19 @@ class BroadcastTransformTest {
             List.of(FieldTransform.of("symbol")), usages(), "symbol", "usage"
         );
         assertThat(json(stage.execute(this.ctx, object("{\"symbol\":null,\"usages\":[\"a\"]}"))), is(equalTo("[{\"usage\":\"a\"}]")));
+    }
+
+    @Test
+    @DisplayName("A NaN parent omits the parent key from every output")
+    void nanParentOmitsKey() {
+        assertThat(json(headOntoTail().execute(this.ctx, List.of(Double.NaN, 1.5, 2.5))), is(equalTo("[{\"c\":1.5},{\"c\":2.5}]")));
+    }
+
+    @Test
+    @DisplayName("An infinite child is dropped")
+    void infiniteChildDropped() {
+        List<Double> input = List.of(1.5, Double.POSITIVE_INFINITY, 2.5);
+        assertThat(json(headOntoTail().execute(this.ctx, input)), is(equalTo("[{\"p\":1.5,\"c\":2.5}]")));
     }
 
     @Test

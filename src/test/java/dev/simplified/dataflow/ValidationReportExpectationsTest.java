@@ -16,6 +16,7 @@ import dev.simplified.dataflow.stage.predicate.common.AndPredicate;
 import dev.simplified.dataflow.stage.predicate.common.NotNullPredicate;
 import dev.simplified.dataflow.stage.predicate.string.NonEmptyPredicate;
 import dev.simplified.dataflow.stage.predicate.string.StartsWithPredicate;
+import dev.simplified.dataflow.stage.source.EmbedSource;
 import dev.simplified.dataflow.stage.source.LiteralListSource;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import dev.simplified.dataflow.stage.terminal.collect.MapCollect;
@@ -244,6 +245,16 @@ class ValidationReportExpectationsTest {
             .stage(AppendOperandTransform.of(suffix))
             .build();
         assertThat(pipeline.validate().expectations(), contains(expectation(1, "#1.suffix[1]", "the suffix is present")));
+    }
+
+    @Test
+    @DisplayName("An embed names its saved pipeline by id, so no expectation inside it is listed")
+    void embeddedPipelineNotListed() {
+        DataPipeline<?> pipeline = DataPipeline.builder()
+            .source(EmbedSource.of("saved", DataTypes.STRING))
+            .stage(UpperCaseTransform.of())
+            .build();
+        assertThat(pipeline.validate().expectations(), is(empty()));
     }
 
     @Test

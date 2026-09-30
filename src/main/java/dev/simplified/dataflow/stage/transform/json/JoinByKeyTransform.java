@@ -16,6 +16,7 @@ import dev.simplified.dataflow.ValidationReport;
 import dev.simplified.dataflow.stage.TransformStage;
 import dev.simplified.dataflow.stage.meta.Configurable;
 import dev.simplified.dataflow.stage.meta.StageSpec;
+import dev.simplified.dataflow.stage.transform.list.ConcatTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,13 +37,17 @@ import java.util.Set;
  * rows carry one key, the first is the one matched, and a right row with no key is never
  * matched. A matched row keeps every left value and takes a right value only into a cell that
  * is absent, JSON null, {@code ""}, {@code []} or {@code {}}, and only when the right value is
- * none of those itself; the right row's {@code rightKey} is never copied, and {@code columns},
- * when set, limits the right keys that may fill a cell.
+ * none of those itself. Neither the right row's {@code rightKey} nor a right cell named
+ * {@code leftKey} is ever copied, so a row keeps the key it matched on even when that key is
+ * {@code ""}, {@code []} or {@code {}}; {@code columns}, when set, limits the right keys that may
+ * fill a cell.
  * <p>
  * {@link Mode#INNER} keeps the matched left rows, {@link Mode#LEFT} keeps every left row, and
- * {@link Mode#FULL} keeps every left row and then appends, in right order, each right row whose
- * key no left row carries, as a row holding its key under {@code leftKey} plus the cells the
- * same fill rule takes from it. Left rows keep their order. {@code FULL} joins chained over
+ * {@link Mode#FULL} keeps every left row and then appends, in right order, the first right row of
+ * each key no left row carries, as a row holding its key under {@code leftKey} plus the cells the
+ * same fill rule takes from it. A later right row repeating a key and a right row with no key are
+ * never appended, and none of their cells is used; a union that keeps every row is a
+ * {@link ConcatTransform}. Left rows keep their order. {@code FULL} joins chained over
  * inputs in which every row carries a key, unique within its input, give the rows of a merge by
  * key that fills each cell from the first input populating it; a left row with no key is kept
  * as it is, and a cell no input populates keeps the empty value the left row gave it.
@@ -95,7 +100,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
      * The right rows indexed by {@link #rightKey}, built at most once per context.
      */
     @Getter(AccessLevel.NONE)
-    private final @NotNull DataPipeline<Map<String, JsonObject>> rightIndex;
+    private final @NotNull RowKeys.Index rightIndex;
 
     /**
      * Rule for which rows a join keeps.
@@ -113,7 +118,8 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
         LEFT,
 
         /**
-         * Every left row, followed by the right rows no left row matches.
+         * Every left row, followed by the first right row of each key no left row carries; a later
+         * right row repeating a key, and a right row with no key, is not appended.
          */
         FULL
 
@@ -162,7 +168,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
             rows,
             mode,
             columns,
-            RowKeys.index(rows, rightKey, "TRANSFORM_JOIN_BY_KEY")
+            RowKeys.index(rows, rightKey)
         );
     }
 
@@ -195,7 +201,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
     @Override
     public @Nullable ConcurrentList<JsonObject> execute(@NotNull PipelineContext ctx, @Nullable List<JsonObject> input) {
         if (input == null) return null;
-        Map<String, JsonObject> index = ctx.evaluateOperand(this.rightIndex);
+        Map<String, JsonObject> index = this.rightIndex.read(ctx);
         if (index == null) return null;
 
         List<JsonObject> joined = new ArrayList<>(input.size());
@@ -229,7 +235,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
 
     /**
      * Copies into {@code row} each cell of {@code match} that the fill rule and the column list
-     * allow.
+     * allow, never the right key and never into the left key.
      *
      * @param row the output row, already a copy
      * @param match the right row it matched
@@ -238,7 +244,7 @@ public final class JoinByKeyTransform implements TransformStage<List<JsonObject>
     private @NotNull JsonObject fill(@NotNull JsonObject row, @NotNull JsonObject match) {
         for (Map.Entry<String, JsonElement> cell : match.entrySet()) {
             String column = cell.getKey();
-            if (column.equals(this.rightKey)) continue;
+            if (column.equals(this.rightKey) || column.equals(this.leftKey)) continue;
             if (this.columns != null && !this.columns.contains(column)) continue;
             if (RowKeys.populated(row.get(column)) || !RowKeys.populated(cell.getValue())) continue;
             row.add(column, cell.getValue().deepCopy());

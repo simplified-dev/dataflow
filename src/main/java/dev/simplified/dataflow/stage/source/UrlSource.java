@@ -6,6 +6,7 @@ import dev.simplified.annotations.NamingStyle;
 import dev.simplified.annotations.RequiredArgsConstructor;
 import dev.simplified.client.exception.UrlFetchException;
 import dev.simplified.client.fetch.UrlFetcher;
+import dev.simplified.client.response.HttpStatus;
 import dev.simplified.dataflow.DataType;
 import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
@@ -21,14 +22,36 @@ import java.net.URI;
  * {@link SourceStage} that fetches a URL via {@link UrlFetcher} and emits the response body
  * tagged as one of the {@code RAW_*} types.
  * <p>
+ * The URL is parsed as written when the stage runs, so one holding a space fails the run. A space
+ * in a path segment is written as {@code %20}, since a path reads the {@code +} that
+ * {@code TRANSFORM_URL_ENCODE} writes for one as a literal plus. The request goes out in the URL's
+ * {@linkplain URI#toASCIIString() ASCII form}, so a character outside ASCII is sent as its UTF-8
+ * bytes, percent-encoded.
+ * <p>
  * The body is held to {@code maxBodyBytes} when one is configured and to the fetcher's
  * configured cap otherwise. The fetch throws a {@link UrlFetchException}, failing the run, on
- * every error status - each {@code 4xx}, {@code 408} and {@code 429} among them, and each
- * {@code 5xx} - on a status code the client's {@code HttpStatus} has no constant for, on a
- * transport failure, a body past the cap, or a request the local rate limit refuses.
+ * every status outside the {@code 2xx} class - a {@code 3xx} the fetcher does not follow, each
+ * {@code 4xx} with {@code 408} and {@code 429} among them, and each {@code 5xx} - on a transport
+ * failure, a body past the cap, or a request the local rate limit refuses. A {@code 2xx} code
+ * the client's {@link HttpStatus} has no constant for is read as a {@code 200}: its body is held
+ * to the cap and emitted, and the response cache does not store it.
+ * <p>
+ * A redirect the fetcher follows is read through to the page it leads to, and a {@code 304}
+ * answering the fetcher's own revalidation of a cached copy is answered with the cached body.
+ * Every other {@code 3xx} throws {@link UrlFetchException.Redirection}: a {@code 300},
+ * {@code 305} or {@code 306}, a {@code 304} that answers no revalidation the fetcher made - one
+ * answering an {@code If-None-Match} or {@code If-Modified-Since} among the fetcher's own headers
+ * included - a redirect with no {@code Location} header, a redirect to another host or port from
+ * a fetcher that sends {@code Authorization} or {@code Cookie}, or a {@code 3xx} code
+ * {@link HttpStatus} has no constant for. A {@code 5xx} the origin answers while the fetcher
+ * refreshes a stale cached copy of the URL is not raised when that copy's {@code stale-if-error}
+ * window is still open as the fetch begins and no directive requires it revalidated: the fetcher
+ * answers the cached body in its place, and it is emitted like a fresh one, so a finished run can
+ * hold a page an earlier fetch read.
  * <p>
  * A fetched body passes through the context's {@link PipelineContext#fetchGuard() fetch guard}
- * before it is emitted, and a guard that throws fails the run.
+ * before it is emitted, and a guard that throws fails the run. The guard is handed the URL and
+ * the body, not the status.
  */
 @StageSpec(
     id = "SOURCE_URL",
@@ -144,7 +167,7 @@ public final class UrlSource implements SourceStage<String> {
     /** {@inheritDoc} */
     @Override
     public @Nullable String execute(@NotNull PipelineContext ctx, @Nullable Void input) {
-        URI uri = URI.create(this.url);
+        URI uri = URI.create(URI.create(this.url).toASCIIString());
         String body = this.maxBodyBytes == null
             ? ctx.fetcher().get(uri).getBody()
             : ctx.fetcher().get(uri, this.maxBodyBytes).getBody();

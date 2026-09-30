@@ -32,9 +32,9 @@ import java.util.function.Consumer;
  * Each named output declares an explicit output {@link DataType}; the body chain is
  * validated against {@code (inputType, branchOutputType)} when the stage is built, on the
  * typed builder path and the wire path alike. At execute time,
- * each branch's final value is coerced to a {@link JsonElement} via
- * {@link PipelineGson#gson() gson.toJsonTree(...)} and stored under its name, in the order the
- * outputs were declared. Null branch results omit the field.
+ * each branch's final value is stored under its name, in the order the outputs were declared: a
+ * {@link JsonElement} as a copy of itself, JSON {@code null} members included, and any other value
+ * through {@link PipelineGson#gson() gson.toJsonTree(...)}. Null branch results omit the field.
  *
  * @param <I> input type, shared by every named sub-pipeline
  */
@@ -151,7 +151,7 @@ public final class ObjectBuildTransform<I> implements TransformStage<I, JsonObje
         for (Map.Entry<String, TypedChain<?>> entry : this.outputs.entrySet()) {
             Object value = runBranch(entry.getValue(), ctx, input);
             if (value == null) continue;
-            result.add(entry.getKey(), PipelineGson.gson().toJsonTree(value));
+            result.add(entry.getKey(), value instanceof JsonElement element ? element.deepCopy() : PipelineGson.gson().toJsonTree(value));
         }
         return result;
     }

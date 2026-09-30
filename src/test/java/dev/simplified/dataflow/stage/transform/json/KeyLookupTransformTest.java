@@ -11,6 +11,7 @@ import dev.simplified.dataflow.DataTypes;
 import dev.simplified.dataflow.PipelineContext;
 import dev.simplified.dataflow.serde.PipelineGson;
 import dev.simplified.dataflow.stage.SourceStage;
+import dev.simplified.dataflow.stage.meta.StageSpec;
 import dev.simplified.dataflow.stage.source.LiteralListSource;
 import dev.simplified.dataflow.stage.source.LiteralSource;
 import dev.simplified.dataflow.stage.source.UrlSource;
@@ -24,7 +25,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -201,17 +204,50 @@ class KeyLookupTransformTest {
     }
 
     @Test
-    @DisplayName("A Map body indexes the table once, reported under the lookup's id")
-    void mapBodyIndexesTableOnce() {
+    @DisplayName("A tracer sees only registered stages, and no step for the indexing")
+    void tracerSeesOnlyRegisteredStages() {
         MapTransform<String, JsonElement> map = mapOver(KeyLookupTransform.of("name", "id", table(TABLE)));
-        AtomicInteger runs = new AtomicInteger();
+        List<String> unregistered = new ArrayList<>();
         PipelineContext ctx = PipelineContext.builder()
             .withTrace((stage, output) -> {
-                if (!(stage instanceof KeyLookupTransform) && stage.kindId().equals("TRANSFORM_KEY_LOOKUP")) runs.incrementAndGet();
+                if (!stage.getClass().isAnnotationPresent(StageSpec.class)) unregistered.add(stage.getClass().getName());
             })
             .build();
         map.execute(ctx, List.of("Stone", "Gem", "Ore"));
-        assertThat(runs.get(), is(1));
+        assertThat(unregistered, is(empty()));
+    }
+
+    @Test
+    @DisplayName("The table's index is built once per context")
+    void indexBuiltOncePerContext() {
+        RowKeys.Index index = RowKeys.index(table(TABLE), "name");
+        PipelineContext ctx = PipelineContext.defaults();
+        assertThat(index.read(ctx), is(sameInstance(index.read(ctx))));
+    }
+
+    @Test
+    @DisplayName("Each context builds its own index")
+    void eachContextBuildsIndex() {
+        RowKeys.Index index = RowKeys.index(table(TABLE), "name");
+        assertThat(index.read(PipelineContext.defaults()), is(not(sameInstance(index.read(PipelineContext.defaults())))));
+    }
+
+    @Test
+    @DisplayName("A context made by mutate() builds its own index")
+    void mutatedContextBuildsIndex() {
+        RowKeys.Index index = RowKeys.index(table(TABLE), "name");
+        PipelineContext ctx = PipelineContext.defaults();
+        assertThat(index.read(ctx.mutate().build()), is(not(sameInstance(index.read(ctx)))));
+    }
+
+    @Test
+    @DisplayName("The index is held by the context, under the index instance")
+    void indexHeldByContext() {
+        RowKeys.Index index = RowKeys.index(table(TABLE), "name");
+        PipelineContext ctx = PipelineContext.defaults();
+        Map<String, JsonObject> built = index.read(ctx);
+        Map<String, JsonObject> held = ctx.derive(index, () -> null);
+        assertThat(held, is(sameInstance(built)));
     }
 
     @Test

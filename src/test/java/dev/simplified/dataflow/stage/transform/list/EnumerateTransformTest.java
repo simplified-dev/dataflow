@@ -84,6 +84,29 @@ class EnumerateTransformTest {
     }
 
     @Test
+    @DisplayName("A NaN or infinite DOUBLE element is dropped and still uses up its number")
+    void nonFiniteDoubleElementUsesItsNumber() {
+        List<Double> input = List.of(1.5, Double.NaN, Double.POSITIVE_INFINITY, 2.5);
+        List<JsonObject> result = this.enumerate(EnumerateTransform.of(DataTypes.DOUBLE, null, null, null), input);
+        assertThat(json(result), is(equalTo("[{\"index\":0,\"value\":1.5},{\"index\":3,\"value\":2.5}]")));
+    }
+
+    @Test
+    @DisplayName("An infinite FLOAT element is dropped")
+    void infiniteFloatElementDropped() {
+        List<JsonObject> result = this.enumerate(EnumerateTransform.of(DataTypes.FLOAT, null, null, null), List.of(Float.NEGATIVE_INFINITY, 1.5f));
+        assertThat(json(result), is(equalTo("[{\"index\":1,\"value\":1.5}]")));
+    }
+
+    @Test
+    @DisplayName("A list element holding a NaN is dropped")
+    void listHoldingNaNDropped() {
+        EnumerateTransform<List<Double>> stage = EnumerateTransform.of(DataType.list(DataTypes.DOUBLE), null, null, null);
+        List<JsonObject> result = this.enumerate(stage, List.of(List.of(1.0, Double.NaN), List.of(2.0)));
+        assertThat(json(result), is(equalTo("[{\"index\":1,\"value\":[2.0]}]")));
+    }
+
+    @Test
     @DisplayName("A numeric element is written as a JSON number")
     void numericElementWrittenAsNumber() {
         List<JsonObject> result = this.enumerate(EnumerateTransform.of(DataTypes.INT, null, null, null), List.of(5, 7));
