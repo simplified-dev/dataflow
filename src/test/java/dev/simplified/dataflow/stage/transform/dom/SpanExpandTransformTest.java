@@ -12,11 +12,14 @@ import dev.simplified.dataflow.stage.transform.list.MapTransform;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -135,12 +138,28 @@ class SpanExpandTransformTest {
     }
 
     @Test
-    @DisplayName("A row ends at the first position no cell covers")
-    void rowEndsAtGap() {
+    @DisplayName("A carried cell keeps its column past a position no cell covers, which holds an empty cell")
+    void carriedCellKeepsColumnPastGap() {
         assertThat(
             texts("<table><tr><td>a</td><td>b</td><td rowspan='2'>c</td></tr><tr><td>d</td></tr></table>").get(1),
-            is(equalTo(List.of("d")))
+            is(equalTo(List.of("d", "", "c")))
         );
+    }
+
+    @Test
+    @DisplayName("A row with no cells of its own keeps a carried cell in its column")
+    void emptyRowKeepsCarriedColumn() {
+        assertThat(
+            texts("<table><tr><td>a</td><td rowspan='2'>b</td><td>c</td></tr><tr></tr></table>").get(1),
+            is(equalTo(List.of("", "b")))
+        );
+    }
+
+    @Test
+    @DisplayName("A position no cell covers holds a cell outside the document")
+    void gapCellDetached() {
+        List<List<Element>> grid = expand(null, table("<table><tr><td>a</td><td rowspan='2'>b</td></tr><tr></tr></table>"));
+        assertThat(grid.get(1).getFirst().parent(), is(nullValue()));
     }
 
     @Test
@@ -159,6 +178,37 @@ class SpanExpandTransformTest {
             texts("<table><tr><td rowspan='0'>a</td><td>b</td></tr><tr><td>c</td></tr><tr><td>d</td></tr></table>"),
             is(equalTo(List.of(List.of("a", "b"), List.of("a", "c"), List.of("a", "d"))))
         );
+    }
+
+    @Test
+    @DisplayName("rowspan=-0 reads as zero and covers the rest of its row group")
+    void rowspanNegativeZeroToGroupEnd() {
+        assertThat(
+            texts("<table><tr><td rowspan='-0'>a</td><td>b</td></tr><tr><td>c</td></tr><tr><td>d</td></tr></table>"),
+            is(equalTo(List.of(List.of("a", "b"), List.of("a", "c"), List.of("a", "d"))))
+        );
+    }
+
+    @Test
+    @DisplayName("A table laid out to the entry limit is laid out")
+    void entryLimitReached() {
+        assertThat(expand(null, spanningTable(SpanExpandTransform.MAX_ENTRIES / SpanExpandTransform.MAX_COLSPAN)).size(), is(equalTo(SpanExpandTransform.MAX_ENTRIES / SpanExpandTransform.MAX_COLSPAN)));
+    }
+
+    @Test
+    @DisplayName("A table laid out past the entry limit rejects with null")
+    void entryLimitExceeded() {
+        assertThat(expand(null, spanningTable(SpanExpandTransform.MAX_ENTRIES / SpanExpandTransform.MAX_COLSPAN + 1)), is(nullValue()));
+    }
+
+    @Test
+    @DisplayName("The entry limit counts the rows a selector leaves out")
+    void entryLimitCountsUnselectedRows() {
+        assertThat(expand("tr:has(td)", spanningTable(SpanExpandTransform.MAX_ENTRIES / SpanExpandTransform.MAX_COLSPAN + 1)), is(nullValue()));
+    }
+
+    private static @NotNull Element spanningTable(int rows) {
+        return table("<table><tr><td colspan='" + SpanExpandTransform.MAX_COLSPAN + "' rowspan='0'>a</td></tr>" + "<tr></tr>".repeat(rows - 1) + "</table>");
     }
 
     @Test
@@ -233,13 +283,41 @@ class SpanExpandTransformTest {
     }
 
     @Test
-    @DisplayName("A row selector chooses the rows, and spans count the chosen rows")
+    @DisplayName("A row selector chooses the rows returned")
     void rowSelector() {
         assertThat(texts("tr:has(td)", table(STATS)), is(equalTo(List.of(
             List.of("Breaking Power", "0", "10"),
             List.of("Mining Spread", "0", "100"),
             List.of("Pristine", "0", "20")
         ))));
+    }
+
+    @Test
+    @DisplayName("A row the selector leaves out still takes a row of a span covering it")
+    void selectorSkippedRowTakesSpan() {
+        Element table = table("<table><tr><td rowspan='2'>r</td><td>x</td></tr><tr><th>h</th></tr><tr><td>y</td><td>z</td></tr></table>");
+        assertThat(texts("tr:has(td)", table), is(equalTo(List.of(List.of("r", "x"), List.of("y", "z")))));
+    }
+
+    @Test
+    @DisplayName("A structural row selector holds no reference to the last table's document")
+    void selectorReleasesDocument() throws InterruptedException {
+        SpanExpandTransform stage = SpanExpandTransform.of("table tr");
+        WeakReference<Document> document = expandOnce(stage);
+
+        for (int attempt = 0; attempt < 50 && document.get() != null; attempt++) {
+            System.gc();
+            Thread.sleep(10);
+        }
+
+        assertThat(document.get(), is(nullValue()));
+        Reference.reachabilityFence(stage);
+    }
+
+    private @NotNull WeakReference<Document> expandOnce(@NotNull SpanExpandTransform stage) {
+        Document document = Jsoup.parse(STATS);
+        stage.execute(this.ctx, document.selectFirst("table"));
+        return new WeakReference<>(document);
     }
 
     @Test
