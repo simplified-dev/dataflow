@@ -17,13 +17,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -48,30 +48,34 @@ import java.util.regex.Pattern;
  *       value a literal or a table, and a name in value position, the {@code return} included,
  *       reading the value of the latest local of that name declared before it; the first read of
  *       a local takes its value and every later read a copy, so the tree returned never holds one
- *       element in two places</li>
+ *       table in two places, while a copy shares the local's strings, numbers and booleans, which
+ *       cannot change</li>
  *   <li><b>comments</b> - line comments and long-bracket block comments, anywhere whitespace may
  *       stand</li>
  * </ul>
  * A table whose keys are exactly {@code 1..n} becomes a {@link JsonArray} in index order, an empty
  * table included, and any other table a {@link JsonObject} whose keys keep their source order.
  * An integer key becomes its decimal string and a boolean key {@code "true"} or {@code "false"}.
- * An integer literal becomes a JSON integer, and a literal with a fraction or an exponent, or a
- * decimal integer too large for 64 bits, a JSON float. A {@code nil} value omits its key, and a
- * positional {@code nil} still takes its index, so {@code {1, nil, 3}} becomes an object keyed
- * {@code "1"} and {@code "3"}.
+ * An integer literal becomes a JSON integer, and a literal with a fraction or an exponent a JSON
+ * float. A decimal or hexadecimal integer too large for a signed 64-bit integer becomes a JSON
+ * float too, the double Lua 5.1 reads it as. A {@code nil} value omits its key, and a positional
+ * {@code nil} still takes its index, so {@code {1, nil, 3}} becomes an object keyed {@code "1"}
+ * and {@code "3"}.
  * <p>
  * Anything outside that subset throws {@link IllegalArgumentException} naming the line and column,
  * as {@link ParseJsonTransform} throws on malformed JSON, so a module that starts computing values
  * fails instead of yielding half a table: a function call, a concatenation, a field access, a
  * name no earlier local declares, a statement other than {@code local} before the {@code return},
  * anything after the returned table, a {@code return} of something other than a table, a
- * hexadecimal float, a number JSON cannot hold, decimal escapes whose bytes are not UTF-8, a float
- * key that is not an integer, a key assigned twice in one table, two keys that would share one
- * JSON name, and tables nested deeper than {@value #MAX_DEPTH} levels, the levels of every local a
- * table names counted in. Reads of locals also throw once their copies together hold more values
- * than the module has characters, so a few lines that each name the local before them twice
- * cannot double the tree once per line. A module transcluded through {@code msgnw} arrives
- * HTML-escaped and needs {@link HtmlDecodeTransform} first.
+ * hexadecimal float, a number JSON cannot hold, a {@code [[} inside a long string or comment that
+ * {@code [[} opens, decimal escapes whose bytes are not UTF-8, a float key that is not an integer,
+ * a key assigned twice in one table, two keys that would share one JSON name, and tables nested
+ * deeper than {@value #MAX_DEPTH} levels, the levels of every local a table names counted in.
+ * Reads of locals also throw once their copies together hold more values and string characters,
+ * keys included, than the module has characters, so a few lines that each name the local before
+ * them twice cannot double the tree once per line, and a long string named over and over cannot
+ * multiply its length. A module transcluded through {@code msgnw} arrives HTML-escaped and needs
+ * {@link HtmlDecodeTransform} first.
  */
 @StageSpec(
     id = "PARSE_LUA",
@@ -145,7 +149,7 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         private int depth;
 
         /**
-         * Values the repeated reads of locals have copied so far.
+         * Values and string characters the repeated reads of locals have copied so far.
          */
         private long copied;
 
@@ -176,7 +180,7 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
             this.position += "return".length();
             skipTrivia();
             int valueAt = this.position;
-            JsonElement table = readValue();
+            JsonElement table = readValue().element();
 
             if (table == null || table.isJsonPrimitive())
                 throw error(valueAt, "expected a table after 'return' but found '%s'", table == null ? "nil" : table);
@@ -195,11 +199,12 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         }
 
         /**
-         * Reads one table constructor, the position at its opening brace.
+         * Reads one table constructor, the position at its opening brace, measuring it from the
+         * measures of its fields.
          *
-         * @return the table as a JSON array or object
+         * @return the table as a JSON array or object, with its measures
          */
-        private @NotNull JsonElement readTable() {
+        private @NotNull Value readTable() {
             int open = this.position++;
 
             if (++this.depth > MAX_DEPTH)
@@ -208,6 +213,8 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
             Map<Object, JsonElement> fields = new LinkedHashMap<>();
             Set<Object> assigned = new HashSet<>();
             long nextIndex = 1;
+            int height = 0;
+            long size = 1;
             skipTrivia();
 
             while (peek() != '}') {
@@ -221,13 +228,16 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 else
                     key = nextIndex++;
 
-                JsonElement value = readValue();
+                Value value = readValue();
 
                 if (!assigned.add(key))
                     throw error(fieldAt, "key '%s' is assigned twice in one table", key);
 
-                if (value != null)
-                    fields.put(key, value);
+                if (value.element() != null) {
+                    fields.put(key, value.element());
+                    height = Math.max(height, value.height());
+                    size += value.size() + (key instanceof String text ? text.length() : 0);
+                }
 
                 skipTrivia();
                 int separator = peek();
@@ -241,7 +251,7 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
 
             this.position++;
             this.depth--;
-            return toJson(fields, open);
+            return new Value(toJson(fields, open), height + 1, size);
         }
 
         /**
@@ -253,7 +263,7 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
             this.position++;
             skipTrivia();
             int keyAt = this.position;
-            JsonElement key = readValue();
+            JsonElement key = readValue().element();
 
             if (key == null)
                 throw error(keyAt, "a table key cannot be nil");
@@ -288,17 +298,17 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         /**
          * Reads one value.
          *
-         * @return the value as JSON, or {@code null} for {@code nil}
+         * @return the value with its measures, its element {@code null} for {@code nil}
          */
-        private @Nullable JsonElement readValue() {
+        private @NotNull Value readValue() {
             skipTrivia();
             int at = this.position;
             int c = peek();
 
             if (c == '{') return readTable();
-            if (c == '"' || c == '\'') return new JsonPrimitive(readQuoted());
-            if (c == '[' && atLongBracket()) return new JsonPrimitive(readLongBracket("string"));
-            if (atNumber()) return readNumber();
+            if (c == '"' || c == '\'') return Value.of(new JsonPrimitive(readQuoted()));
+            if (c == '[' && atLongBracket()) return Value.of(new JsonPrimitive(readLongBracket("string")));
+            if (atNumber()) return Value.of(readNumber());
 
             if (c == '-') {
                 this.position++;
@@ -307,16 +317,16 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 if (!atNumber())
                     throw error(this.position, "expected a number after '-' but found %s", describe(this.position));
 
-                return negate(readNumber());
+                return Value.of(negate(readNumber()));
             }
 
             if (isNameStart(c)) {
                 String name = readName();
 
                 return switch (name) {
-                    case "true" -> new JsonPrimitive(true);
-                    case "false" -> new JsonPrimitive(false);
-                    case "nil" -> null;
+                    case "true" -> Value.of(new JsonPrimitive(true));
+                    case "false" -> Value.of(new JsonPrimitive(false));
+                    case "nil" -> Value.NIL;
                     default -> readLocalValue(name, at);
                 };
             }
@@ -354,35 +364,39 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
 
         /**
          * Reads the value of the latest local named {@code name}. The first read takes the value
-         * and every later read a copy of it, so the tree returned never holds one element in two
-         * places, and the copies together hold no more values than the module has characters.
+         * and every later read a copy of it, so the tree returned never holds one table in two
+         * places, and the copies together hold no more values and string characters than the
+         * module has characters.
          *
          * @param name the name read
          * @param at the name's position, for the error message
-         * @return the local's value, or {@code null} when it is {@code nil}
+         * @return the local's value with its measures, its element {@code null} when it is
+         *         {@code nil}
          */
-        private @Nullable JsonElement readLocalValue(@NotNull String name, int at) {
+        private @NotNull Value readLocalValue(@NotNull String name, int at) {
             Local local = this.locals.get(name);
 
             if (local == null)
                 throw error(at, "found the name '%s', which no local before it declares", name);
 
-            if (local.value == null) return null;
+            Value value = local.value;
 
-            if (this.depth + local.height > MAX_DEPTH)
+            if (value.element() == null) return value;
+
+            if (this.depth + value.height() > MAX_DEPTH)
                 throw error(at, "tables nest deeper than %s levels", MAX_DEPTH);
 
             if (!local.taken) {
                 local.taken = true;
-                return local.value;
+                return value;
             }
 
-            this.copied += local.size;
+            this.copied += value.size();
 
             if (this.copied > this.source.length())
                 throw error(at, "the local '%s' is read so often that its copies outgrow the module", name);
 
-            return local.value.deepCopy();
+            return new Value(value.element().deepCopy(), value.height(), value.size());
         }
 
         /**
@@ -489,7 +503,8 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         /**
          * Reads a long-bracket string or comment body, the position at its opening bracket. The
          * line break straight after the opening bracket is dropped, and every line break inside
-         * reads as {@code \n}, as Lua reads them.
+         * reads as {@code \n}, as Lua reads them. A body that {@code [[} opens holds no other
+         * {@code [[}, which Lua 5.1 refuses as nesting.
          *
          * @param what what the bracket opens, for the error message
          * @return the body
@@ -501,6 +516,10 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
             skipLineBreak();
             String close = "]" + "=".repeat(level) + "]";
             int end = this.source.indexOf(close, this.position);
+            int nested = level == 0 ? this.source.indexOf("[[", this.position) : -1;
+
+            if (nested >= 0 && (end < 0 || nested < end))
+                throw error(nested, "a long %s that '[[' opens cannot hold another '[['", what);
 
             if (end < 0)
                 throw error(open, "unfinished long %s", what);
@@ -527,11 +546,26 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
                 if (this.position == start + 2 || isNumeralPart(peek()))
                     throw error(start, "malformed number '%s'", numeral(start));
 
+                int significant = start + 2;
+
+                while (significant < this.position - 1 && this.source.charAt(significant) == '0')
+                    significant++;
+
+                String hex = this.source.substring(significant, this.position);
+
                 try {
-                    return new JsonPrimitive(Long.parseLong(this.source.substring(start + 2, this.position), 16));
-                } catch (NumberFormatException ex) {
-                    throw error(start, "hexadecimal integer '%s' is larger than a signed 64-bit integer", numeral(start));
-                }
+                    return new JsonPrimitive(Long.parseLong(hex, 16));
+                } catch (NumberFormatException ignored) { }
+
+                // a leading digit worth 2^1024 or more is past every double
+                double value = (hex.length() - 1) * 4L > Double.MAX_EXPONENT
+                    ? Double.POSITIVE_INFINITY
+                    : new BigInteger(hex, 16).doubleValue();
+
+                if (Double.isInfinite(value))
+                    throw error(start, "number '%s' has no JSON form", numeral(start));
+
+                return new JsonPrimitive(value);
             }
 
             skipDigits();
@@ -837,54 +871,46 @@ public final class ParseLuaTransform implements TransformStage<String, JsonEleme
         private static final class Local {
 
             /**
-             * Value of the local, or {@code null} when it is {@code nil}.
+             * Value of the local with its measures, its element {@code null} when it is
+             * {@code nil}.
              */
-            private final @Nullable JsonElement value;
-
-            /**
-             * Levels of tables in the value, {@code 0} when it holds no table.
-             */
-            private final int height;
-
-            /**
-             * Number of values in the value, itself included.
-             */
-            private final long size;
+            private final @NotNull Value value;
 
             /**
              * Whether a read has taken the value itself, so every later read copies it.
              */
             private boolean taken;
 
-            Local(@Nullable JsonElement value) {
+            Local(@NotNull Value value) {
                 this.value = value;
-                this.height = value == null ? 0 : height(value);
-                this.size = value == null ? 0 : size(value);
             }
 
-            private static int height(@NotNull JsonElement element) {
-                if (!element.isJsonArray() && !element.isJsonObject()) return 0;
-                int deepest = 0;
+        }
 
-                for (JsonElement child : children(element))
-                    deepest = Math.max(deepest, height(child));
+        /**
+         * A value read, with the measures a read of a local holding it is checked against, taken
+         * as the value is read so that no value is walked to measure it.
+         *
+         * @param element the value as JSON, or {@code null} for {@code nil}
+         * @param height the levels of tables in the value, {@code 0} when it holds no table
+         * @param size the values in the value, itself included, plus the characters of every
+         *             string and string key in it
+         */
+        private record Value(@Nullable JsonElement element, int height, long size) {
 
-                return deepest + 1;
-            }
+            /**
+             * The value of {@code nil}.
+             */
+            static final @NotNull Value NIL = new Value(null, 0, 0);
 
-            private static long size(@NotNull JsonElement element) {
-                long size = 1;
-
-                for (JsonElement child : children(element))
-                    size += size(child);
-
-                return size;
-            }
-
-            private static @NotNull Iterable<JsonElement> children(@NotNull JsonElement element) {
-                if (element.isJsonArray()) return element.getAsJsonArray();
-                if (element.isJsonObject()) return element.getAsJsonObject().asMap().values();
-                return List.of();
+            /**
+             * Measures a string, number or boolean.
+             *
+             * @param primitive the value
+             * @return the value with its measures
+             */
+            static @NotNull Value of(@NotNull JsonPrimitive primitive) {
+                return new Value(primitive, 0, 1 + (primitive.isString() ? primitive.getAsString().length() : 0));
             }
 
         }
