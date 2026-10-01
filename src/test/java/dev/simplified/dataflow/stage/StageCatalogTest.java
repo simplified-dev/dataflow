@@ -29,6 +29,7 @@ import dev.simplified.dataflow.stage.transform.primitive.BinaryArithmeticLongTra
 import dev.simplified.dataflow.stage.transform.primitive.CoalesceTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ConstantTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ExpectTransform;
+import dev.simplified.dataflow.stage.transform.primitive.IterateTransform;
 import dev.simplified.dataflow.stage.transform.primitive.ParseRomanTransform;
 import dev.simplified.dataflow.stage.transform.primitive.RoundDoubleTransform;
 import dev.simplified.dataflow.stage.transform.primitive.RoundFloatTransform;
@@ -102,7 +103,8 @@ class StageCatalogTest {
         new Entry("TRANSFORM_BROADCAST", BroadcastTransform.class, StageSpec.Category.TRANSFORM_LIST),
         new Entry("FILTER_WHERE", WhereFilter.class, StageSpec.Category.FILTER_LIST),
         new Entry("PREDICATE_COMPARE", ComparePredicate.class, StageSpec.Category.PREDICATE_COMMON),
-        new Entry("TRANSFORM_EXPECT", ExpectTransform.class, StageSpec.Category.TRANSFORM_PRIMITIVE)
+        new Entry("TRANSFORM_EXPECT", ExpectTransform.class, StageSpec.Category.TRANSFORM_PRIMITIVE),
+        new Entry("TRANSFORM_ITERATE", IterateTransform.class, StageSpec.Category.TRANSFORM_PRIMITIVE)
     );
 
     @TestFactory

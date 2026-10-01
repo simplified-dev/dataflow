@@ -228,6 +228,7 @@ key afterwards matches `1` or `1.0` depending on which row came first.
 | `TRANSFORM_ROUND_DOUBLE`             | `DOUBLE` | `DOUBLE`           | `scale` decimal places, optional `mode` (`RoundingMode`, `HALF_UP`) |
 | `TRANSFORM_CONSTANT`                 | `I`      | `T`                | every present input replaced by `value`, parsed under the types `SOURCE_LITERAL` admits but more strictly: a `BOOLEAN` is `true` or `false` in any case, and a `FLOAT` or `DOUBLE` must be finite, so a `BOOLEAN` of `yes` or an empty string, or a `DOUBLE` of `NaN` or `1e309`, fails the load |
 | `TRANSFORM_COALESCE`                 | `I`      | `O`                | first non-`null` of `body`, `fallback` body and `defaultValue`; optional `when` body guards `body`; `defaultValue` is parsed as `TRANSFORM_CONSTANT` parses `value` |
+| `TRANSFORM_ITERATE`                  | `T`      | `T`                | `body` applied to its own output while the optional `while` body yields `true`, or until a pass changes nothing; `maxIterations` (1 to 10,000) still changing fails the run, as does a pass yielding over 10,000,000 characters or elements |
 | `TRANSFORM_TO_STRING`                | `T`      | `STRING`           |                                                                 |
 | `TRANSFORM_TO_RAW`                   | `STRING` | `RAW_*`            | retypes the string; parses nothing                              |
 | `TRANSFORM_PEEK`                     | `T`      | `T`                | identity + `ctx.log()` side effect                              |
